@@ -19,8 +19,8 @@ export class UpdateUserDto {
   lastname?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: 'El documento debe ser un número' })
-  document?: number;
+  @IsString({ message: 'El documento debe ser un número' })
+  document?: string;
 
   @IsOptional()
   @IsString()

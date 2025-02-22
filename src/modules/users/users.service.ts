@@ -3,6 +3,7 @@ import { UserRepository } from '../users/users.repository';
 import { User } from './User.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthRequest } from '../../types';
 
 @Injectable()
 export class UsersService {
@@ -47,38 +48,51 @@ export class UsersService {
     return newUser;
   }
 
-  /** ✅ Actualizar usuario */
-  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
-    try{
-      const user = await this.getUserById(id); // Lanza error si no existe
-
+  /** ✅ Actualizar usuario por id (Admin)*/
+  async updateUserById(id: number, updateUserDto: UpdateUserDto, AuthRequest: AuthRequest): Promise<boolean> {
+      const user=await this.userRepository.getUserById(id)
+      if(!user || !user.id){
+        throw new HttpException('No se encontraron usuarios', HttpStatus.NOT_FOUND);
+      }else if(user.roles?.id!=1 && user.roles?.id!=id){
+        throw new HttpException('Acceso denegado', HttpStatus.FORBIDDEN);
+      }
       // Definir los campos permitidos para evitar actualizaciones no deseadas
       const allowedFields = ['email', 'document', 'role', 'password', 'address', 'mobile', 'phone'];
       const filteredData = Object.fromEntries(
         Object.entries(updateUserDto).filter(([key]) => allowedFields.includes(key))
       );
-  
-      Object.assign(user, filteredData);
-      return await this.userRepository.updateUser(id,user);
-    }catch(error){
-      throw error;
-    }
 
+      const updatedUser = { ...user, ...filteredData, id: user.id };
+      
+      return await this.userRepository.updateUser(id,updatedUser);
   }
+  async updateMyUser(id: number, updateUserDto: UpdateUserDto, AuthRequest: AuthRequest): Promise<boolean> {
+    const user=AuthRequest.user;
+    if(!user || !user.id){
+      throw new HttpException('No se encontraro usuario', HttpStatus.NOT_FOUND);
+    }else if(user.id!=id){
+      throw new HttpException('Acceso denegado', HttpStatus.FORBIDDEN);
+    }
+    // Definir los campos permitidos para evitar actualizaciones no deseadas
+    const allowedFields = ['email', 'document', 'role', 'password', 'address', 'mobile', 'phone'];
+    const filteredData = Object.fromEntries(
+      Object.entries(updateUserDto).filter(([key]) => allowedFields.includes(key))
+    );
+    const updatedUser = { ...user, ...filteredData, id: user.id }; 
+    return await this.userRepository.updateUser(id,updatedUser);
+}
 
   /** ✅ Eliminar usuario */
-  async deleteUser(id: number): Promise<boolean> {
-    try{
-       // Lanza error si no existe
-      const user = await this.getUserById(id);
-      if(!user){
+  async deleteUser(id: number, AuthRequest: AuthRequest): Promise<boolean> {
+      // Lanza error si no cuenta con autorización       
+      if(AuthRequest.user && AuthRequest.user.roles?.id!=1){
+        throw new HttpException('Acceso denegado', HttpStatus.FORBIDDEN);
+      }
+      const user=await this.userRepository.getUserById(id)
+      // Lanza error si no existe 
+      if(!user || !user.id){
         throw new HttpException('No se encontraron usuarios', HttpStatus.NOT_FOUND);
       }
-      await this.userRepository.deleteUser(id);
-      return true;
-    }catch(error){
-      throw error;
-    }
-
+      return await this.userRepository.deleteUser(id,user);
   }
 }

@@ -1,16 +1,17 @@
 import { Injectable, CanActivate, ExecutionContext,UnauthorizedException  } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { SupabaseService } from '../config/supabase.service';
 import { UsersService } from '../modules/users/users.service';
 import { User } from '../modules/users/User.entity';
+import { AuthRequest } from '../types';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(private readonly supabaseService: SupabaseService, private reflector: Reflector,private readonly usersService: UsersService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthRequest>();
+
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

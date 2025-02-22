@@ -66,39 +66,46 @@ export class UserController {
   /** ✅ Actualizar usuario (Solo admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Patch('admin/update-user/:id')
-  async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.updateUser(id, updateUserDto);
+  async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto,@Req() request: AuthRequest) {
+    const userUpdated=await this.usersService.updateUserById(id, updateUserDto,request);
+    if(!userUpdated){
+      throw new HttpException('Error al actualizar usuario', HttpStatus.BAD_REQUEST);
+    }
+    return { message: `Usuario ${id} Actualizado`, status: userUpdated };
   }
 
   /** ✅ Eliminar usuario (Solo admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Delete('admin/delete-user/:id')
-  async deleteUser(@Param('id') id: number) {
-    const deleted = await this.usersService.deleteUser(id);
+  async deleteUser(@Param('id') id: number,@Req() request: AuthRequest) {
+    const deleted = await this.usersService.deleteUser(id,request);
     if (!deleted) {
       throw new HttpException('Error al eliminar usuario', HttpStatus.BAD_REQUEST);
     }
-    return { message: `Usuario ${id} eliminado`, check: deleted };
+    return { message: `Usuario ${id} eliminado`, status: deleted };
   }
 
   // 🟢 **Rutas para usuarios normales**
   /** ✅ Obtener perfil propio */
-  @UseGuards(JwtAuthGuard, new RolesGuard([2]))
-  @Get('profile/my-profile/:id')
-  async getMyProfile(@Param('id') id: number, @Req() req: AuthRequest) {
-    if (req.user && req.user.id !== id) {
+  @UseGuards(JwtAuthGuard, new RolesGuard([1,2]))
+  @Get('profile/my-profile')
+  async getMyProfile(@Req() request: AuthRequest) {
+    if (!request.user) {
       throw new HttpException('Acceso denegado', HttpStatus.FORBIDDEN);
     }
+    const id=request.user.id;
     return this.usersService.getUserById(id);
   }
 
   /** ✅ Actualizar perfil propio */
   @UseGuards(JwtAuthGuard, new RolesGuard([2]))
-  @Patch('profile/update-my-profile/:id')
-  async updateMyProfile(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto, @Req() req: AuthRequest) {
-    if (req.user && req.user.id !== id) {
+  @Patch('profile/update-my-profile')
+  async updateMyProfile(@Body() updateUserDto: UpdateUserDto, @Req() request: AuthRequest) {    
+    if (!request.user) {
       throw new HttpException('Acceso denegado', HttpStatus.FORBIDDEN);
     }
-    return this.usersService.updateUser(id, updateUserDto);
+    const id=request.user.id;
+    const userUpdated= await this.usersService.updateMyUser(id, updateUserDto,request);
+    return { message: `Usuario ${id} Actualizado`, status: userUpdated };
   }
 }

@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupabaseService } from '../../config/supabase.service';
 import { User } from '../users/User.entity';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
+
 
 @Injectable()
 export class UserRepository {
@@ -111,41 +112,38 @@ export class UserRepository {
   /** ✅
    * Actualiza un usuario por su ID en PostgreSQL y Supabase
    */
-  async updateUser(id: number, user: Partial<User>): Promise<User | null> {
+  async updateUser(id: number, updatedUser: Partial<User>): Promise<boolean> {
     const queryRunner = this.userRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    try {
-      user.updated_at = new Date();
-
-      // ✅ 1. Obtener usuario actual
-      const existingUser = await this.userRepository.findOne({ where: { id } });
-      if (!existingUser) throw new Error('Usuario no encontrado.');
-
-      if (user.password) {
-        user.password = bcrypt.hashSync(user.password, 10);
+    try {    
+      // ✅ 1. Guardamos la contraseña
+      const newpassword= updatedUser.password;
+      // ✅ 2. Hasheamos la contraseña
+      if (updatedUser.password) {
+        updatedUser.password = bcrypt.hashSync(updatedUser.password, 10);
       }
+      // ✅ 3. Actualizar en public.users
+      await queryRunner.manager.update(User, id, updatedUser);
 
-      await queryRunner.manager.update(User, id, user);
-
-      // ✅ 2. Actualizar en Supabase
+      // ✅ 4. Actualizar en Supabase
       await this.supabaseService.getAdminClient().auth.admin.updateUserById(
-        existingUser.uuid_authsupa!,
+        updatedUser.uuid_authsupa!,
         {
-          email: user.email || existingUser.email,
-          password: user.password || undefined,
-          phone: user.phone || existingUser.phone,
+          email: updatedUser.email || updatedUser.email,
+          password: newpassword || undefined,
+          phone: updatedUser.phone || updatedUser.phone,
           user_metadata: {
-            name: user.name || existingUser.name,
-            lastname: user.lastname || existingUser.lastname,
+            name: updatedUser.name || updatedUser.name,
+            lastname: updatedUser.lastname || updatedUser.lastname,
           },
         }
       );
 
       await queryRunner.commitTransaction();
 
-      return this.userRepository.findOne({ where: { id }, relations: ['roles'] });
+      return true;
       
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -159,16 +157,12 @@ export class UserRepository {
   /** ✅
    * Elimina un usuario en PostgreSQL y Supabase Auth
    */
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: number,user:User): Promise<boolean> {
     const queryRunner = this.userRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // ✅ 1. Obtener usuario antes de eliminarlo
-      const user = await this.userRepository.findOne({ where: { id } });
-      if (!user) return false;
-
       // ✅ 2. Eliminar en PostgreSQL
       await queryRunner.manager.delete(User, id);
 
