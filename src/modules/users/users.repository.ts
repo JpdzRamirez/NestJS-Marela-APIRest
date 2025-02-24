@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupabaseService } from '../../config/supabase.service';
-import { User } from '../users/User.entity';
+import { User } from './user.entity';
 import * as bcrypt from 'bcrypt';
 
 
@@ -118,6 +118,7 @@ export class UserRepository {
     await queryRunner.startTransaction();
 
     try {    
+
       // ✅ 1. Guardamos la contraseña
       const newpassword= updatedUser.password;
       // ✅ 2. Hasheamos la contraseña

@@ -63,15 +63,25 @@ export class UserController {
     return this.usersService.createUser(createUserDto);
   }
 
-  /** ✅ Actualizar usuario (Solo admin) */
+  /** ✅ Actualizar usuario por id (Solo admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Patch('admin/update-user/:id')
-  async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto,@Req() request: AuthRequest) {
-    const userUpdated=await this.usersService.updateUserById(id, updateUserDto,request);
+  async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
+    const userUpdated=await this.usersService.updateUserById(id, updateUserDto);
     if(!userUpdated){
       throw new HttpException('Error al actualizar usuario', HttpStatus.BAD_REQUEST);
     }
     return { message: `Usuario ${id} Actualizado`, status: userUpdated };
+  }
+
+  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @Get('admin/create-auth-code/:id')
+  async createAuthCode(@Param('id') id: number) {
+    const userCode=await this.usersService.createAuthCode(id);
+    if(!userCode){
+      throw new HttpException('Error al actualizar usuario', HttpStatus.BAD_REQUEST);
+    }
+    return { message: `Codigo de autorización Generado`, status: userCode  };
   }
 
   /** ✅ Eliminar usuario (Solo admin) */

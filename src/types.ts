@@ -1,8 +1,9 @@
 import { Request } from 'express';
-import { User } from './modules/users/User.entity';
+import { User } from './modules/users/user.entity';
 interface LoginData {
   email: string;
   password: string;
+  auth_code: string;
 }
 
 interface RegisterData {

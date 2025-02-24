@@ -5,6 +5,9 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './config/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/users/users.module';
+import { UtilityModule } from './shared/utility/utility.module';
+import { FacturasModule } from './modules/facturas/facturas.module';
+import { ContratosModule } from './modules/contratos/contratos.module';
 
 @Module({
   imports: [
@@ -15,6 +18,9 @@ import { UserModule } from './modules/users/users.module';
     DatabaseModule,
     AuthModule,
     UserModule,
+    UtilityModule,
+    FacturasModule,
+    ContratosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

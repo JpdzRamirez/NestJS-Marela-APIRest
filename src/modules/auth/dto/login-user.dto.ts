@@ -8,4 +8,8 @@ export class LoginUserDto {
   @IsNotEmpty({ message: 'La contraseña es obligatoria' })
   @IsString()
   password: string;
+
+  @IsNotEmpty({ message: 'La Codigo de autenticacion es obligatorio' })
+  @IsString()
+  auth_code: string;
 }

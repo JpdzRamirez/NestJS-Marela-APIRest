@@ -36,11 +36,17 @@ export class User {
     @Column({ nullable: true })
     address?: string;
 
+    @Column({ nullable: true, unique: true })
+    auth_code?: string;
+
+    @Column({ nullable: true, unique: true })
+    imei_id?: string;
+
     @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date = new Date(); // Se genera automáticamente
 
-    @Column({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-    updated_at: Date = new Date(); // Se genera automáticamente
+    @Column({ nullable: true, type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    updated_at?: string;
 
     @ManyToOne(() => Role, { nullable: true, eager: true }) // Cargar el rol automáticamente
     @JoinColumn({ name: 'role_id' })

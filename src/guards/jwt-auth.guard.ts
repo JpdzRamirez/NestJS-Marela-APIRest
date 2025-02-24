@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext,UnauthorizedException  } from
 import { Reflector } from '@nestjs/core';
 import { SupabaseService } from '../config/supabase.service';
 import { UsersService } from '../modules/users/users.service';
-import { User } from '../modules/users/User.entity';
+import { User } from '../modules/users/user.entity';
 import { AuthRequest } from '../types';
 
 @Injectable()

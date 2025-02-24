@@ -22,9 +22,21 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+## SUPA BASE commands
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+<ol>
+<li>
+<code>
+SQL TRIGGERS
+-- Enable MODDATETIME extension
+create extension if not exists moddatetime schema extensions;
+
+-- This will set the `updated_at` column on every update
+create trigger handle_updated_at before update on YOUR_TABLE_NAME
+  for each row execute procedure moddatetime (updated_at);
+</code>
+</li>
+</ol>
 
 ## Project setup
 
