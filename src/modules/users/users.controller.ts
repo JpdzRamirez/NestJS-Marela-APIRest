@@ -11,7 +11,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { UserServices } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthRequest } from '../../types';
@@ -20,13 +20,13 @@ import { RolesGuard } from '../../guards/role-check.guard';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly userService: UserServices) {}
 
   /** ✅ Obtener todos los usuarios (Solo admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Get('admin/get-users')
   async getAllUsers() {
-    const users = await this.usersService.getAllUsers();
+    const users = await this.userService.getAllUsers();
     if (!users.length) {
       throw new HttpException('No se encontraron usuarios', HttpStatus.NOT_FOUND);
     }
@@ -48,7 +48,7 @@ export class UserController {
       throw new HttpException('Usuario no autorizado', HttpStatus.FORBIDDEN);
     }
 
-    const user = await this.usersService.getUserById(id);
+    const user = await this.userService.getUserById(id);
     if (!user) {
       throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
     }
@@ -60,14 +60,14 @@ export class UserController {
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Post('admin/create-user')
   async createUser(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.createUser(createUserDto);
+    return this.userService.createUser(createUserDto);
   }
 
   /** ✅ Actualizar usuario por id (Solo admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Patch('admin/update-user/:id')
   async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    const userUpdated=await this.usersService.updateUserById(id, updateUserDto);
+    const userUpdated=await this.userService.updateUserById(id, updateUserDto);
     if(!userUpdated){
       throw new HttpException('Error al actualizar usuario', HttpStatus.BAD_REQUEST);
     }
@@ -77,7 +77,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Get('admin/create-auth-code/:id')
   async createAuthCode(@Param('id') id: number) {
-    const userCode=await this.usersService.createAuthCode(id);
+    const userCode=await this.userService.createAuthCode(id);
     if(!userCode){
       throw new HttpException('Error al actualizar usuario', HttpStatus.BAD_REQUEST);
     }
@@ -88,7 +88,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Delete('admin/delete-user/:id')
   async deleteUser(@Param('id') id: number,@Req() request: AuthRequest) {
-    const deleted = await this.usersService.deleteUser(id,request);
+    const deleted = await this.userService.deleteUser(id,request);
     if (!deleted) {
       throw new HttpException('Error al eliminar usuario', HttpStatus.BAD_REQUEST);
     }
@@ -104,7 +104,7 @@ export class UserController {
       throw new HttpException('Acceso denegado', HttpStatus.FORBIDDEN);
     }
     const id=request.user.id;
-    return this.usersService.getUserById(id);
+    return this.userService.getUserById(id);
   }
 
   /** ✅ Actualizar perfil propio */
@@ -115,7 +115,7 @@ export class UserController {
       throw new HttpException('Acceso denegado', HttpStatus.FORBIDDEN);
     }
     const id=request.user.id;
-    const userUpdated= await this.usersService.updateMyUser(id, updateUserDto,request);
+    const userUpdated= await this.userService.updateMyUser(id, updateUserDto,request);
     return { message: `Usuario ${id} Actualizado`, status: userUpdated };
   }
 }

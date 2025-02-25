@@ -7,7 +7,7 @@ import { AuthRequest } from '../../types';
 import { UtilityService } from '../../shared/utility/utility.service';
 
 @Injectable()
-export class UsersService {
+export class UserServices {
   constructor(
     private readonly userRepository: UserRepository, 
     private readonly utilityService: UtilityService

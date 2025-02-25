@@ -1,13 +1,13 @@
 import { Injectable, CanActivate, ExecutionContext,UnauthorizedException  } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SupabaseService } from '../config/supabase.service';
-import { UsersService } from '../modules/users/users.service';
+import { UserServices } from '../modules/users/users.service';
 import { User } from '../modules/users/user.entity';
 import { AuthRequest } from '../types';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly supabaseService: SupabaseService, private reflector: Reflector,private readonly usersService: UsersService) {}
+  constructor(private readonly supabaseService: SupabaseService, private reflector: Reflector,private readonly userService: UserServices) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthRequest>();
@@ -26,7 +26,7 @@ export class JwtAuthGuard implements CanActivate {
         throw new Error("Usuario no autenticado o token inválido");
       }     
 
-      const complementaryDataUser = await this.usersService.findByEmail(authData.user.email);
+      const complementaryDataUser = await this.userService.findByEmail(authData.user.email);
       
       if (!complementaryDataUser) {
         throw new UnauthorizedException('Acceso denegado. Usuario no registrado.');
@@ -46,7 +46,10 @@ export class JwtAuthGuard implements CanActivate {
             address: complementaryDataUser.address,
             created_at: complementaryDataUser.created_at,
             updated_at: complementaryDataUser.updated_at,
+            imei_id: complementaryDataUser.imei_id,
+            auth_code: complementaryDataUser.auth_code,
             roles: complementaryDataUser.roles ? { id: complementaryDataUser.roles.id, name: complementaryDataUser.roles.name } : null,
+            schemas: complementaryDataUser.schemas ? { id: complementaryDataUser.schemas.id, name: complementaryDataUser.schemas.name } : null,
       };
 
       request.user = user; // Guarda la información del usuario en la request

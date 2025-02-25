@@ -1,8 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn,OneToMany  } from 'typeorm';
-import { Factura } from '../facturas/factura.entity'
+import { Invoice } from '../invoices/invoice.entity'
+
+
 
 @Entity('contratos') // Nombre de la tabla en Supabase
-export class Contrato {
+export class Contract {
     @PrimaryGeneratedColumn("increment") // ID autoincremental
     id!: number;
 
@@ -36,7 +38,8 @@ export class Contrato {
     @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date = new Date(); // Se genera automáticamente
 
-    @OneToMany(() => Factura, factura => factura.contrato)
-    facturas: Factura[];
+    @OneToMany(() => Invoice, invoice => invoice.contract)
+    invoices: Invoice[];
+
 
 }

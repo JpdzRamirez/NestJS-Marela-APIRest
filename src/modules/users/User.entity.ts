@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Role } from '../roles/Role.entity';
+import { Role } from '../roles/role.entity';
+import { Schemas } from '../schemas/schema.entity';
 
 @Entity('users') // Nombre de la tabla en Supabase
 export class User {
@@ -51,4 +52,8 @@ export class User {
     @ManyToOne(() => Role, { nullable: true, eager: true }) // Cargar el rol automáticamente
     @JoinColumn({ name: 'role_id' })
     roles?: Role | null;
+
+    @ManyToOne(() => Schemas, { nullable: true, eager: true }) // Cargar el rol automáticamente
+    @JoinColumn({ name: 'schema_id' })
+    schemas?: Schemas | null;
 }
