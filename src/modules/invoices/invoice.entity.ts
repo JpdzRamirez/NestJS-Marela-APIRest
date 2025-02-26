@@ -34,22 +34,18 @@ export class Invoice {
     @Column({name: 'lectura_anterior', type: 'float8',  nullable: true })
     last_summary?: string;
 
-    @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    created_at: Date = new Date(); // Se genera automáticamente
+    @Column({ name: 'contrato_id', type: 'float8' })
+    contract_Id?: number; 
+
+    @Column({ name: 'fecha_pago', type: 'timestamp',nullable: true})
+    payment_date?: Date; 
+
+    @Column({ name: 'fecha_pago_oportuno', type: 'timestamp',nullable: true})
+    payment_deadline?: Date; 
 
     @ManyToOne(() => Contract, contract => contract.invoices, { nullable: false, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'contrato_id' }) // Nombre de la columna FK en la BD
     contract?: Contract;
-
-    
-    @Column({ name: 'contrato_id', type: 'float8' })
-    contract_Id?: number; 
-
-    @Column({ name: 'fecha_pago', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP',nullable: false})
-    payment_date!: string; 
-
-    @Column({ name: 'fecha_pago_oportuno', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP',nullable: false})
-    payment_deadline!: string; 
 
     // Relación uno a uno con la tabla public.users
     @OneToOne(() => User)

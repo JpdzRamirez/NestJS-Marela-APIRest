@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column,ManyToOne,OneToMany,JoinColumn }
 import "reflect-metadata";
 
 @Entity('pie_factura')
-export class InvoiceFooterController {
+export class InvoiceFooter{
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
@@ -24,15 +24,13 @@ export class InvoiceFooterController {
     @Column({ name: 'correo_empresa', type:'varchar',length: 500,nullable:true })
     company_email?: string | null;  
 
-    @Column({ name: 'observaciones', type:'varchar',length: 500,nullable:true })
-    observations?: string | null;  
+    @Column({ name: 'resolucion', type:'varchar',length: 500,nullable:true })
+    resolution?: string | null;  
 
-    @Column({ name: 'observaciones2', type:'varchar',length: 500,nullable:true })
-    observations_2?: string | null;  
+    @Column({ name: 'articulo', type:'varchar',length: 500,nullable:true })
+    article?: string | null;  
 
-    @Column({ name: 'observaciones3', type:'varchar',length: 500,nullable:true })
-    observations_3?: string | null;  
+    @Column({ name: 'anio', type:'date',length: 500,nullable:true })
+    year?: Date;  
     
-    @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    created_at: Date = new Date(); 
 }

@@ -17,9 +17,6 @@ export class ProductsActivity {
     @Column({ name: 'codigo',type: 'int2', nullable: false })
     code?: number;
 
-    @Column({name: 'fecha_actividad', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', nullable: false,})
-    activity_date: Date = new Date();
-
     @Column({name: 'precio_venta', type: 'float4', nullable: false })
     sale_price?: number; 
 

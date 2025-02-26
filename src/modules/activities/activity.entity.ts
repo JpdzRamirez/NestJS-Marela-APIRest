@@ -13,8 +13,8 @@ export class Activity {
     @Column({ name: 'nombre',type: 'varchar', length: 50, unique: false, nullable: false })
     name?: string;
 
-    @Column({name: 'fecha_actividad', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', nullable: false,})
-    activity_date: Date = new Date();
+    @Column({name: 'fecha_actividad', type: 'timestamp', nullable: true,})
+    activity_date: Date;
 
     @Column({ name: 'image_bytes',type: 'int8', nullable: false })
     image_bytes?: number;
