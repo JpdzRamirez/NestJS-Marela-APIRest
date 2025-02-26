@@ -1,45 +1,46 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn,OneToMany  } from 'typeorm';
-import { Invoice } from '../invoices/invoice.entity'
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
+import { Invoice } from '../invoices/invoice.entity';
+import { Activity } from '../activities/activity.entity';
+import { Client } from '../clients/client.entity';
+import { Meter } from '../meters/meters.entity';
+import { TypeService } from '../type_services/type_service.entity';
+import { MunicipalUnit } from '../municipal_unit/municipal_unit.entity';
 
 
-
-@Entity('contratos') // Nombre de la tabla en Supabase
+@Entity('contratos') 
 export class Contract {
-    @PrimaryGeneratedColumn("increment") // ID autoincremental
-    id!: number;
+  @PrimaryGeneratedColumn('increment') 
+  id!: number;
 
-    @Column({ name: 'uuid_authsupa',type:'varchar',nullable:true })
-    qr?: string | null;  // Puede ser opcional si Supabase lo genera
+  @Column({ name: 'fecha', type: 'timestamp',nullable: false})
+  date_registered!: Date; 
 
-    @Column({type: 'double precision', nullable: false })
-    consumo?: number; // No puede ser null y debe ser único
+  @ManyToOne(() => Client, { nullable: true, eager: true })
+  @JoinColumn({ name: 'cliente_id' })
+  client?: Client | null;
 
-    @Column({type: 'double precision', nullable: false })
-    total?: number; // No puede ser null y debe ser único
+  @ManyToOne(() => Meter, { nullable: true, eager: true })
+  @JoinColumn({ name: 'medidor_id' })
+  meter?: Meter | null;
 
-    @Column({ nullable: false, unique: true })
-    folio?: string; // No puede ser null y debe ser único
+  @ManyToOne(() => TypeService, { nullable: true, eager: true })
+  @JoinColumn({ name: 'tiposervicio_id' })
+  type_service?: TypeService | null;
 
-    @Column({ nullable: true })
-    pagada?: boolean; // No puede ser null y debe ser único
+  @ManyToOne(() => MunicipalUnit, { nullable: true, eager: true })
+  @JoinColumn({ name: 'unidad_municipal_id' })
+  municipal_unit?: MunicipalUnit | null;
 
-    @Column({ nullable: false })
-    sincronizada?: boolean; // No puede ser null y debe ser único
+  @OneToMany(() => Invoice, (invoice) => invoice.contract)
+  invoices?: Invoice[];
 
-    @Column({ name: 'fecha_lectura', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP',nullable: false})
-    fechaLectura!: string; 
-
-    @Column({name: 'lectura_actual',type: 'double precision', nullable: true })
-    lecturaActual!: string; 
-
-    @Column({name: 'lectura_anterior', type: 'double precision',  nullable: true })
-    lecturaAnterior?: string;
-
-    @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    created_at: Date = new Date(); // Se genera automáticamente
-
-    @OneToMany(() => Invoice, invoice => invoice.contract)
-    invoices: Invoice[];
-
-
+  @OneToMany(() => Activity, (activity) => activity.contract)
+  activities?: Activity[];
 }

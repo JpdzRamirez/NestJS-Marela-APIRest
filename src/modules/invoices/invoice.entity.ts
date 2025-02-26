@@ -7,49 +7,49 @@ export class Invoice {
     @PrimaryGeneratedColumn("increment") // ID autoincremental
     id!: number;
 
-    @Column({ name: 'qr',type:'varchar',nullable:true })
+    @Column({ name: 'qr', type:'varchar',nullable:true })
     qr?: string | null;  // Puede ser opcional si Supabase lo genera
 
-    @Column({type: 'double precision', nullable: false })
-    consumo?: number; 
+    @Column({name: 'consumo',type: 'float8', nullable: false })
+    ammount?: number; 
 
-    @Column({type: 'double precision', nullable: false })
+    @Column({type: 'float8', nullable: false })
     total?: number; 
 
-    @Column({ nullable: false, unique: true })
+    @Column({ type: 'float8',nullable: false, unique: true })
     folio?: string; 
 
-    @Column({ nullable: true })
-    pagada?: boolean; 
+    @Column({name: 'pagada', type: 'boolean', nullable: true })
+    paid?: boolean; 
 
-    @Column({ nullable: false })
-    sincronizada?: boolean; 
+    @Column({name: 'sincronizada', type:'boolean', nullable: false })
+    synchronized?: boolean; 
 
-    @Column({ name: 'fecha_lectura', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP',nullable: false})
-    fechaLectura!: string; 
+    @Column({ name: 'fecha_lectura', type: 'timestamp',nullable: false})
+    date_summary!: Date; 
 
-    @Column({name: 'lectura_actual',type: 'double precision', nullable: true })
-    lecturaActual!: string; 
+    @Column({name: 'lectura_actual',type: 'float8', nullable: true })
+    current_summary!: string; 
 
-    @Column({name: 'lectura_anterior', type: 'double precision',  nullable: true })
-    lecturaAnterior?: string;
+    @Column({name: 'lectura_anterior', type: 'float8',  nullable: true })
+    last_summary?: string;
 
     @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date = new Date(); // Se genera automáticamente
 
     @ManyToOne(() => Contract, contract => contract.invoices, { nullable: false, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'contrato_id' }) // Nombre de la columna FK en la BD
-    contract: Contract;
+    contract?: Contract;
 
     
-    @Column({ name: 'contrato_id' })
-    contratoId: number; 
+    @Column({ name: 'contrato_id', type: 'float8' })
+    contract_Id?: number; 
 
     @Column({ name: 'fecha_pago', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP',nullable: false})
-    fechaPago!: string; 
+    payment_date!: string; 
 
     @Column({ name: 'fecha_pago_oportuno', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP',nullable: false})
-    fechaPagoOportuno!: string; 
+    payment_deadline!: string; 
 
     // Relación uno a uno con la tabla public.users
     @OneToOne(() => User)
@@ -57,6 +57,6 @@ export class Invoice {
     user: User;
 
     @Column({ name: 'user_id' }) // Columna que almacena la clave foránea
-    userId: number;
+    user_id: number;
 
 }

@@ -10,37 +10,37 @@ export class User {
     @Column({ name: 'uuid_authsupa',type:'uuid',nullable:true, unique: true })
     uuid_authsupa?: string | null;  // Puede ser opcional si Supabase lo genera
 
-    @Column({ name: 'schema_id', nullable: true })
+    @Column({ name: 'schema_id', type: 'int4', nullable: true })
     schema_id?: number;
 
-    @Column({ nullable: true, unique: true })
+    @Column({ nullable: true,type: 'varchar', unique: true, length: 50 })
     document?: string; // No puede ser null y debe ser único
 
-    @Column({ nullable: false, unique: true })
+    @Column({ nullable: false,type: 'varchar', unique: true, length: 50 })
     email!: string; // No puede ser null y debe ser único
 
-    @Column({ nullable: true })
+    @Column({ nullable: true,type: 'varchar' })
     password?: string; // No puede ser null
 
-    @Column({ nullable: false })
+    @Column({ nullable: false,type: 'varchar', length: 50 })
     name!: string; // No puede ser null
 
-    @Column({ nullable: true })
+    @Column({ nullable: true,type: 'varchar', length: 50 })
     lastname?: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false,type: 'varchar', length: 50 })
     mobile!: string; // No puede ser null
 
-    @Column({ nullable: true })
+    @Column({ nullable: true,type: 'varchar', length: 50 })
     phone?: string;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true,type: 'varchar', length: 50 })
     address?: string;
 
-    @Column({ nullable: true, unique: true })
+    @Column({ nullable: true, unique: true, type: 'varchar', length: 50 })
     auth_code?: string;
 
-    @Column({ nullable: true, unique: true })
+    @Column({ nullable: true, unique: true, type: 'varchar', length: 50})
     imei_id?: string;
 
     @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

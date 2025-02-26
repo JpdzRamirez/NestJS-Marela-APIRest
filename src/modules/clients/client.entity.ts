@@ -27,13 +27,12 @@ export class Client {
     @Column({ name: 'telefono',nullable: true})
     phone?: string; // No puede ser null y debe ser único    
     
-    @ManyToOne(() => TypeClient, { nullable: true, eager: true }) // Cargar el rol automáticamente
+    @ManyToOne(() => TypeClient, { nullable: false, eager: true }) // Cargar el rol automáticamente
     @JoinColumn({ name: 'tipocliente_id' })
     type_client?: TypeClient | null;
 
-    @ManyToOne(() => TypeDocument, { nullable: true, eager: true }) // Cargar el rol automáticamente
+    @ManyToOne(() => TypeDocument, { nullable: false, eager: true }) // Cargar el rol automáticamente
     @JoinColumn({ name: 'tipodocumento_id' })
     type_document?: TypeDocument | null;
-
 
 }

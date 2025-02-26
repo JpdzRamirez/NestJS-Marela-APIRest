@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import "reflect-metadata";
 
-@Entity('tipo_documento')
-export class TypeDocument {
+@Entity('marcas')
+export class Brand {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
