@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { createHash } from "crypto";
 
 @Injectable()
 export class UtilityService {
@@ -9,5 +10,13 @@ export class UtilityService {
           code += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         return code;
+      }
+      
+      hashMD5(text: string): string {
+        return createHash("md5").update(text).digest("hex");
+      }
+      
+      verificarHash(entrada: string, hashEsperado: string): boolean {
+        return this.hashMD5(entrada) === hashEsperado;
       }
 }

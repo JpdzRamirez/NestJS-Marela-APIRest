@@ -30,7 +30,7 @@ export class InvoiceFooter{
     @Column({ name: 'articulo', type:'varchar',length: 500,nullable:true })
     article?: string | null;  
 
-    @Column({ name: 'anio', type:'date',length: 500,nullable:true })
+    @Column({ name: 'anio', type:'date',nullable:true })
     year?: Date;  
     
 }

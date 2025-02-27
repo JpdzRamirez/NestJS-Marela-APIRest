@@ -20,7 +20,7 @@ export class SalesRate {
     @Column({ name: 'valor_unitario',type: 'float4', nullable: false })
     unit_value?: number;
 
-    @ManyToOne(() => TypeService, (typeService) => typeService.salesRates, { nullable: false, onDelete: 'CASCADE' })
+    @ManyToOne(() => TypeService, (typeService) => typeService.salesRates, { nullable: true })
     @JoinColumn({ name: 'tiposervicio_id' }) // Nombre de la columna FK en la BD
     typeService: TypeService;
 }

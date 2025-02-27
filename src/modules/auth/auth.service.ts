@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { SupabaseService } from '../../config/supabase.service';
 import { UserRepository } from '../users/users.repository';
+import { UtilityService } from '../../shared/utility/utility.service';
 import { LoginData } from '../../types';
 import { User } from '../users/user.entity';
 
@@ -9,6 +10,7 @@ export class AuthService {
   constructor(
     private readonly supabaseService: SupabaseService, // ✅ Inyectamos SupabaseService
     private readonly userRepository: UserRepository, // ✅ Inyectamos el UserRepository
+    private readonly utilityService: UtilityService
   ) {}
 
   async userBuilder(data: Partial<User>): Promise<any> {
@@ -41,11 +43,11 @@ export class AuthService {
         data.email as string,
       );
       // Validamos usuario existe antes de generar token
-      if (!complementaryDataUser) {
+      if (!complementaryDataUser || !complementaryDataUser.auth_code) {
         throw new UnauthorizedException(
           'Usuario no encontrado en la base de datos',
         );
-      } else if (complementaryDataUser.auth_code != data.auth_code) {
+      } else if (!this.utilityService.verificarHash(data.auth_code,complementaryDataUser.auth_code)) {
         throw new UnauthorizedException('Error en codigo de autorizacion');
       }
       // 🔹 Autenticación con Supabase

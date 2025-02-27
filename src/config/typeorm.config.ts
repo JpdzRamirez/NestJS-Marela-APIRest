@@ -25,7 +25,7 @@ import { Trail } from '../modules/trails/trail.entity';
 export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
   type: 'postgres',
   url: configService.get<string>('DATABASE_URL'), // 🔹 Usa ConfigService para obtener la variable de entorno
-  synchronize: true,
+  synchronize: false,
   logging: false,
   entities: [
     Activity,User,Role,Schemas,Invoice,Contract,

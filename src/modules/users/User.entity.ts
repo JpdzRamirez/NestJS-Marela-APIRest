@@ -16,20 +16,20 @@ export class User {
     @Column({ nullable: true,type: 'varchar', unique: true, length: 50 })
     document?: string; // No puede ser null y debe ser único
 
-    @Column({ nullable: false,type: 'varchar', unique: true, length: 50 })
-    email!: string; // No puede ser null y debe ser único
+    @Column({ nullable: true,type: 'varchar', unique: true, length: 50 })
+    email?: string; // No puede ser null y debe ser único
 
     @Column({ nullable: true,type: 'varchar' })
     password?: string; // No puede ser null
 
-    @Column({ nullable: false,type: 'varchar', length: 50 })
-    name!: string; // No puede ser null
+    @Column({ nullable: true,type: 'varchar', length: 50 })
+    name?: string; // No puede ser null
 
     @Column({ nullable: true,type: 'varchar', length: 50 })
     lastname?: string;
 
-    @Column({ nullable: false,type: 'varchar', length: 50 })
-    mobile!: string; // No puede ser null
+    @Column({ nullable: true,type: 'varchar', length: 50 })
+    mobile?: string; // No puede ser null
 
     @Column({ nullable: true,type: 'varchar', length: 50 })
     phone?: string;

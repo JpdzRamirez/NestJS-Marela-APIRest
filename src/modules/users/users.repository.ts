@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupabaseService } from '../../config/supabase.service';
+import { UtilityService } from '../../shared/utility/utility.service';
 import { User } from './user.entity';
 import * as bcrypt from 'bcrypt';
 
@@ -10,7 +11,8 @@ import * as bcrypt from 'bcrypt';
 export class UserRepository {
   constructor(
     private readonly supabaseService: SupabaseService, // ✅ Inyectamos el servicio de Supabase
-    @InjectRepository(User) private readonly userRepository: Repository<User> // ✅ Inyectamos el repositorio de TypeORM
+    @InjectRepository(User) private readonly userRepository: Repository<User> ,
+    private readonly utilityService: UtilityService
   ) {}
 
   /** ✅
@@ -79,6 +81,13 @@ export class UserRepository {
       // ✅ 2. Hashear contraseña antes de guardarla en PostgreSQL
       const passwordHashed = bcrypt.hashSync(user.password!, 10);
 
+      if (!user.name || !user.lastname) {
+        throw new Error('No se pudo crear el codigo de autenticación por error de campos.');
+      }
+      const authCode= this.utilityService.generateAuthCode();
+
+      const hashedAuthCode= this.utilityService.hashMD5(authCode);
+
       // ✅ 3. Crear usuario en la base de datos PostgreSQL
       const newUser = this.userRepository.create({
         uuid_authsupa: authUserId,
@@ -89,10 +98,13 @@ export class UserRepository {
         phone: user.phone,
         mobile: user.mobile,
         address: user.address,
+        auth_code:hashedAuthCode
       });
 
-      const savedUser = await queryRunner.manager.save(newUser);
+      let savedUser = await queryRunner.manager.save(newUser);
       await queryRunner.commitTransaction();
+      // devolvemos el codigo de autenticación para ser mostrado luego de registrar el usuario
+      savedUser.auth_code=authCode;
       return savedUser;
     } catch (error) {
       await queryRunner.rollbackTransaction();
