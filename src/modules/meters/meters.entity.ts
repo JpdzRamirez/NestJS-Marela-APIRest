@@ -8,30 +8,27 @@ import { Brand } from '../brands/brand.entity'
 export class Meter {
     @PrimaryGeneratedColumn("increment")
     id!: number;
-
-    @Column({ name: 'nombre',type: 'varchar', length: 50, nullable: false })
-    name?: string;
     
     @Column({ name: 'numero_referencia',type: 'int4', unique: true, nullable: false })
-    reference_number?: bigint;
+    numero_referencia?: bigint;
 
     @Column({ name: 'tipo',type: 'varchar', length: 100, nullable: true })
-    type?: string;
+    tipo?: string;
 
     @Column({ name: 'modelo',type: 'varchar', length: 100, nullable: true })
-    model?: string;
+    modelo?: string;
 
     @Column({ name: 'diametro',type: 'varchar', length: 100, nullable: true })
-    diameter?: string;
+    diametro?: string;
 
     @Column({ name: 'descripcion',type: 'varchar', length: 250, nullable: true })
-    description?: string;
+    descripcion?: string;
     
     @ManyToOne(() => Brand, { nullable: false, eager: false })
     @JoinColumn({ name: 'marca_id' })
-    brand?: Brand | null;
+    marca?: Brand | null;
 
     @ManyToOne(() => Contract, { nullable: false})
     @JoinColumn({ name: 'contrato_id' }) 
-    contract: Contract;
+    contrato: Contract;
 }

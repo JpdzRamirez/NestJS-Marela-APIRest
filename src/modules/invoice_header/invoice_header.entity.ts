@@ -7,31 +7,31 @@ export class InvoiceHeader {
     id!: number;
 
     @Column({ name: 'nombre_empresa',type: 'varchar', length: 100, unique: false, nullable: false })
-    company_name?: string;
+    nombre_empresa?: string;
 
     @Column({name: 'nit', type:'varchar', unique: true, nullable: false})
     nit?: string;
 
     @Column({ name: 'descripcion', type:'varchar',length: 500,nullable:true })
-    description?: string | null;  
+    descripcion?: string | null;  
 
     @Column({ name: 'direccion_empresa', type:'varchar',length: 500,nullable:true })
-    company_address?: string | null;  
+    direccion_empresa?: string | null;  
 
     @Column({ name: 'telefono_empresa', type:'varchar',length: 500,nullable:true })
-    company_phone?: string | null;  
+    telefono_empresa?: string | null;  
 
     @Column({ name: 'correo_empresa', type:'varchar',length: 500,nullable:true })
-    company_email?: string | null;  
+    correo_empresa?: string | null;  
 
     @Column({ name: 'observaciones', type:'varchar',length: 500,nullable:true })
-    observations?: string | null;  
+    observaciones?: string | null;  
 
     @Column({ name: 'observaciones2', type:'varchar',length: 500,nullable:true })
-    observations_2?: string | null;  
+    observaciones2?: string | null;  
 
     @Column({ name: 'observaciones3', type:'varchar',length: 500,nullable:true })
-    observations_3?: string | null;  
+    observaciones3?: string | null;  
     
     @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date = new Date(); 

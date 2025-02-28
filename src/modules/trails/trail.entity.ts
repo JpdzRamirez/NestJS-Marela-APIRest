@@ -7,9 +7,9 @@ export class Trail {
     id!: number;
 
     @Column({ name: 'nombre',type: 'varchar', length: 50, nullable: false })
-    name?: string;
+    nombre?: string;
     
     @Column({ name: 'unidades_municipales',type: 'json', nullable: false })
-    municipal_list?: Record<string, any>;
+    unidades_municipales?: Record<string, any>;
 
 }

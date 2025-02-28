@@ -7,5 +7,5 @@ export class Brand {
     id!: number;
 
     @Column({ name: 'nombre', unique: true, nullable: false })
-    name?: string;
+    nombre?: string;
 }

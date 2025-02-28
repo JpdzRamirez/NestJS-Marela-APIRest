@@ -11,16 +11,16 @@ export class MunicipalUnit {
     id!: number;
 
     @Column({ name: 'nombre',type: 'varchar', length: 50, nullable: false })
-    name?: string;
+    nombre?: string;
 
     @ManyToOne(() => City, { nullable: false, eager: true })
     @JoinColumn({ name: 'ciudad_id' })
-    city?: City | null;
+    ciudad?: City | null;
 
     @ManyToOne(() => State, { nullable: false, eager: true })
     @JoinColumn({ name: 'departamento_id' })
-    state?: State | null;
+    departamento?: State | null;
 
-    @OneToMany(() => Contract, (contract) => contract.municipal_unit)
-    contracts?: Contract[];
+    @OneToMany(() => Contract, (contract) => contract.unidad_municipal)
+    contrato?: Contract[];
 }

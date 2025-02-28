@@ -9,33 +9,27 @@ export class PaymentsActivity {
     id!: number;
 
     @Column({ name: 'nombre',type: 'varchar', length: 50, unique: false, nullable: false })
-    name?: string;
+    nombre?: string;
 
-    @Column({ name: 'stock',type: 'int2', nullable: false })
-    stock?: number;
+    @Column({name: 'total', type: 'float4', nullable: false })
+    total?: number; 
 
-    @Column({ name: 'codigo',type: 'int2', nullable: false })
-    code?: number;
+    @Column({ name: 'numero_cuotas',type: 'int2', nullable: false })
+    numero_cuotas?: number;
 
-    @Column({name: 'fecha_actividad', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', nullable: false,})
-    activity_date: Date = new Date();
+    @Column({name: 'cuota_actual', type: 'int2', nullable: false,})
+    cuota_actual?: number;
 
-    @Column({name: 'precio_venta', type: 'float4', nullable: false })
-    sale_price?: number; 
+    @Column({name: 'valor_cuota_actual', type: 'float4', nullable: false })
+    valor_cuota_actual?: number; 
 
-    @Column({ name: 'descripcion', type:'varchar',length: 300,nullable:true })
-    description?: string | null;  // Puede ser opcional si Supabase lo genera
+    @Column({name: 'saldo', type: 'float4', nullable: false })
+    saldo?: number; 
 
-    @Column({ name: 'manejo_stock', type:'boolean',nullable:true })
-    stock_manage?: boolean; 
+    @Column({ name: 'actividad_id', type:'int2',nullable:false })
+    actividad_id?: number ;  // Puede ser opcional si Supabase lo genera
 
-    @Column({ name: 'producto_venta', type:'boolean',nullable:true })
-    product_sale?: boolean; 
-
-    @Column({ name: 'unidad_id', type:'int2',nullable:true })
-    unity_id?: number; 
-
-    @ManyToOne(() => Activity, (activity) => activity.products_activity, { nullable: false, onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tiposervicio_id' }) // Nombre de la columna FK en la BD
-    activity: Activity;
+    @ManyToOne(() => Activity, (activity) => activity.pagos_actividad, { nullable: false })
+    @JoinColumn({ name: 'actividad_id' }) // Nombre de la columna FK en la BD
+    actividad?: Activity;
 }

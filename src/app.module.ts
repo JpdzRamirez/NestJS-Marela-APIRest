@@ -58,6 +58,9 @@ import { InvoiceHeaderModule } from './modules/invoice_header/invoice_header.mod
 import { InvoiceFooterService } from './modules/invoice_footer/invoice_footer.service';
 import { InvoiceFooterController } from './modules/invoice_footer/invoice_footer.controller';
 import { InvoiceFooterModule } from './modules/invoice_footer/invoice_footer.module';
+import { OverdueDebtService } from './modules/overdue_debt/overdue_debt.service';
+import { OverdueDebtController } from './modules/overdue_debt/overdue_debt.controller';
+import { OverdueDebtModule } from './modules/overdue_debt/overdue_debt.module';
 
 @Module({
   imports: [
@@ -88,8 +91,9 @@ import { InvoiceFooterModule } from './modules/invoice_footer/invoice_footer.mod
     PaymentsActivityModule,
     InvoiceHeaderModule,
     InvoiceFooterModule,
+    OverdueDebtModule,
   ],
-  controllers: [AppController, TypeClientController, ClientController, TypeDocumentController, WaterMeterController, BrandsController, TypeServicesController, SalesRateController, MunicipalUnitController, CitiesController, StatesController, TrailController, ActivitiesController, ProductsActivityController, PaymentsActivityController, InvoiceHeaderController, InvoiceFooterController],
-  providers: [AppService, SchemasService, TypeClientService, ClientService, TypeDocumentService, WaterMeterService, BrandsService, TypeServicesService, SalesRateService, MunicipalUnitService, CityServices, StatesService, TrailServices, ActivityServices, ProductsActivityService, PaymentsActivityService, InvoiceHeaderService, InvoiceFooterService],
+  controllers: [AppController, TypeClientController, ClientController, TypeDocumentController, WaterMeterController, BrandsController, TypeServicesController, SalesRateController, MunicipalUnitController, CitiesController, StatesController, TrailController, ActivitiesController, ProductsActivityController, PaymentsActivityController, InvoiceHeaderController, InvoiceFooterController, OverdueDebtController],
+  providers: [AppService, SchemasService, TypeClientService, ClientService, TypeDocumentService, WaterMeterService, BrandsService, TypeServicesService, SalesRateService, MunicipalUnitService, CityServices, StatesService, TrailServices, ActivityServices, ProductsActivityService, PaymentsActivityService, InvoiceHeaderService, InvoiceFooterService, OverdueDebtService],
 })
 export class AppModule {}

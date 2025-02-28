@@ -7,5 +7,5 @@ export class TypeClient {
     id!: number;
 
     @Column({ name: 'nombre', unique: true, nullable: true })
-    name?: string;
+    nombre?: string;
 }

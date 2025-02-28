@@ -10,29 +10,29 @@ export class Client {
     id!: number;
 
     @Column({ name: 'nombre', nullable: true })
-    name?: string;
+    nombre?: string;
 
     @Column({ name: 'documento',nullable: true, unique: true })
-    document?: string; // No puede ser null y debe ser único
+    documento?: string; // No puede ser null y debe ser único
 
     @Column({ name: 'apellido',nullable: true })
-    lastname?: string; // No puede ser null y debe ser único
+    apellido?: string; // No puede ser null y debe ser único
 
     @Column({ name: 'correo',nullable: true })
-    email?: string; // No puede ser null y debe ser único
+    correo?: string; // No puede ser null y debe ser único
 
     @Column({ name: 'direccion',nullable: true})
-    address?: string; // No puede ser null y debe ser único
+    direccion?: string; // No puede ser null y debe ser único
 
     @Column({ name: 'telefono',nullable: true})
-    phone?: string; // No puede ser null y debe ser único    
+    telefono?: string; // No puede ser null y debe ser único    
     
-    @ManyToOne(() => TypeClient, { nullable: false, eager: true }) // Cargar el rol automáticamente
+    @ManyToOne(() => TypeClient, { nullable: false, eager: false }) // Cargar el rol automáticamente
     @JoinColumn({ name: 'tipocliente_id' })
-    type_client?: TypeClient | null;
+    tipo_cliente?: TypeClient | null;
 
-    @ManyToOne(() => TypeDocument, { nullable: false, eager: true }) // Cargar el rol automáticamente
+    @ManyToOne(() => TypeDocument, { nullable: false, eager: false }) // Cargar el rol automáticamente
     @JoinColumn({ name: 'tipodocumento_id' })
-    type_document?: TypeDocument | null;
+    tipo_documento?: TypeDocument | null;
 
 }

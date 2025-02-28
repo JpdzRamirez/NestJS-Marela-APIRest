@@ -11,7 +11,7 @@ export class Invoice {
     qr?: string | null;  // Puede ser opcional si Supabase lo genera
 
     @Column({name: 'consumo',type: 'float8', nullable: false })
-    ammount?: number; 
+    consumo?: number; 
 
     @Column({type: 'float8', nullable: false })
     total?: number; 
@@ -20,39 +20,33 @@ export class Invoice {
     folio?: string; 
 
     @Column({name: 'pagada', type: 'boolean', nullable: true })
-    paid?: boolean; 
+    pagada?: boolean; 
 
     @Column({name: 'sincronizada', type:'boolean', nullable: false })
-    synchronized?: boolean; 
+    sincronizada?: boolean; 
 
     @Column({ name: 'fecha_lectura', type: 'timestamp',nullable: false})
-    date_summary!: Date; 
+    fecha_lectura!: Date; 
 
     @Column({name: 'lectura_actual',type: 'float8', nullable: true })
-    current_summary!: string; 
+    lectura_actual!: string; 
 
     @Column({name: 'lectura_anterior', type: 'float8',  nullable: true })
-    last_summary?: string;
-
-    @Column({ name: 'contrato_id', type: 'float8' })
-    contract_Id?: number; 
+    lectura_anterior?: string;
 
     @Column({ name: 'fecha_pago', type: 'timestamp',nullable: true})
-    payment_date?: Date; 
+    fecha_pago?: Date; 
 
     @Column({ name: 'fecha_pago_oportuno', type: 'timestamp',nullable: true})
-    payment_deadline?: Date; 
+    fecha_pago_oportuno?: Date; 
 
-    @ManyToOne(() => Contract, contract => contract.invoices, { nullable: false, onDelete: 'CASCADE' })
+    @ManyToOne(() => Contract, (contract) => contract.facturas, { nullable: true})
     @JoinColumn({ name: 'contrato_id' }) // Nombre de la columna FK en la BD
-    contract?: Contract;
+    contrato: Contract;
 
     // Relación uno a uno con la tabla public.users
     @OneToOne(() => User)
-    @JoinColumn({ name: 'user_id' }) // Mapea la columna user_id en la tabla perfil
-    user: User;
-
-    @Column({ name: 'user_id' }) // Columna que almacena la clave foránea
-    user_id: number;
+    @JoinColumn({ name: 'user_id' }) 
+    usuario: User;
 
 }

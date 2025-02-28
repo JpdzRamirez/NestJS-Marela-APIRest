@@ -7,8 +7,8 @@ export class State {
     id!: number;
 
     @Column({ name: 'nombre', type: 'varchar',  unique: true, nullable: false })
-    name?: string;
+    nombre?: string;
 
     @Column({ name: 'codigo', type: 'int2',  unique: true, nullable: false })
-    code?: number;
+    codigo?: number;
 }

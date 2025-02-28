@@ -20,27 +20,27 @@ export class Contract {
   id!: number;
 
   @Column({ name: 'fecha', type: 'timestamp',nullable: false})
-  date_registered!: Date; 
+  fecha!: Date; 
 
   @ManyToOne(() => Client, { nullable: true, eager: true })
   @JoinColumn({ name: 'cliente_id' })
-  client?: Client | null;
+  cliente?: Client | null;
 
   @ManyToOne(() => Meter, { nullable: true, eager: true })
   @JoinColumn({ name: 'medidor_id' })
-  meter?: Meter | null;
+  medidor?: Meter | null;
 
   @ManyToOne(() => TypeService, { nullable: true, eager: true })
   @JoinColumn({ name: 'tiposervicio_id' })
-  type_service?: TypeService | null;
+  tipo_servicio?: TypeService | null;
 
   @ManyToOne(() => MunicipalUnit, { nullable: true, eager: true })
   @JoinColumn({ name: 'unidad_municipal_id' })
-  municipal_unit?: MunicipalUnit | null;
+  unidad_municipal?: MunicipalUnit | null;
 
-  @OneToMany(() => Invoice, (invoice) => invoice.contract)
-  invoices?: Invoice[];
+  @OneToMany(() => Invoice, (invoice) => invoice.contrato)
+  facturas?: Invoice[];
 
-  @OneToMany(() => Activity, (activity) => activity.contract)
-  activities?: Activity[];
+  @OneToMany(() => Activity, (activity) => activity.contrato)
+  actividades?: Activity[];
 }

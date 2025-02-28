@@ -9,18 +9,18 @@ export class SalesRate {
     id!: number;
 
     @Column({ name: 'nombre', unique: true, nullable: false })
-    name?: string;
+    nombre?: string;
 
     @Column({ name: 'rango_final',type: 'float4', nullable: false })
-    final_range?: number;
+    rango_final?: number;
 
     @Column({ name: 'rango_inicial',type: 'float4', nullable: false })
-    start_range?: number;
+    rango_inicial?: number;
 
     @Column({ name: 'valor_unitario',type: 'float4', nullable: false })
-    unit_value?: number;
+    valor_unitario?: number;
 
-    @ManyToOne(() => TypeService, (typeService) => typeService.salesRates, { nullable: true })
+    @ManyToOne(() => TypeService, (typeService) => typeService.tarifas, { nullable: true })
     @JoinColumn({ name: 'tiposervicio_id' }) // Nombre de la columna FK en la BD
-    typeService: TypeService;
+    tipo_servicio: TypeService;
 }
