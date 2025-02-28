@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Invoice } from '../invoices/invoice.entity';
+import { OverdueDebt } from '../overdue_debt/overdue_debt.entity';
 import { Activity } from '../activities/activity.entity';
 import { Client } from '../clients/client.entity';
 import { Meter } from '../meters/meters.entity';
@@ -43,4 +44,7 @@ export class Contract {
 
   @OneToMany(() => Activity, (activity) => activity.contrato)
   actividades?: Activity[];
+
+  @OneToMany(() => OverdueDebt, (overduedebt) => overduedebt.contrato)
+  moras?: OverdueDebt[];
 }

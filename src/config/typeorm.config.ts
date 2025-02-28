@@ -6,6 +6,7 @@ import { Role } from '../modules/roles/role.entity';
 import { Schemas } from '../modules/schemas/schema.entity';
 import { Invoice } from '../modules/invoices/invoice.entity';
 import { Contract } from '../modules/contracts/contract.entity';
+import { OverdueDebt } from '../modules/overdue_debt/overdue_debt.entity';
 import { InvoiceHeader } from '../modules/invoice_header/invoice_header.entity';
 import { InvoiceFooter } from '../modules/invoice_footer/invoice_footer.entity';
 import { Client } from '../modules/clients/client.entity';
@@ -32,7 +33,7 @@ export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOption
     Client,InvoiceHeader,InvoiceFooter,Meter,
     Brand,City,TypeClient,TypeDocument,TypeService,
     MunicipalUnit,PaymentsActivity,ProductsActivity,Trail,
-    SalesRate,State
+    SalesRate,State,OverdueDebt
 
   ],
   migrations: ['src/migrations/**/*.ts'],

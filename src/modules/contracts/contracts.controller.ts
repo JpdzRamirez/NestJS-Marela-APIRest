@@ -36,7 +36,7 @@ export class ContractController {
 
   /** ✅ Obtener todas los contratos dentro de un rango de fechas (Solo admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
-  @Get('admin/get-date-range-invoices')
+  @Get('admin/get-date-range-contracts')
     async getDateRangeInvoices(@Req() request: AuthRequest,@Body() dateParameters: GetDateRangeContractsDto) {
       const invoices = await this.contractsServices.getDateRangeContracts(request,dateParameters);
       if (!invoices.length) {

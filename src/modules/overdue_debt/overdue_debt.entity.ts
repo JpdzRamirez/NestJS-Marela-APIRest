@@ -25,7 +25,7 @@ export class OverdueDebt {
     @Column({name: 'contrato_id', type:'boolean', nullable: false })
     contrato_id?: number; 
 
-    @ManyToOne(() => Contract, (contract) => contract.facturas, { nullable: true})
+    @ManyToOne(() => Contract, (contract) => contract.moras, { nullable: true})
     @JoinColumn({ name: 'contrato_id' }) // Nombre de la columna FK en la BD
     contrato: Contract;
 
