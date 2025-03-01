@@ -15,23 +15,21 @@ export class ClientRepository {
     /** ✅
      * Obtiene todas las facturas
      */
-    async submitAllClients(schema: string, clientArray:PostAllClientsDto): Promise<Client[]| Boolean> {
+    async submitAllClients(schema: string, newClients: Client[]): Promise<Client[] | boolean> {
       try {
-            return this.dataSource.manager.transaction(async (entityManager: EntityManager) => {
-              // 🔥 Cambiar dinámicamente el esquema de las entidades principales
-              entityManager.connection.getMetadata(Client).tablePath = `${schema}.facturas`;    
+        return this.dataSource.manager.transaction(async (entityManager: EntityManager) => {
+          // 🔥 Cambiar dinámicamente el esquema de las entidades principales
+          entityManager.connection.getMetadata(Client).tablePath = `${schema}.clientes`;
+    
+          // Insertar todos los clientes en una sola operación
+          const savedClients = await entityManager.save(Client, newClients);
           
-              return await entityManager.find(Client, {
-                relations: [
-                  'contrato',
-                  'usuario'
-                ],
-              });
-            });
-          }catch (error) {
-            console.error('❌ Error en submit all clients:', error);
-            return false;
-        }
+          return savedClients;
+        });
+      } catch (error) {
+        console.error('❌ Error en submit all clients:', error);
+        return false;
+      }
     }
 
 

@@ -26,8 +26,11 @@ export class PaymentsActivity {
     @Column({name: 'saldo', type: 'float4', nullable: false })
     saldo?: number; 
 
+    @Column({name: 'pagado', type: 'bool', nullable: false })
+    pagado?: Boolean; 
+
     @Column({ name: 'actividad_id', type:'int2',nullable:false })
-    actividad_id?: number ;  // Puede ser opcional si Supabase lo genera
+    actividad_id?: number ; 
 
     @ManyToOne(() => Activity, (activity) => activity.pagos_actividad, { nullable: false })
     @JoinColumn({ name: 'actividad_id' }) // Nombre de la columna FK en la BD
