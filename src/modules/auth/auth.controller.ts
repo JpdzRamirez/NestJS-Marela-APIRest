@@ -6,7 +6,8 @@ import {
   UnauthorizedException, 
   HttpStatus, 
   UsePipes, 
-  ValidationPipe 
+  ValidationPipe, 
+  Get
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from '../users/user.entity';
@@ -17,6 +18,15 @@ import { LoginUserDto } from './dto/login-user.dto';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Get('public')
+  async public() {
+    try {
+      return { message: 'Conexión con la api', status: true};
+    } catch (error) {
+      throw new UnauthorizedException(error.message);
+    }
+  }
 
   @Post('register')
   @UsePipes(new ValidationPipe({ whitelist: true })) // 🔹 Aplica validación automática

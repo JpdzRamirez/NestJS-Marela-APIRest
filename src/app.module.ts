@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './config/database.module';
+import { SupabaseModule } from './config/supabase.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/users/users.module';
 import { UtilityModule } from './shared/utility/utility.module';
@@ -69,6 +70,7 @@ import { OverdueDebtModule } from './modules/overdue_debt/overdue_debt.module';
       envFilePath: '.env',
     }), // 🔹 Carga variables de entorno desde `.env`
     DatabaseModule,
+    SupabaseModule,
     AuthModule,
     UserModule,
     UtilityModule,
