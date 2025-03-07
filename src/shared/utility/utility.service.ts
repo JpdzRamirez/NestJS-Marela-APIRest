@@ -2,8 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { createHash } from "crypto";
 
 import { PostAllClientsDto } from '../../modules/clients/dto/post-AllClients.dto';
+import { PostAllTypeClientDto } from '../../modules/type_client/dto/post-AllTypeClient.dto';
+
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
+
 import { TypeDocument } from '../../modules/type_document/type_document.entity';
 
 @Injectable()
@@ -46,4 +49,29 @@ export class UtilityService {
     
         return client;
       }
+
+      mapDtoToTypeClientEntity(dto: PostAllTypeClientDto, uuid_authsupa: string): TypeClient {
+        const typeClient = new TypeClient();
+        typeClient.nombre = dto.nombre;
+    
+        // Asignar el usuario que sube el dato
+        typeClient.uploaded_by_authsupa = uuid_authsupa;
+    
+        // Construir el arreglo sync_with
+        typeClient.sync_with = [{ id: dto.id, uuid_authsupa: uuid_authsupa }];
+
+        
+          // Construir el arreglo sync_with como JSON válido
+          const syncData = [{ id: dto.id, uuid_authsupa }];
+
+          try {
+              typeClient.sync_with = JSON.parse(JSON.stringify(syncData)); // Asegura que sea JSON válido
+          } catch (error) {
+              console.error("❌ Error en la conversión de sync_with:", error);
+              typeClient.sync_with = null; // En caso de error, evita insertar un valor incorrecto
+          }
+
+        
+        return typeClient;
+    }
 }
