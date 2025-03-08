@@ -31,6 +31,9 @@ export class JwtAuthGuard implements CanActivate {
       if (!complementaryDataUser) {
         throw new UnauthorizedException('Acceso denegado. Usuario no registrado.');
       }
+      if(!complementaryDataUser.is_active){
+        throw new UnauthorizedException('Acceso denegado. Usuario inactivado.');
+      }
           // 🔹 3. Mapear los datos al modelo `APPUser`
       const user: User = {
             id: complementaryDataUser.id,
@@ -46,7 +49,7 @@ export class JwtAuthGuard implements CanActivate {
             address: complementaryDataUser.address,
             created_at: complementaryDataUser.created_at,
             updated_at: complementaryDataUser.updated_at,
-            imei_id: complementaryDataUser.imei_id,
+            is_active: complementaryDataUser.is_active,
             auth_code: complementaryDataUser.auth_code,
             roles: complementaryDataUser.roles ? { id: complementaryDataUser.roles.id, name: complementaryDataUser.roles.name } : null,
             schemas: complementaryDataUser.schemas ? { id: complementaryDataUser.schemas.id, name: complementaryDataUser.schemas.name } : null,

@@ -59,18 +59,6 @@ export class UtilityService {
     
         // Construir el arreglo sync_with
         typeClient.sync_with = [{ id: dto.id, uuid_authsupa: uuid_authsupa }];
-
-        
-          // Construir el arreglo sync_with como JSON válido
-          const syncData = [{ id: dto.id, uuid_authsupa }];
-
-          try {
-              typeClient.sync_with = JSON.parse(JSON.stringify(syncData)); // Asegura que sea JSON válido
-          } catch (error) {
-              console.error("❌ Error en la conversión de sync_with:", error);
-              typeClient.sync_with = null; // En caso de error, evita insertar un valor incorrecto
-          }
-
         
         return typeClient;
     }

@@ -40,9 +40,9 @@ export class User {
     @Column({ nullable: true, unique: true, type: 'varchar', length: 50 })
     auth_code?: string;
 
-    @Column({ nullable: true, unique: true, type: 'varchar', length: 50})
-    imei_id?: string;
-
+    @Column({ name: 'is_active',nullable: true, type: 'bool'})
+    is_active?: Boolean;
+    
     @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date = new Date(); // Se genera automáticamente
 

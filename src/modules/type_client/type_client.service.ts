@@ -13,7 +13,11 @@ export class TypeClientServices {
     private readonly utilityService: UtilityService    
   ) {}
 /** ✅ Obtener todas las facturas*/
-  async submitAllTypeClient(AuthRequest: AuthRequest, clientsArray: PostAllTypeClientDto[]): Promise<TypeClient[]| Boolean> {
+  async submitAllTypeClient(AuthRequest: AuthRequest, clientsArray: PostAllTypeClientDto[]): Promise<{ 
+    message: string;
+    inserted: { id: number; nombre: string }[]; 
+    duplicated: { id: number; nombre: string }[] 
+}> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
       throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
@@ -23,7 +27,6 @@ export class TypeClientServices {
     const newTypeClient = clientsArray.map(dto => 
         this.utilityService.mapDtoToTypeClientEntity(dto, uuidAuthsupa)
     );
-
     // Enviar los clientes al repositorio para inserción en la BD
     return await this.clientRepository.submitAllTypeClient(user.schemas.name, newTypeClient);
 
