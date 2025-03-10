@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { TypeClientRepository } from './type_client.repository';
-import { PostAllTypeClientDto } from './dto/post-AllTypeClient.dto';
+import { TypeClientDto } from './dto/typeClient.dto';
 import { TypeClient } from './type_client.entity';
 import { AuthRequest } from '../../types';
 
@@ -12,9 +12,11 @@ export class TypeClientServices {
     private readonly clientRepository: TypeClientRepository,
     private readonly utilityService: UtilityService    
   ) {}
-/** ✅ Obtener todas las facturas*/
-  async submitAllTypeClient(AuthRequest: AuthRequest, clientsArray: PostAllTypeClientDto[]): Promise<{ 
-    message: string;
+
+
+/** ✅ Obtener todas los tipos de clientes*/
+  async submitAllTypeClient(AuthRequest: AuthRequest, typeClientsArray: TypeClientDto[]): Promise<{ 
+    message: String;
     inserted: { id: number; nombre: string }[]; 
     duplicated: { id: number; nombre: string }[] 
 }> {
@@ -24,7 +26,7 @@ export class TypeClientServices {
     }
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades
-    const newTypeClient = clientsArray.map(dto => 
+    const newTypeClient = typeClientsArray.map(dto => 
         this.utilityService.mapDtoToTypeClientEntity(dto, uuidAuthsupa)
     );
     // Enviar los clientes al repositorio para inserción en la BD
@@ -32,4 +34,41 @@ export class TypeClientServices {
 
   }
 
+
+  async getAllTypeClient(AuthRequest: AuthRequest): Promise<{ 
+    message: String,
+    type_client:TypeClient[]
+  }> {
+    const user = AuthRequest.user;
+    if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
+      throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
+    }
+
+    // Enviar los clientes al repositorio para inserción en la BD
+    return await this.clientRepository.getAllTypeClient(user.schemas.name,user.uuid_authsupa);
+
+  }
+
+
+
+  /** ✅ Sincronizar los tipos de clientes*/
+  async syncTypeClient(AuthRequest: AuthRequest, typeClientsArray: TypeClientDto[]): Promise<{ 
+    message: String,
+    status: Boolean,
+    duplicated: TypeClientDto[] | null   
+}> {
+    const user = AuthRequest.user;
+    if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
+      throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
+    }
+    const uuidAuthsupa: string = user.uuid_authsupa;
+
+    const typeClientArrayFiltred = this.utilityService.removeDuplicatTypeClients(typeClientsArray);
+
+    // Enviar los clientes al repositorio para inserción en la BD
+    return await this.clientRepository.syncTypeClient(user.schemas.name, uuidAuthsupa,typeClientArrayFiltred);
+
+  }
 }
+
+

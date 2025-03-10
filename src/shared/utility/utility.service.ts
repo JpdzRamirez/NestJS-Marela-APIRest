@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { createHash } from "crypto";
 
 import { PostAllClientsDto } from '../../modules/clients/dto/post-AllClients.dto';
-import { PostAllTypeClientDto } from '../../modules/type_client/dto/post-AllTypeClient.dto';
+import { TypeClientDto } from '../../modules/type_client/dto/typeClient.dto';
 
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
@@ -50,7 +50,7 @@ export class UtilityService {
         return client;
       }
 
-      mapDtoToTypeClientEntity(dto: PostAllTypeClientDto, uuid_authsupa: string): TypeClient {
+      mapDtoToTypeClientEntity(dto: TypeClientDto, uuid_authsupa: string): TypeClient {
         const typeClient = new TypeClient();
         typeClient.nombre = dto.nombre;
     
@@ -62,4 +62,58 @@ export class UtilityService {
         
         return typeClient;
     }
+
+    removeDuplicatTypeClients(typeClientArray: TypeClientDto[]) {
+      const uniqueTypeClient = new Map<string, TypeClientDto>();
+      const duplicateTypeClient: TypeClientDto[] = [];
+    
+      for (const typeClient of typeClientArray) {
+        // Normalizar el nombre para comparar sin errores
+        const normalizedName = typeClient.nombre
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "") 
+          .normalize("NFD") 
+          .replace(/[\u0300-\u036f]/g, ""); 
+    
+        if (uniqueTypeClient.has(normalizedName)) {
+          const existingClient = uniqueTypeClient.get(normalizedName)!;
+          
+          // Comparar cuál está mejor escrita
+          if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {
+            duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
+            uniqueTypeClient.set(normalizedName, { ...typeClient, nombre: normalizedName }); // Reemplazar por el mejor
+          } else {
+            duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
+          }
+        } else {
+          uniqueTypeClient.set(normalizedName, { ...typeClient, nombre: normalizedName });
+        }
+      }
+    
+      return {
+        uniqueTypeClient: Array.from(uniqueTypeClient.values()),
+        duplicateTypeClient,
+      };
+    }
+    
+    // Función para evaluar cuál nombre está mejor escrito
+    isBetterFormatted(newName: string, existingName: string): boolean {
+      const newNameScore = this.getNameQualityScore(newName);
+      const existingNameScore = this.getNameQualityScore(existingName);
+      return newNameScore > existingNameScore;
+    }
+    
+    // Función que asigna una puntuación a los nombres según calidad
+    getNameQualityScore(name: string): number {
+      let score = 0;
+    
+      if (/^[A-Z]/.test(name)) score += 2; // Comienza con mayúscula
+      if (/^[A-Za-z\s]+$/.test(name)) score += 3; // Solo letras y espacios
+      if (!/\s{2,}/.test(name)) score += 1; // No tiene espacios dobles
+      if (name.length > 2) score += 1; // No es demasiado corto
+    
+      return score;
+    }
+    
 }
