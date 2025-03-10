@@ -83,6 +83,7 @@ export class AuthService {
           name: complementaryDataUser.name,
           lastname: complementaryDataUser.lastname,
           phone: complementaryDataUser.phone,
+          auth_code:data.auth_code,
           mobile: complementaryDataUser.mobile,
           created_at: complementaryDataUser.created_at,
           updated_at: complementaryDataUser.updated_at,
