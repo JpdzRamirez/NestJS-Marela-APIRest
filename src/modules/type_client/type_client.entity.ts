@@ -7,7 +7,7 @@ export class TypeClient {
     id!: number;
 
     @Column({ name: 'nombre', unique: true, nullable: true })
-    nombre?: string;
+    nombre!: string;
 
     @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     created_at!: Date;

@@ -30,30 +30,56 @@ export class TypeClientRepository {
     try {
       const entityManager = queryRunner.manager;
 
-      // Obtener nombres que ya existen en la base de datos
+      const normalizedNewTypeClients = newTypeClients.map((tc) => ({
+        ...tc,
+        nombre: tc.nombre
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, ""), // Quitar acentos y espacios innecesarios
+      }));
+      
+      // 🔥 Obtener nombres normalizados que ya existen en la base de datos
       const existingClients = await entityManager
         .createQueryBuilder()
         .select(['id', 'nombre'])
         .from(`${schema}.tipo_cliente`, 'tipo_cliente')
-        .where('nombre IN (:...nombres)', {
-          nombres: newTypeClients.map((tc) => tc.nombre),
+        .where('LOWER(unaccent(tipo_cliente.nombre)) IN (:...nombres)', {
+          nombres: normalizedNewTypeClients.map((tc) => tc.nombre),
         })
         .getRawMany();
-
+      
+      // 🔥 Normalizar nombres existentes para comparación eficiente
       const existingNames = new Set(
-        existingClients.map((client) => client.nombre),
+        existingClients.map((client) =>
+          client.nombre
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+        )
       );
-
-      // Filtrar solo los clientes que no están duplicados
+      
+      // 🔥 Filtrar solo los clientes que no están duplicados
       const uniqueClients = newTypeClients.filter((tc) => {
-        if (existingNames.has(tc.nombre)) {
+        const normalizedName = tc.nombre
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+
+        if (existingNames.has(normalizedName)) {
           const existingClient = existingClients.find(
-            (c) => c.nombre === tc.nombre,
+            (c) => c.nombre.localeCompare(tc.nombre, undefined, { sensitivity: "base" }) === 0
           );
+
           if (existingClient) {
             duplicatedClients.push({
-              id: existingClient.id,
-              nombre: existingClient.nombre,
+              id: tc.id, // ⚡ Mantener el ID original en la respuesta
+              nombre: tc.nombre,
             });
             return false;
           }
@@ -62,34 +88,32 @@ export class TypeClientRepository {
       });
 
       if (uniqueClients.length > 0) {
-        // Insertar solo los clientes que no estaban duplicados
+        // 🔥 Insertar solo los clientes que no estaban duplicados
         await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.tipo_cliente`)
+          .into(`${schema}.tipo_cliente`, ['nombre', 'uploaded_by_authsupa', 'sync_with'])
           .values(
             uniqueClients.map((tc) => ({
-              ...tc,
+              nombre: tc.nombre,
+              uploaded_by_authsupa: tc.uploaded_by_authsupa,
               sync_with: () => `'${JSON.stringify(tc.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
-            })),
-          )
-          .returning(['id', 'nombre']) // Retornar los datos insertados
-          .execute();
+            }))
+          ).execute();
 
-        // Agregar a la lista de insertados
+        // 🔥 Asociar los nombres insertados con los IDs originales
         insertedClients.push(
           ...uniqueClients.map((tc) => ({
-            id: tc.id,
-            nombre: tc.nombre ?? '',
-          })),
+            id: tc.id, // ⚡ Mantener el ID original en la respuesta
+            nombre: tc.nombre,
+          }))
         );
       }
-
+      
       await queryRunner.commitTransaction();
-
+      
       return {
-        message:
-          'Sincronización exitosa, se han obtenido los siguientes resultados:',
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados:",
         inserted: insertedClients,
         duplicated: duplicatedClients,
       };

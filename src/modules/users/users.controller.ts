@@ -67,11 +67,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))
   @Patch('admin/update-user/:id')
   async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    const userUpdated=await this.userService.updateUserById(id, updateUserDto);
-    if(!userUpdated){
-      throw new HttpException('Error al actualizar usuario', HttpStatus.BAD_REQUEST);
-    }
-    return { message: `Usuario ${id} Actualizado`, status: userUpdated };
+    return  await this.userService.updateUserById(id, updateUserDto);    
   }
 
   @UseGuards(JwtAuthGuard, new RolesGuard([1]))

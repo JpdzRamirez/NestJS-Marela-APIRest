@@ -13,7 +13,7 @@ import { TypeDocument } from '../../modules/type_document/type_document.entity';
 export class UtilityService {
 
   
-    generateAuthCode(length = 5): string {
+      generateAuthCode(length = 5): string {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let code = '';
         for (let i = 0; i < length; i++) {
@@ -52,6 +52,7 @@ export class UtilityService {
 
       mapDtoToTypeClientEntity(dto: TypeClientDto, uuid_authsupa: string): TypeClient {
         const typeClient = new TypeClient();
+        typeClient.id=dto.id;
         typeClient.nombre = dto.nombre;
     
         // Asignar el usuario que sube el dato

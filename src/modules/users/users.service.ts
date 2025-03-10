@@ -62,7 +62,10 @@ export class UserServices {
   async updateUserById(
     id: number,
     updateUserDto: UpdateUserDto
-  ): Promise<boolean> {
+  ): Promise<{
+    message: String;
+    response: String;    
+    }>{
     const user = await this.userRepository.getUserById(id);
     if (!user || !user.id) {
       throw new HttpException(
@@ -90,7 +93,7 @@ export class UserServices {
 
     const updatedUser = { ...user, ...filteredData, id: user.id };
 
-    return await this.userRepository.updateUser(id, updatedUser);
+    return await this.userRepository.updateUser(id, updatedUser,1);
   }
 
   /** ✅ Actualizar mi usuario*/
@@ -98,7 +101,10 @@ export class UserServices {
     id: number,
     updateUserDto: UpdateUserDto,
     AuthRequest: AuthRequest,
-  ): Promise<boolean> {
+    ): Promise<{
+      message: String;
+      response: String;    
+    }> {
     const user = AuthRequest.user;
     if (!user || !user.id) {
       throw new HttpException('No se encontraro usuario', HttpStatus.NOT_FOUND);
@@ -123,12 +129,16 @@ export class UserServices {
       ),
     );
     const updatedUser = { ...user, ...filteredData, id: user.id };
-    return await this.userRepository.updateUser(id, updatedUser);
+    return await this.userRepository.updateUser(id, updatedUser,2);
+    
   }
   /** ✅ Generar token de autorización (Solo Admin)*/
   async createAuthCode(
     id: number
-  ): Promise<boolean> {
+  ): Promise<{
+      message: String;
+      response: String;    
+    }> {
     const user = await this.userRepository.getUserById(id);
     if (!user || !user.id) {
       throw new HttpException(
@@ -137,10 +147,12 @@ export class UserServices {
       );
     } 
     // Definir los campos permitidos para evitar actualizaciones no deseadas
-    let code = this.utilityService.generateAuthCode();
+    const code = this.utilityService.generateAuthCode();
+    
     const updatedUser = { ...user, auth_code: code };
 
-    return await this.userRepository.updateUser(id, updatedUser);
+    return await this.userRepository.updateUser(id, updatedUser,3);
+
   }
 
   /** ✅ Eliminar usuario */

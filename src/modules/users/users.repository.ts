@@ -124,19 +124,31 @@ export class UserRepository {
   /** ✅
    * Actualiza un usuario por su ID en PostgreSQL y Supabase
    */
-  async updateUser(id: number, updatedUser: Partial<User>): Promise<boolean> {
+  async updateUser(id: Number, updatedUser: Partial<User>,type: Number): Promise<{
+    message: String;
+    response: String;    
+  }>{
     const queryRunner = this.userRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    /*
+      Type 1= Actualización de perfiles desde administrador
+      Type 2= Actualización de perfiles desde mi propio usuario
+      Type 3= Actualización de código de autenticación
+    */
     try {    
-
+      let response='';
       // ✅ 1. Guardamos la contraseña
       const newpassword= updatedUser.password;
       // ✅ 2. Hasheamos la contraseña
       if (updatedUser.password) {
         updatedUser.password = bcrypt.hashSync(updatedUser.password, 10);
-      }
+      } 
+      if (updatedUser.auth_code && type===3){
+        response=updatedUser.auth_code;
+        updatedUser.auth_code = this.utilityService.hashMD5(response);
+      }      
       // ✅ 3. Actualizar en public.users
       await queryRunner.manager.update(User, id, updatedUser);
 
@@ -156,7 +168,18 @@ export class UserRepository {
 
       await queryRunner.commitTransaction();
 
-      return true;
+      if(type===1){
+        response=`Usuario actualizado exitosamente`;
+      }else if(type===2){
+        response=`Mi usuario ha sido actualizado`;
+      }else{
+        response=`Codigo de autorización (Único): ${response}`;
+      }
+
+      return {
+        message: "Operación exitosa, se han obtenido los siguientes resultados:",
+        response: response        
+      };;
       
     } catch (error) {
       await queryRunner.rollbackTransaction();
