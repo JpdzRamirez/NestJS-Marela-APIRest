@@ -17,7 +17,7 @@ import { TypeClientModule } from './modules/type_client/type_client.module';
 import { ClientServices } from './modules/clients/clients.service';
 import { ClientController } from './modules/clients/clients.controller';
 import { ClientModule } from './modules/clients/clients.module';
-import { TypeDocumentService } from './modules/type_document/type_document.service';
+import { TypeDocumentServices } from './modules/type_document/type_document.service';
 import { TypeDocumentController } from './modules/type_document/type_document.controller';
 import { TypeDocumentModule } from './modules/type_document/type_document.module';
 import { WaterMeterService } from './modules/meters/meters.service';
@@ -96,6 +96,6 @@ import { OverdueDebtModule } from './modules/overdue_debt/overdue_debt.module';
     OverdueDebtModule,
   ],
   controllers: [AppController, TypeClientController, ClientController, TypeDocumentController, WaterMeterController, BrandsController, TypeServicesController, SalesRateController, MunicipalUnitController, CitiesController, StatesController, TrailController, ActivitiesController, ProductsActivityController, PaymentsActivityController, InvoiceHeaderController, InvoiceFooterController, OverdueDebtController],
-  providers: [AppService, SchemasService, TypeClientServices, ClientServices, TypeDocumentService, WaterMeterService, BrandsService, TypeServicesService, SalesRateService, MunicipalUnitService, CityServices, StatesService, TrailServices, ActivityServices, ProductsActivityService, PaymentsActivityService, InvoiceHeaderService, InvoiceFooterService, OverdueDebtService],
+  providers: [AppService, SchemasService, TypeClientServices, ClientServices, TypeDocumentServices, WaterMeterService, BrandsService, TypeServicesService, SalesRateService, MunicipalUnitService, CityServices, StatesService, TrailServices, ActivityServices, ProductsActivityService, PaymentsActivityService, InvoiceHeaderService, InvoiceFooterService, OverdueDebtService],
 })
 export class AppModule {}

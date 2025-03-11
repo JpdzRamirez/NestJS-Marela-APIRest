@@ -3,10 +3,11 @@ import { createHash } from "crypto";
 
 import { PostAllClientsDto } from '../../modules/clients/dto/post-AllClients.dto';
 import { TypeClientDto } from '../../modules/type_client/dto/typeClient.dto';
+import { TypeDocumentDto } from '../../modules/type_document/dto/typeDocument.dto';
+
 
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
-
 import { TypeDocument } from '../../modules/type_document/type_document.entity';
 
 @Injectable()
@@ -95,6 +96,40 @@ export class UtilityService {
       return {
         uniqueTypeClient: Array.from(uniqueTypeClient.values()),
         duplicateTypeClient,
+      };
+    }
+
+    removeDuplicateTypeDocument(typeDocumentArray: TypeDocumentDto[]) {
+      const uniqueTypeDocument = new Map<string, TypeDocumentDto>();
+      const duplicateTypeDocument: TypeDocumentDto[] = [];
+    
+      for (const typeDocument of typeDocumentArray) {
+        // Normalizar el nombre para comparar sin errores
+        const normalizedName = typeDocument.nombre
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "") 
+          .normalize("NFD") 
+          .replace(/[\u0300-\u036f]/g, ""); 
+    
+        if (uniqueTypeDocument.has(normalizedName)) {
+          const existingClient = uniqueTypeDocument.get(normalizedName)!;
+          
+          // Comparar cuál está mejor escrita
+          if (this.isBetterFormatted(typeDocument.nombre, existingClient.nombre)) {
+            duplicateTypeDocument.push({ ...existingClient }); // Guardar copia del duplicado
+            uniqueTypeDocument.set(normalizedName, { ...typeDocument, nombre: normalizedName }); // Reemplazar por el mejor
+          } else {
+            duplicateTypeDocument.push({ ...typeDocument }); // Guardar este en duplicados
+          }
+        } else {
+          uniqueTypeDocument.set(normalizedName, { ...typeDocument, nombre: normalizedName });
+        }
+      }
+    
+      return {
+        uniqueTypeDocument: Array.from(uniqueTypeDocument.values()),
+        duplicateTypeDocument,
       };
     }
     
