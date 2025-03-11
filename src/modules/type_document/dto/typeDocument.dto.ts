@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, ValidateNested, IsNotEmpty, IsString, Matches, IsInt } from 'class-validator';
+import { IsArray, ValidateNested, IsNotEmpty, IsString, Matches, IsInt,IsOptional  } from 'class-validator';
 
 export class TypeDocumentDto {
   @IsNotEmpty({ message: 'El id es obligatorio' })
@@ -10,6 +10,10 @@ export class TypeDocumentDto {
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @Matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, { message: 'El nombre solo debe contener letras y espacios' })
   nombre!: string;
+
+  @IsString()
+  @IsOptional()   
+  source_failure?: string;
 }
 export class TypeDocumentArrayDto {
   @IsArray({ message: 'El cuerpo debe ser un array de clientes' })

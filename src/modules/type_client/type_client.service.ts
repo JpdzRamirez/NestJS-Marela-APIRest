@@ -16,9 +16,10 @@ export class TypeClientServices {
 
 /** ✅ Obtener todas los tipos de clientes*/
   async submitAllTypeClient(AuthRequest: AuthRequest, typeClientsArray: TypeClientDto[]): Promise<{ 
-    message: String;
-    inserted: { id: number; nombre: string }[]; 
-    duplicated: { id: number; nombre: string }[] 
+    message: string;
+    status: boolean;
+    inserted: { id: number; nombre: string }[];
+    duplicated: TypeClientDto[];
 }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
@@ -26,11 +27,10 @@ export class TypeClientServices {
     }
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades
-    const newTypeClient = typeClientsArray.map(dto => 
-        this.utilityService.mapDtoToTypeClientEntity(dto, uuidAuthsupa)
-    );
+    const newTypeClientArray = this.utilityService.mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientsArray, uuidAuthsupa)
+    
     // Enviar los clientes al repositorio para inserción en la BD
-    return await this.clientRepository.submitAllTypeClient(user.schemas.name, newTypeClient);
+    return await this.clientRepository.submitAllTypeClient(user.schemas.name, newTypeClientArray);
 
   }
 
@@ -63,7 +63,7 @@ export class TypeClientServices {
     }
     const uuidAuthsupa: string = user.uuid_authsupa;
 
-    const typeClientArrayFiltred = this.utilityService.removeDuplicatTypeClients(typeClientsArray);
+    const typeClientArrayFiltred = this.utilityService.removeDuplicateTypeClients(typeClientsArray);
 
     // Enviar los clientes al repositorio para inserción en la BD
     return await this.clientRepository.syncTypeClient(user.schemas.name, uuidAuthsupa,typeClientArrayFiltred);

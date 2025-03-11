@@ -15,7 +15,7 @@ export class TypeDocumentServices {
 
 
 /** ✅ Obtener todas los tipos de clientes*/
-  async submitAllTypeDocument(AuthRequest: AuthRequest, typeClientsArray: TypeDocumentDto[]): Promise<{ 
+  async submitAllTypeDocument(AuthRequest: AuthRequest, typeDocumentArray: TypeDocumentDto[]): Promise<{ 
     message: String;
     inserted: { id: number; nombre: string }[]; 
     duplicated: { id: number; nombre: string }[] 
@@ -26,11 +26,9 @@ export class TypeDocumentServices {
     }
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades
-    const newTypeClient = typeClientsArray.map(dto => 
-        this.utilityService.mapDtoToTypeClientEntity(dto, uuidAuthsupa)
-    );
+    const newTypeDocument = this.utilityService.mapDtoToTypeDocumentAndRemoveDuplicateEntity(typeDocumentArray, uuidAuthsupa);
     // Enviar los clientes al repositorio para inserción en la BD
-    return await this.clientRepository.submitAllTypeDocument(user.schemas.name, newTypeClient);
+    return await this.clientRepository.submitAllTypeDocument(user.schemas.name, newTypeDocument);
 
   }
 

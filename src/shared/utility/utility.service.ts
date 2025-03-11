@@ -51,21 +51,116 @@ export class UtilityService {
         return client;
       }
 
-      mapDtoToTypeClientEntity(dto: TypeClientDto, uuid_authsupa: string): TypeClient {
-        const typeClient = new TypeClient();
-        typeClient.id=dto.id;
-        typeClient.nombre = dto.nombre;
+    mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientArray: TypeClientDto[], uuid_authsupa: string): 
+      { uniqueTypeClient: TypeClient[], 
+        duplicateTypeClient: TypeClientDto[] 
+      } {
+        const uniqueTypeClient = new Map<string, TypeClient>();
+        const duplicateTypeClient: TypeClientDto[] = [];
     
-        // Asignar el usuario que sube el dato
-        typeClient.uploaded_by_authsupa = uuid_authsupa;
+        for (const typeClient of typeClientArray) {
+            // Normalizar el nombre para comparación
+            const normalizedName = typeClient.nombre
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, " ") // Normaliza los espacios
+                .normalize("NFD") // Descompone caracteres con tilde
+                .replace(/[\u0300-\u036f]/g, ""); // Remueve diacríticos
+            
+            if (uniqueTypeClient.has(normalizedName)) {
+                const existingClient = uniqueTypeClient.get(normalizedName)!;
     
-        // Construir el arreglo sync_with
-        typeClient.sync_with = [{ id: dto.id, uuid_authsupa: uuid_authsupa }];
+                // Comparar cuál está mejor escrita
+                if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {
+                    duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
+                    let newClient = new TypeClient();
+                    newClient.id=typeClient.id;
+                    newClient.nombre = typeClient.nombre;
+                    // Asignar el usuario que sube el dato
+                    newClient.uploaded_by_authsupa = uuid_authsupa;
         
-        return typeClient;
+                    // Construir el arreglo sync_with
+                    newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
+                    uniqueTypeClient.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
+                } else {
+                  typeClient.source_failure='Request';
+                  duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
+                }
+            } else {
+                let newClient = new TypeClient();
+                newClient.id=typeClient.id;
+                newClient.nombre = typeClient.nombre;
+                // Asignar el usuario que sube el dato
+                newClient.uploaded_by_authsupa = uuid_authsupa;
+    
+                // Construir el arreglo sync_with
+                newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
+    
+                uniqueTypeClient.set(normalizedName, { ...newClient });
+            }
+        }
+    
+        return {
+            uniqueTypeClient: Array.from(uniqueTypeClient.values()),
+            duplicateTypeClient,
+        };
     }
 
-    removeDuplicatTypeClients(typeClientArray: TypeClientDto[]) {
+    mapDtoToTypeDocumentAndRemoveDuplicateEntity(typeDocumentArray: TypeDocumentDto[], uuid_authsupa: string): 
+      { uniqueTypeDocument: TypeDocument[], 
+        duplicateTypeDocument: TypeDocumentDto[] 
+      } {
+        const uniqueTypeDocument = new Map<string, TypeDocument>();
+        const duplicateTypeDocument: TypeDocumentDto[] = [];
+    
+        for (const typeDocument of typeDocumentArray) {
+            // Normalizar el nombre para comparación
+            const normalizedName = typeDocument.nombre
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, " ") // Normaliza los espacios
+                .normalize("NFD") // Descompone caracteres con tilde
+                .replace(/[\u0300-\u036f]/g, ""); // Remueve diacríticos
+            
+            if (uniqueTypeDocument.has(normalizedName)) {
+                const existingClient = uniqueTypeDocument.get(normalizedName)!;
+    
+                // Comparar cuál está mejor escrita
+                if (this.isBetterFormatted(typeDocument.nombre, existingClient.nombre)) {
+                  duplicateTypeDocument.push({ ...existingClient }); // Guardar copia del duplicado
+                    let newClient = new TypeClient();
+                    newClient.id=typeDocument.id;
+                    newClient.nombre = typeDocument.nombre;
+                    // Asignar el usuario que sube el dato
+                    newClient.uploaded_by_authsupa = uuid_authsupa;
+        
+                    // Construir el arreglo sync_with
+                    newClient.sync_with = [{ id: typeDocument.id, uuid_authsupa }];
+                    uniqueTypeDocument.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
+                } else {
+                  typeDocument.source_failure='Request';
+                  duplicateTypeDocument.push({ ...typeDocument }); // Guardar este en duplicados
+                }
+            } else {
+                let newClient = new TypeClient();
+                newClient.id=typeDocument.id;
+                newClient.nombre = typeDocument.nombre;
+                // Asignar el usuario que sube el dato
+                newClient.uploaded_by_authsupa = uuid_authsupa;
+    
+                // Construir el arreglo sync_with
+                newClient.sync_with = [{ id: typeDocument.id, uuid_authsupa }];
+    
+                uniqueTypeDocument.set(normalizedName, { ...newClient });
+            }
+        }
+    
+        return {
+          uniqueTypeDocument: Array.from(uniqueTypeDocument.values()),
+          duplicateTypeDocument,
+        };
+    }
+    removeDuplicateTypeClients(typeClientArray: TypeClientDto[]) {
       const uniqueTypeClient = new Map<string, TypeClientDto>();
       const duplicateTypeClient: TypeClientDto[] = [];
     

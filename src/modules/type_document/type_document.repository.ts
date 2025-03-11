@@ -14,23 +14,24 @@ export class TypeDocumentRepository {
    */
   async submitAllTypeDocument(
     schema: string,
-    newTypeClients: TypeDocument[],
+     typeDocumentArrayFiltred: { uniqueTypeDocument: TypeDocument[]; duplicateTypeDocument: TypeDocumentDto[] }
   ): Promise<{
     message: string;
+    status: boolean;
     inserted: { id: number; nombre: string }[];
-    duplicated: { id: number; nombre: string }[];
+    duplicated: TypeDocumentDto[];
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const insertedClients: { id: number; nombre: string }[] = [];
-    const duplicatedClients: { id: number; nombre: string }[] = [];
+    const insertedTypeDocuments: { id: number; nombre: string }[] = [];
+    const duplicatedTypeDocuments=typeDocumentArrayFiltred.duplicateTypeDocument;
 
     try {
       const entityManager = queryRunner.manager;
 
-      const normalizedNewTypeClients = newTypeClients.map((tc) => ({
+      const normalizedNewTypeDocuments = typeDocumentArrayFiltred.uniqueTypeDocument.map((tc) => ({
         ...tc,
         nombre: tc.nombre
           .trim()
@@ -41,18 +42,18 @@ export class TypeDocumentRepository {
       }));
       
       // 🔥 Obtener nombres normalizados que ya existen en la base de datos
-      const existingClients = await entityManager
+      const existingDocuments = await entityManager
         .createQueryBuilder()
         .select(['id', 'nombre'])
         .from(`${schema}.tipo_documento`, 'tipo_documento')
         .where('LOWER(unaccent(tipo_documento.nombre)) IN (:...nombres)', {
-          nombres: normalizedNewTypeClients.map((tc) => tc.nombre),
+          nombres: normalizedNewTypeDocuments.map((tc) => tc.nombre),
         })
         .getRawMany();
       
       // 🔥 Normalizar nombres existentes para comparación eficiente
       const existingNames = new Set(
-        existingClients.map((client) =>
+        existingDocuments.map((client) =>
           client.nombre
             .trim()
             .toLowerCase()
@@ -62,8 +63,8 @@ export class TypeDocumentRepository {
         )
       );
       
-      // 🔥 Filtrar solo los clientes que no están duplicados
-      const uniqueClients = newTypeClients.filter((tc) => {
+      // 🔥 Filtrar solo los documentos que no están duplicados
+      const uniqueDocument = typeDocumentArrayFiltred.uniqueTypeDocument.filter((tc) => {
         const normalizedName = tc.nombre
           .trim()
           .toLowerCase()
@@ -72,29 +73,28 @@ export class TypeDocumentRepository {
           .replace(/[\u0300-\u036f]/g, "");
 
         if (existingNames.has(normalizedName)) {
-          const existingClient = existingClients.find(
+          let existingDocument = existingDocuments.find(
             (c) => c.nombre.localeCompare(tc.nombre, undefined, { sensitivity: "base" }) === 0
           );
 
-          if (existingClient) {
-            duplicatedClients.push({
-              id: tc.id, // ⚡ Mantener el ID original en la respuesta
-              nombre: tc.nombre,
-            });
+          if (existingDocument) {
+            existingDocument.id=tc.id;
+            existingDocument.source_failure='DataBase';
+            duplicatedTypeDocuments.push(existingDocument);
             return false;
           }
         }
         return true;
       });
 
-      if (uniqueClients.length > 0) {
-        // 🔥 Insertar solo los clientes que no estaban duplicados
+      if (uniqueDocument.length > 0) {
+        // 🔥 Insertar solo los documentos que no estaban duplicados
         await entityManager
           .createQueryBuilder()
           .insert()
           .into(`${schema}.tipo_documento`, ['nombre', 'uploaded_by_authsupa', 'sync_with'])
           .values(
-            uniqueClients.map((tc) => ({
+            uniqueDocument.map((tc) => ({
               nombre: tc.nombre,
               uploaded_by_authsupa: tc.uploaded_by_authsupa,
               sync_with: () => `'${JSON.stringify(tc.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
@@ -102,8 +102,8 @@ export class TypeDocumentRepository {
           ).execute();
 
         // 🔥 Asociar los nombres insertados con los IDs originales
-        insertedClients.push(
-          ...uniqueClients.map((tc) => ({
+        insertedTypeDocuments.push(
+          ...uniqueDocument.map((tc) => ({
             id: tc.id, // ⚡ Mantener el ID original en la respuesta
             nombre: tc.nombre,
           }))
@@ -114,14 +114,16 @@ export class TypeDocumentRepository {
       
       return {
         message: "Sincronización exitosa, se han obtenido los siguientes resultados:",
-        inserted: insertedClients,
-        duplicated: duplicatedClients,
+        status:true,
+        inserted: insertedTypeDocuments,
+        duplicated: duplicatedTypeDocuments,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en submitAllTypeClient:', error);
       return {
         message: '¡La Sincronización ha fallado!',
+        status:false,
         inserted: [],
         duplicated: [],
       };

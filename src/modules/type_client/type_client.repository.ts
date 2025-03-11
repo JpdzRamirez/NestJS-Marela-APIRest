@@ -14,23 +14,24 @@ export class TypeClientRepository {
    */
   async submitAllTypeClient(
     schema: string,
-    newTypeClients: TypeClient[],
+    typeClientArrayFiltred: { uniqueTypeClient: TypeClient[]; duplicateTypeClient: TypeClientDto[] }
   ): Promise<{
     message: string;
+    status: boolean;
     inserted: { id: number; nombre: string }[];
-    duplicated: { id: number; nombre: string }[];
+    duplicated: TypeClientDto[];
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     const insertedClients: { id: number; nombre: string }[] = [];
-    const duplicatedClients: { id: number; nombre: string }[] = [];
+    const duplicatedClients=typeClientArrayFiltred.duplicateTypeClient;
 
     try {
       const entityManager = queryRunner.manager;
 
-      const normalizedNewTypeClients = newTypeClients.map((tc) => ({
+      const normalizedNewTypeClients = typeClientArrayFiltred.uniqueTypeClient.map((tc) => ({
         ...tc,
         nombre: tc.nombre
           .trim()
@@ -63,7 +64,7 @@ export class TypeClientRepository {
       );
       
       // 🔥 Filtrar solo los clientes que no están duplicados
-      const uniqueClients = newTypeClients.filter((tc) => {
+      const uniqueClients = typeClientArrayFiltred.uniqueTypeClient.filter((tc) => {
         const normalizedName = tc.nombre
           .trim()
           .toLowerCase()
@@ -72,15 +73,14 @@ export class TypeClientRepository {
           .replace(/[\u0300-\u036f]/g, "");
 
         if (existingNames.has(normalizedName)) {
-          const existingClient = existingClients.find(
+          let existingClient = existingClients.find(
             (c) => c.nombre.localeCompare(tc.nombre, undefined, { sensitivity: "base" }) === 0
           );
 
           if (existingClient) {
-            duplicatedClients.push({
-              id: tc.id, // ⚡ Mantener el ID original en la respuesta
-              nombre: tc.nombre,
-            });
+            existingClient.id=tc.id;
+            existingClient.source_failure='DataBase';
+            duplicatedClients.push(existingClient);
             return false;
           }
         }
@@ -114,6 +114,7 @@ export class TypeClientRepository {
       
       return {
         message: "Sincronización exitosa, se han obtenido los siguientes resultados:",
+        status:true,
         inserted: insertedClients,
         duplicated: duplicatedClients,
       };
@@ -122,6 +123,7 @@ export class TypeClientRepository {
       console.error('❌ Error en submitAllTypeClient:', error);
       return {
         message: '¡La Sincronización ha fallado!',
+        status:false,
         inserted: [],
         duplicated: [],
       };
