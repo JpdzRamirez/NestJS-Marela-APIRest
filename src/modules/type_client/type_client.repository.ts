@@ -25,8 +25,8 @@ export class TypeClientRepository {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const insertedClients: { id: number; nombre: string }[] = [];
-    const duplicatedClients=typeClientArrayFiltred.duplicateTypeClient;
+    const insertedTypeClients: { id: number; nombre: string }[] = [];
+    const duplicatedTypeClients=typeClientArrayFiltred.duplicateTypeClient;
 
     try {
       const entityManager = queryRunner.manager;
@@ -42,7 +42,7 @@ export class TypeClientRepository {
       }));
       
       // 🔥 Obtener nombres normalizados que ya existen en la base de datos
-      const existingClients = await entityManager
+      const existingTyeClients = await entityManager
         .createQueryBuilder()
         .select(['id', 'nombre'])
         .from(`${schema}.tipo_cliente`, 'tipo_cliente')
@@ -53,7 +53,7 @@ export class TypeClientRepository {
       
       // 🔥 Normalizar nombres existentes para comparación eficiente
       const existingNames = new Set(
-        existingClients.map((client) =>
+        existingTyeClients.map((client) =>
           client.nombre
             .trim()
             .toLowerCase()
@@ -64,7 +64,7 @@ export class TypeClientRepository {
       );
       
       // 🔥 Filtrar solo los clientes que no están duplicados
-      const uniqueClients = typeClientArrayFiltred.uniqueTypeClient.filter((tc) => {
+      const uniqueTypeClients = typeClientArrayFiltred.uniqueTypeClient.filter((tc) => {
         const normalizedName = tc.nombre
           .trim()
           .toLowerCase()
@@ -73,28 +73,28 @@ export class TypeClientRepository {
           .replace(/[\u0300-\u036f]/g, "");
 
         if (existingNames.has(normalizedName)) {
-          let existingClient = existingClients.find(
+          let existingTypeClient = existingTyeClients.find(
             (c) => c.nombre.localeCompare(tc.nombre, undefined, { sensitivity: "base" }) === 0
           );
 
-          if (existingClient) {
-            existingClient.id=tc.id;
-            existingClient.source_failure='DataBase';
-            duplicatedClients.push(existingClient);
+          if (existingTypeClient) {
+            existingTypeClient.id=tc.id;
+            existingTypeClient.source_failure='DataBase';
+            duplicatedTypeClients.push(existingTypeClient);
             return false;
           }
         }
         return true;
       });
 
-      if (uniqueClients.length > 0) {
+      if (uniqueTypeClients.length > 0) {
         // 🔥 Insertar solo los clientes que no estaban duplicados
         await entityManager
           .createQueryBuilder()
           .insert()
           .into(`${schema}.tipo_cliente`, ['nombre', 'uploaded_by_authsupa', 'sync_with'])
           .values(
-            uniqueClients.map((tc) => ({
+            uniqueTypeClients.map((tc) => ({
               nombre: tc.nombre,
               uploaded_by_authsupa: tc.uploaded_by_authsupa,
               sync_with: () => `'${JSON.stringify(tc.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
@@ -102,8 +102,8 @@ export class TypeClientRepository {
           ).execute();
 
         // 🔥 Asociar los nombres insertados con los IDs originales
-        insertedClients.push(
-          ...uniqueClients.map((tc) => ({
+        insertedTypeClients.push(
+          ...uniqueTypeClients.map((tc) => ({
             id: tc.id, // ⚡ Mantener el ID original en la respuesta
             nombre: tc.nombre,
           }))
@@ -115,8 +115,8 @@ export class TypeClientRepository {
       return {
         message: "Sincronización exitosa, se han obtenido los siguientes resultados:",
         status:true,
-        inserted: insertedClients,
-        duplicated: duplicatedClients,
+        inserted: insertedTypeClients,
+        duplicated: duplicatedTypeClients,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
