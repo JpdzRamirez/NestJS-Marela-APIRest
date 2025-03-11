@@ -18,14 +18,14 @@ export class TypeDocumentRepository {
   ): Promise<{
     message: string;
     status: boolean;
-    inserted: { id: number; nombre: string }[];
+    inserted: { id: number; id_tipodocumento: string ; nombre: string }[];
     duplicated: TypeDocumentDto[];
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const insertedTypeDocuments: { id: number; nombre: string }[] = [];
+    const insertedTypeDocuments: { id: number;id_tipodocumento: string ; nombre: string }[] = [];
     const duplicatedTypeDocuments=typeDocumentArrayFiltred.duplicateTypeDocument;
 
     try {
@@ -92,9 +92,10 @@ export class TypeDocumentRepository {
         await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.tipo_documento`, ['nombre', 'uploaded_by_authsupa', 'sync_with'])
+          .into(`${schema}.tipo_documento`, ['nombre','id_tipodocumento', 'uploaded_by_authsupa', 'sync_with'])
           .values(
             uniqueDocument.map((tc) => ({
+              id_tipodocumento: tc.id_tipodocumento,
               nombre: tc.nombre,
               uploaded_by_authsupa: tc.uploaded_by_authsupa,
               sync_with: () => `'${JSON.stringify(tc.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
@@ -104,7 +105,8 @@ export class TypeDocumentRepository {
         // 🔥 Asociar los nombres insertados con los IDs originales
         insertedTypeDocuments.push(
           ...uniqueDocument.map((tc) => ({
-            id: tc.id, // ⚡ Mantener el ID original en la respuesta
+            id: tc.id, 
+            id_tipodocumento: tc.id_tipodocumento, 
             nombre: tc.nombre,
           }))
         );

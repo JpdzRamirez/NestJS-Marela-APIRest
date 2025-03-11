@@ -18,7 +18,7 @@ export class TypeClientServices {
   async submitAllTypeClient(AuthRequest: AuthRequest, typeClientsArray: TypeClientDto[]): Promise<{ 
     message: string;
     status: boolean;
-    inserted: { id: number; nombre: string }[];
+    inserted: { id: number; id_tipocliente: string ; nombre: string }[];
     duplicated: TypeClientDto[];
 }> {
     const user = AuthRequest.user;

@@ -17,7 +17,7 @@ export class TypeDocumentServices {
 /** ✅ Obtener todas los tipos de clientes*/
   async submitAllTypeDocument(AuthRequest: AuthRequest, typeDocumentArray: TypeDocumentDto[]): Promise<{ 
     message: String;
-    inserted: { id: number; nombre: string }[]; 
+    inserted: { id: number; id_tipodocumento: string; nombre: string }[]; 
     duplicated: { id: number; nombre: string }[] 
 }> {
     const user = AuthRequest.user;

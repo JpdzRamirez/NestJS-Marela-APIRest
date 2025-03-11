@@ -17,7 +17,7 @@ export class ClientServices {
   async submitAllClients(AuthRequest: AuthRequest, clientsArray: ClientsDto[]): Promise<{ 
       message: string,
       status: boolean,
-      inserted: { id: number; id_client: number; nombre: string }[]      
+      inserted: { id: number; id_client: string; nombre: string }[]      
   }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa ) {

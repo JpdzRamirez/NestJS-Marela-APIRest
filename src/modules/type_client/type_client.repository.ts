@@ -18,14 +18,14 @@ export class TypeClientRepository {
   ): Promise<{
     message: string;
     status: boolean;
-    inserted: { id: number; nombre: string }[];
+    inserted: { id: number; id_tipocliente: string ;nombre: string }[];
     duplicated: TypeClientDto[];
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const insertedTypeClients: { id: number; nombre: string }[] = [];
+    const insertedTypeClients: { id: number;id_tipocliente:string ;nombre: string }[] = [];
     const duplicatedTypeClients=typeClientArrayFiltred.duplicateTypeClient;
 
     try {
@@ -79,6 +79,7 @@ export class TypeClientRepository {
 
           if (existingTypeClient) {
             existingTypeClient.id=tc.id;
+            existingTypeClient.id_tipocliente=tc.id_tipocliente;
             existingTypeClient.source_failure='DataBase';
             duplicatedTypeClients.push(existingTypeClient);
             return false;
@@ -92,10 +93,11 @@ export class TypeClientRepository {
         await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.tipo_cliente`, ['nombre', 'uploaded_by_authsupa', 'sync_with'])
+          .into(`${schema}.tipo_cliente`, ['nombre','id_tipocliente', 'uploaded_by_authsupa', 'sync_with'])
           .values(
             uniqueTypeClients.map((tc) => ({
               nombre: tc.nombre,
+              id_tipocliente: tc.id_tipocliente,
               uploaded_by_authsupa: tc.uploaded_by_authsupa,
               sync_with: () => `'${JSON.stringify(tc.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
             }))
@@ -104,7 +106,8 @@ export class TypeClientRepository {
         // 🔥 Asociar los nombres insertados con los IDs originales
         insertedTypeClients.push(
           ...uniqueTypeClients.map((tc) => ({
-            id: tc.id, // ⚡ Mantener el ID original en la respuesta
+            id: tc.id, 
+            id_tipocliente: tc.id_tipocliente,
             nombre: tc.nombre,
           }))
         );

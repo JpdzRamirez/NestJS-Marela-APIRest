@@ -76,6 +76,7 @@ export class UtilityService {
                     duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
                     let newClient = new TypeClient();
                     newClient.id=typeClient.id;
+                    newClient.id_tipocliente=typeClient.id_tipocliente;
                     newClient.nombre = typeClient.nombre;
                     // Asignar el usuario que sube el dato
                     newClient.uploaded_by_authsupa = uuid_authsupa;
@@ -84,12 +85,13 @@ export class UtilityService {
                     newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
                     uniqueTypeClient.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
                 } else {
-                  typeClient.source_failure='Request';
+                  typeClient.source_failure='Request';                  
                   duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
                 }
             } else {
                 let newClient = new TypeClient();
                 newClient.id=typeClient.id;
+                newClient.id_tipocliente=typeClient.id_tipocliente;
                 newClient.nombre = typeClient.nombre;
                 // Asignar el usuario que sube el dato
                 newClient.uploaded_by_authsupa = uuid_authsupa;
@@ -128,11 +130,12 @@ export class UtilityService {
     
                 // Comparar cuál está mejor escrita
                 if (this.isBetterFormatted(typeDocument.nombre, existingClient.nombre)) {
+                  existingClient.id_tipodocumento=typeDocument.id_tipodocumento;
                   duplicateTypeDocument.push({ ...existingClient }); // Guardar copia del duplicado
-                    let newClient = new TypeClient();
+                    let newClient = new TypeDocument();
                     newClient.id=typeDocument.id;
-                    newClient.nombre = typeDocument.nombre;
-                    // Asignar el usuario que sube el dato
+                    newClient.id_tipodocumento=typeDocument.id_tipodocumento;
+                    newClient.nombre = typeDocument.nombre;                    
                     newClient.uploaded_by_authsupa = uuid_authsupa;
         
                     // Construir el arreglo sync_with
@@ -143,8 +146,9 @@ export class UtilityService {
                   duplicateTypeDocument.push({ ...typeDocument }); // Guardar este en duplicados
                 }
             } else {
-                let newClient = new TypeClient();
+                let newClient = new TypeDocument();
                 newClient.id=typeDocument.id;
+                newClient.id_tipodocumento=typeDocument.id_tipodocumento;
                 newClient.nombre = typeDocument.nombre;
                 // Asignar el usuario que sube el dato
                 newClient.uploaded_by_authsupa = uuid_authsupa;

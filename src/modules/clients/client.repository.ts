@@ -17,18 +17,18 @@ export class ClientRepository {
     async submitAllClients(schema: string, newClients: Client[]): Promise<{ 
       message: string,
       status: boolean,
-      inserted: { id: number; id_client: number; nombre: string }[]     
+      inserted: { id: number; id_client: string; nombre: string }[]     
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
       
-      const insertedClients: { id: number; id_client: number; nombre: string }[] = [];
+      const insertedClients: { id: number; id_client: string; nombre: string }[] = [];
       try {
         const entityManager = queryRunner.manager;
     
         // 🔥 Insertar los clientes con el esquema dinámico
-        const savedClients = await entityManager
+          await entityManager
           .createQueryBuilder()
           .insert()
           .into(`${schema}.clientes`, [

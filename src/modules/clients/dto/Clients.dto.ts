@@ -6,6 +6,11 @@ export class ClientsDto {
   @IsInt({ message: 'El id debe ser entero' })
   id!: number;
 
+  
+  @IsNotEmpty({ message: 'El id_client no puede estar vacío' })
+  @IsString()
+  id_client!: string;
+
   @IsString()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @Matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, { message: 'El nombre solo debe contener letras y espacios' })
@@ -47,10 +52,6 @@ export class ClientsDto {
   @IsString()
   @IsOptional() 
   source_failure?: string;
-
-  @IsNotEmpty({ message: 'El id_client no puede estar vacío' })
-  @IsInt()
-  id_client!: number;
 
 }
 

@@ -6,6 +6,10 @@ export class TypeDocumentDto {
   @IsInt({ message: 'El id debe ser entero' })
   id!: number;
 
+  @IsNotEmpty({ message: 'El id_tipodocumento no puede estar vacío' })
+  @IsString()
+  id_tipodocumento!: string;
+
   @IsString()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @Matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, { message: 'El nombre solo debe contener letras y espacios' })

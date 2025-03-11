@@ -9,8 +9,8 @@ export class Client {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
-    @Column({ name: 'id_client',type: 'int8', nullable: false })
-    id_client!: number;
+    @Column({ name: 'id_client',type: 'varchar', nullable: false, unique: true })
+    id_client!: string;
 
     @Column({ name: 'nombre', type: 'varchar', nullable: true })
     nombre!: string;
@@ -37,13 +37,11 @@ export class Client {
     sync_with?: Record<string, any>[] | null;
     
     @ManyToOne(() => TypeClient, { nullable: false, eager: false })
-    @JoinColumn({ name: 'tipocliente_id' })
+    @JoinColumn({ name: 'tipocliente_id' , referencedColumnName: 'id_tipocliente' })
     tipo_cliente?: TypeClient | null;
 
     @ManyToOne(() => TypeDocument, { nullable: false, eager: false }) 
-    @JoinColumn({ name: 'tipodocumento_id' })
+    @JoinColumn({ name: 'tipodocumento_id', referencedColumnName: 'id_tipodocumento' })
     tipo_documento?: TypeDocument | null;
-
-
 
 }

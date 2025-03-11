@@ -5,6 +5,9 @@ import "reflect-metadata";
 export class TypeClient {
     @PrimaryGeneratedColumn("increment")
     id!: number;
+    
+    @Column({ name: 'id_tipocliente',type: 'varchar', nullable: false, unique: true })
+    id_tipocliente!: string;
 
     @Column({ name: 'nombre', unique: true, nullable: true })
     nombre!: string;
