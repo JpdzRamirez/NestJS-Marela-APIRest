@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from "crypto";
 
-import { PostAllClientsDto } from '../../modules/clients/dto/post-AllClients.dto';
+import { ClientsDto } from '../../modules/clients/dto/Clients.dto';
 import { TypeClientDto } from '../../modules/type_client/dto/typeClient.dto';
 import { TypeDocumentDto } from '../../modules/type_document/dto/typeDocument.dto';
 
@@ -31,24 +31,25 @@ export class UtilityService {
         return this.hashMD5(entrada) === hashEsperado;
       }
 
-      mapDtoToClientEntity(dto: PostAllClientsDto): Client {
-        const client = new Client();
-    
-        client.id_mobil = dto.id;
-        client.nombre = dto.nombre;
-        client.apellido = dto.apellido;
-        client.correo = dto.correo;
-        client.documento = dto.numerodocumento;
-        client.direccion = dto.direccion;
-        client.telefono = dto.telefono;
-        client.sincronizado_mobil = dto.sincronizadoMobil;
-        client.sincronizado_web = dto.sincronizadoWeb;
-    
-        // Mapear relaciones ManyToOne
-        client.tipo_cliente = { id: dto.tipoCliente } as TypeClient;
-        client.tipo_documento = { id: dto.tipoDocumento } as TypeDocument;
-    
-        return client;
+      mapDtoClientToEntity(clientArray: ClientsDto[], uuid_authsupa: string): Client[] {
+        const uniqueClient:Client[]=[];        
+        for (const client of clientArray) {
+          let newClient = new Client();
+          newClient.id = client.id;
+          newClient.id_client = client.id_client;
+          newClient.nombre = client.nombre;
+          newClient.apellido = client.apellido;
+          newClient.documento = client.numeroDocumento;
+          newClient.correo = client.correo;
+          newClient.direccion = client.direccion;
+          newClient.telefono = client.telefono;          
+          newClient.sync_with = [{ id: newClient.id, uuid_authsupa }];          
+          newClient.tipo_cliente = { id: client.tipoCliente } as TypeClient;
+          newClient.tipo_documento = { id: client.tipoDocumento } as TypeDocument;          
+          newClient.uploaded_by_authsupa = uuid_authsupa;
+          uniqueClient.push(newClient);
+        }
+        return uniqueClient;
       }
 
     mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientArray: TypeClientDto[], uuid_authsupa: string): 

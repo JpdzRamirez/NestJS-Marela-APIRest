@@ -1,5 +1,6 @@
-import { IsEmail, IsNotEmpty, IsString, Matches, IsBoolean, IsOptional, IsNumber, IsInt } from 'class-validator';
-export class PostAllClientsDto {
+import { Type } from 'class-transformer';
+import { IsEmail, IsNotEmpty, IsString, Matches, IsArray, IsOptional, ValidateNested, IsInt } from 'class-validator';
+export class ClientsDto {
 
   @IsNotEmpty({ message: 'El id es obligatorio' })
   @IsInt({ message: 'El id debe ser entero' })
@@ -21,7 +22,7 @@ export class PostAllClientsDto {
 
   @IsNotEmpty({ message: 'El documento no puede estar vacío' })
   @IsString({ message: 'El documento debe ser un número' })
-  numerodocumento!: string;
+  numeroDocumento!: string;
 
   @IsOptional()
   @IsString({ message: 'El teléfono debe ser una cadena de texto' })
@@ -35,19 +36,28 @@ export class PostAllClientsDto {
   @IsInt()
   ciudad?: number;
 
-  @IsNotEmpty({ message: 'Tipo de documento es obligatorio' })
+  @IsOptional()
   @IsInt()
-  tipoDocumento!: number;
+  tipoDocumento?: number;
 
-  @IsNotEmpty({ message: 'Tipo de cliente es obligatorio' })
+  @IsOptional()
   @IsInt()
-  tipoCliente!: number;
+  tipoCliente?: number;
 
-  @IsNotEmpty({ message: 'Sincronizado mobil es obligatorio' })
-  @IsBoolean({ message: 'Sincronizado Mobil debe ser booleano' })
-  sincronizadoMobil!: Boolean;
+  @IsString()
+  @IsOptional() 
+  source_failure?: string;
 
-  @IsNotEmpty({ message: 'Sincronizado Web es obligatorio' })
-  @IsBoolean({ message: 'Sincronizado Web debe ser booleano' })
-  sincronizadoWeb!: Boolean;
+  @IsNotEmpty({ message: 'El id_client no puede estar vacío' })
+  @IsInt()
+  id_client!: number;
+
+}
+
+export class ClientArrayDto {
+  @IsArray({ message: 'El cuerpo debe ser un array de clientes' })
+  @ValidateNested({ each: true })
+  @Type(() => ClientsDto)
+  @IsNotEmpty({ message: 'El array de clientes no puede estar vacío' })
+  clients!: ClientsDto[];
 }

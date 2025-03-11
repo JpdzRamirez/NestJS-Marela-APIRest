@@ -15,7 +15,7 @@ import { ClientServices } from './clients.service';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/role-check.guard';
 
-import { PostAllClientsDto } from './dto/post-AllClients.dto';
+import { ClientArrayDto } from './dto/Clients.dto';
 
 import { AuthRequest } from '../../types';
 
@@ -25,12 +25,9 @@ export class ClientController {
 constructor(private readonly clientServices: ClientServices) {}
 
   /** ✅ Obtener todas las facturas (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
   @Post('admin/post-all-clients')
-  async submitAllClients(@Req() request: AuthRequest,@Body() clientsArray: PostAllClientsDto | PostAllClientsDto[]) {
-  // Asegurar que siempre sea un array
-  const clients = Array.isArray(clientsArray) ? clientsArray : [clientsArray];
-  
-  return await this.clientServices.submitAllClients(request, clients);
+  async submitAllClients(@Req() request: AuthRequest,@Body() clientsArray: ClientArrayDto) {    
+  return await this.clientServices.submitAllClients(request, clientsArray.clients);
   }
 }

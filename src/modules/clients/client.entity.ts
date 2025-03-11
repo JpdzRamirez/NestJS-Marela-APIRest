@@ -9,20 +9,17 @@ export class Client {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
-    @Column({ name: 'id_mobil',type: 'int8', nullable: false })
-    id_mobil?: number;
-
-    @Column({ name: 'numero_cuotas',type: 'int8', nullable: false })
-    numero_cuotas?: number;
+    @Column({ name: 'id_client',type: 'int8', nullable: false })
+    id_client!: number;
 
     @Column({ name: 'nombre', type: 'varchar', nullable: true })
-    nombre?: string;
-
-    @Column({ name: 'documento', type: 'varchar',nullable: true, unique: true })
-    documento?: string; 
+    nombre!: string;
 
     @Column({ name: 'apellido', type: 'varchar',nullable: true })
     apellido?: string; 
+
+    @Column({ name: 'documento', type: 'varchar',nullable: true, unique: true })
+    documento?: string; 
 
     @Column({ name: 'correo', type: 'varchar',nullable: true })
     correo?: string; 
@@ -33,11 +30,11 @@ export class Client {
     @Column({ name: 'telefono', type: 'varchar',nullable: true})
     telefono?: string;  
 
-    @Column({ name: 'sincronizado_mobil', type: 'bool',nullable: true})
-    sincronizado_mobil?: Boolean;  
+    @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
+    uploaded_by_authsupa?: string;
 
-    @Column({ name: 'sincronizado_web', type: 'bool',nullable: true})
-    sincronizado_web?: Boolean;  
+    @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
+    sync_with?: Record<string, any>[] | null;
     
     @ManyToOne(() => TypeClient, { nullable: false, eager: false })
     @JoinColumn({ name: 'tipocliente_id' })
@@ -46,5 +43,7 @@ export class Client {
     @ManyToOne(() => TypeDocument, { nullable: false, eager: false }) 
     @JoinColumn({ name: 'tipodocumento_id' })
     tipo_documento?: TypeDocument | null;
+
+
 
 }
