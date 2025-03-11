@@ -35,7 +35,7 @@ export class TypeClientRepository {
         nombre: tc.nombre
           .trim()
           .toLowerCase()
-          .replace(/\s+/g, "")
+          .replace(/\s+/g, " ")
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, ""), // Quitar acentos y espacios innecesarios
       }));
@@ -56,7 +56,7 @@ export class TypeClientRepository {
           client.nombre
             .trim()
             .toLowerCase()
-            .replace(/\s+/g, "")
+            .replace(/\s+/g, " ")
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
         )
@@ -67,7 +67,7 @@ export class TypeClientRepository {
         const normalizedName = tc.nombre
           .trim()
           .toLowerCase()
-          .replace(/\s+/g, "")
+          .replace(/\s+/g, " ")
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
 

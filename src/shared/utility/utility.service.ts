@@ -74,7 +74,7 @@ export class UtilityService {
         const normalizedName = typeClient.nombre
           .trim()
           .toLowerCase()
-          .replace(/\s+/g, "") 
+          .replace(/\s+/g, " ") 
           .normalize("NFD") 
           .replace(/[\u0300-\u036f]/g, ""); 
     
@@ -108,7 +108,7 @@ export class UtilityService {
         const normalizedName = typeDocument.nombre
           .trim()
           .toLowerCase()
-          .replace(/\s+/g, "") 
+          .replace(/\s+/g, " ") 
           .normalize("NFD") 
           .replace(/[\u0300-\u036f]/g, ""); 
     
