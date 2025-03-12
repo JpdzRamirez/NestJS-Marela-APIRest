@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, ValidateNested, IsNotEmpty, IsString, Matches, IsInt,IsOptional  } from 'class-validator';
+import { IsArray, ValidateNested, IsNotEmpty, IsString, Matches, IsInt,IsOptional, IsUUID  } from 'class-validator';
 
 export class TypeDocumentDto {
   @IsNotEmpty({ message: 'El id es obligatorio' })
@@ -7,7 +7,7 @@ export class TypeDocumentDto {
   id!: number;
 
   @IsNotEmpty({ message: 'El id_tipodocumento no puede estar vacío' })
-  @IsString()
+  @IsUUID()
   id_tipodocumento!: string;
 
   @IsString()
@@ -24,5 +24,5 @@ export class TypeDocumentArrayDto {
   @ValidateNested({ each: true })
   @Type(() => TypeDocumentDto)
   @IsNotEmpty({ message: 'El array de clientes no puede estar vacío' })
-  type_document!: TypeDocumentDto[];
+  type_documents!: TypeDocumentDto[];
 }

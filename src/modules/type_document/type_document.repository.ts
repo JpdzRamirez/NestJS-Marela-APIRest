@@ -205,7 +205,7 @@ export class TypeDocumentRepository {
       const uniqueTypeDocument = typeDocumentArrayFiltred.uniqueTypeDocument;
   
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
-      const existingClients = await entityManager
+      const existingTypeDocuments = await entityManager
         .createQueryBuilder()
         .select("tipo_documento.*")
         .from(`${schema}.tipo_documento`, "tipo_documento")
@@ -215,7 +215,7 @@ export class TypeDocumentRepository {
         .getRawMany();
   
       for (const typeDocument of uniqueTypeDocument) {
-        const existingTypeDocument = existingClients.find(
+        const existingTypeDocument = existingTypeDocuments.find(
           (c) => c.nombre.localeCompare(typeDocument.nombre, undefined, { sensitivity: "base" }) === 0
         );
   

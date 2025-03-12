@@ -3,13 +3,14 @@ import "reflect-metadata";
 
 import { TypeClient } from '../type_client/type_client.entity';
 import { TypeDocument } from '../type_document/type_document.entity';
+import { MunicipalUnit } from '../municipal_unit/municipal_unit.entity';
 
 @Entity('clientes')
 export class Client {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
-    @Column({ name: 'id_client',type: 'varchar', nullable: false, unique: true })
+    @Column({ name: 'id_client',type: 'uuid', nullable: false, unique: true })
     id_client!: string;
 
     @Column({ name: 'nombre', type: 'varchar', nullable: true })
@@ -43,5 +44,9 @@ export class Client {
     @ManyToOne(() => TypeDocument, { nullable: false, eager: false }) 
     @JoinColumn({ name: 'tipodocumento_id', referencedColumnName: 'id_tipodocumento' })
     tipo_documento?: TypeDocument | null;
+
+    @ManyToOne(() => MunicipalUnit, { nullable: false, eager: false })
+    @JoinColumn({ name: 'unidad_municipal_id' , referencedColumnName: 'id_unidadmunicipal' })
+    unidad_municipal?: MunicipalUnit | null;
 
 }

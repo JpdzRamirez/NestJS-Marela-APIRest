@@ -31,7 +31,7 @@ export class UtilityService {
         return this.hashMD5(entrada) === hashEsperado;
       }
 
-      mapDtoClientToEntity(clientArray: ClientsDto[], uuid_authsupa: string): Client[] {
+    mapDtoClientToEntity(clientArray: ClientsDto[], uuid_authsupa: string): Client[] {
         const uniqueClient:Client[]=[];        
         for (const client of clientArray) {
           let newClient = new Client();
@@ -44,8 +44,8 @@ export class UtilityService {
           newClient.direccion = client.direccion;
           newClient.telefono = client.telefono;          
           newClient.sync_with = [{ id: newClient.id, uuid_authsupa }];          
-          newClient.tipo_cliente = { id: client.tipoCliente } as TypeClient;
-          newClient.tipo_documento = { id: client.tipoDocumento } as TypeDocument;          
+          newClient.tipo_cliente = { id_tipocliente: client.tipoCliente } as Partial<TypeClient> as TypeClient;
+          newClient.tipo_documento = { id_tipodocumento: client.tipoDocumento } as Partial<TypeDocument> as TypeDocument;        
           newClient.uploaded_by_authsupa = uuid_authsupa;
           uniqueClient.push(newClient);
         }

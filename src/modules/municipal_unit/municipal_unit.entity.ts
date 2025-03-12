@@ -10,6 +10,9 @@ export class MunicipalUnit {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
+    @Column({ name: 'id_unidadmunicipal',type: 'uuid', nullable: false, unique: true })
+    id_unidadmunicipal!: string;
+
     @Column({ name: 'nombre',type: 'varchar', length: 50, nullable: false })
     nombre?: string;
 

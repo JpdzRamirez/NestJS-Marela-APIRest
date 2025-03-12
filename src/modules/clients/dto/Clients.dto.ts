@@ -1,14 +1,13 @@
 import { Type } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString, Matches, IsArray, IsOptional, ValidateNested, IsInt } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Matches, IsArray, IsOptional, ValidateNested, IsInt, IsUUID } from 'class-validator';
 export class ClientsDto {
 
   @IsNotEmpty({ message: 'El id es obligatorio' })
   @IsInt({ message: 'El id debe ser entero' })
   id!: number;
 
-  
   @IsNotEmpty({ message: 'El id_client no puede estar vacío' })
-  @IsString()
+  @IsUUID()
   id_client!: string;
 
   @IsString()
@@ -48,6 +47,10 @@ export class ClientsDto {
   @IsOptional()
   @IsInt()
   tipoCliente?: number;
+
+  @IsOptional()
+  @IsUUID()
+  unidadMunicipal?: string;
 
   @IsString()
   @IsOptional() 

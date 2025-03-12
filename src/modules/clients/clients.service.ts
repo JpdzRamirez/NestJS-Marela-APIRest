@@ -31,4 +31,36 @@ export class ClientServices {
 
   }
 
+    async getAllClients(AuthRequest: AuthRequest): Promise<{ 
+      message: String,
+      clients:Client[]
+      }> {
+      const user = AuthRequest.user;
+      if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
+        throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
+      }
+      // Enviar los clientes al repositorio para inserción en la BD
+      return await this.clientRepository.getAllClients(user.schemas.name,user.uuid_authsupa);
+    }
+  
+  
+  
+    /** ✅ Sincronizar los tipos de clientes*/
+    async syncClients(AuthRequest: AuthRequest, clientsArray: ClientsDto[]): Promise<{ 
+      message: String,
+      status: Boolean  
+  }> {
+      const user = AuthRequest.user;
+      if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
+        throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
+      }
+      const uuidAuthsupa: string = user.uuid_authsupa;
+  
+      const clientArrayFiltred = this.utilityService.mapDtoClientToEntity(clientsArray,uuidAuthsupa);
+  
+      // Enviar los clientes al repositorio para inserción en la BD
+      return await this.clientRepository.syncClient(user.schemas.name, uuidAuthsupa,clientArrayFiltred);
+  
+    }
+
 }

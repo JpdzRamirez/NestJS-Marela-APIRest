@@ -6,7 +6,7 @@ export class TypeDocument {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
-    @Column({ name: 'id_tipodocumento',type: 'varchar', nullable: false, unique: true })
+    @Column({ name: 'id_tipodocumento',type: 'uuid', nullable: false, unique: true })
     id_tipodocumento!: string;
 
     @Column({ name: 'nombre', unique: true, nullable: true })

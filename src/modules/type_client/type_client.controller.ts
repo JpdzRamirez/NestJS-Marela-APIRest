@@ -36,7 +36,6 @@ constructor(private readonly typeClientServices: TypeClientServices) {}
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
   @Get('admin/get-all-typeClient')
   async getAllTypeClient(@Req() request: AuthRequest ) {    
-    
     return await this.typeClientServices.getAllTypeClient(request);
   }
 

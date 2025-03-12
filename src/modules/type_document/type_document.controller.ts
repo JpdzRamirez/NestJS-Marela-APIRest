@@ -28,7 +28,7 @@ constructor(private readonly typeDocumentServices: TypeDocumentServices) {}
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
   @Post('admin/post-all-typeDocument')
   async submitAllTypeDocument(@Req() request: AuthRequest,@Body() typeDocumentArray: TypeDocumentArrayDto ) {      
-  return await this.typeDocumentServices.submitAllTypeDocument(request, typeDocumentArray.type_document);
+  return await this.typeDocumentServices.submitAllTypeDocument(request, typeDocumentArray.type_documents);
   }
 
   /** ✅ Obtener todos los tipos de documentos no sincronizados desde el la base de datos (admin y fontanero) */
@@ -42,7 +42,7 @@ constructor(private readonly typeDocumentServices: TypeDocumentServices) {}
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
   @Patch('admin/patch-sync-typeDocument')
     async syncTypeDocument(@Req() request: AuthRequest,@Body() typeDocumentArray: TypeDocumentArrayDto ) {    
-    return await this.typeDocumentServices.syncTypeDocument(request,typeDocumentArray.type_document);
+    return await this.typeDocumentServices.syncTypeDocument(request,typeDocumentArray.type_documents);
   }
 
 }
