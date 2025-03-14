@@ -7,6 +7,9 @@ export class Invoice {
     @PrimaryGeneratedColumn("increment") // ID autoincremental
     id!: number;
 
+    @Column({ name: 'id_factura',type: 'uuid', nullable: false, unique: true })
+    id_factura!: string;
+
     @Column({ name: 'qr', type:'varchar',nullable:true })
     qr?: string | null;  // Puede ser opcional si Supabase lo genera
 
@@ -41,12 +44,12 @@ export class Invoice {
     fecha_pago_oportuno?: Date; 
 
     @ManyToOne(() => Contract, (contract) => contract.facturas, { nullable: true})
-    @JoinColumn({ name: 'contrato_id' }) // Nombre de la columna FK en la BD
+    @JoinColumn({ name: 'contrato_id', referencedColumnName: 'id_contrato' }) // Nombre de la columna FK en la BD
     contrato: Contract;
 
     // Relación uno a uno con la tabla public.users
     @OneToOne(() => User)
-    @JoinColumn({ name: 'user_id' }) 
+    @JoinColumn({ name: 'user_id' , referencedColumnName: 'uuid_authsupa'}) 
     usuario: User;
 
 }

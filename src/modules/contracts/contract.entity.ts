@@ -20,23 +20,35 @@ export class Contract {
   @PrimaryGeneratedColumn('increment') 
   id!: number;
 
+  @Column({ name: 'id_contrato',type: 'uuid', nullable: false, unique: true })
+  id_contrato!: string;
+
   @Column({ name: 'fecha', type: 'timestamp',nullable: false})
   fecha!: Date; 
 
-  @ManyToOne(() => Client, { nullable: true, eager: true })
-  @JoinColumn({ name: 'cliente_id' })
+  @ManyToOne(() => Client, { nullable: true, eager: false })
+  @JoinColumn({ name: 'cliente_id', referencedColumnName: 'id_cliente' })
   cliente?: Client | null;
 
-  @ManyToOne(() => Meter, { nullable: true, eager: true })
-  @JoinColumn({ name: 'medidor_id' })
+  @ManyToOne(() => Meter, { nullable: true, eager: false })
+  @JoinColumn({ name: 'medidor_id' , referencedColumnName: 'id_medidor'})
   medidor?: Meter | null;
 
-  @ManyToOne(() => TypeService, { nullable: true, eager: true })
-  @JoinColumn({ name: 'tiposervicio_id' })
+  @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
+  uploaded_by_authsupa?: string;
+
+  @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  created_at!: Date;
+
+  @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
+  sync_with?: Record<string, any>[] | null;
+
+  @ManyToOne(() => TypeService, { nullable: true, eager: false })
+  @JoinColumn({ name: 'tiposervicio_id', referencedColumnName: 'id_tiposervicio' })
   tipo_servicio?: TypeService | null;
 
-  @ManyToOne(() => MunicipalUnit, { nullable: true, eager: true })
-  @JoinColumn({ name: 'unidad_municipal_id' })
+  @ManyToOne(() => MunicipalUnit, { nullable: true, eager: false })
+  @JoinColumn({ name: 'unidad_municipal_id', referencedColumnName: 'id_unidadmunicipal' })
   unidad_municipal?: MunicipalUnit | null;
 
   @OneToMany(() => Invoice, (invoice) => invoice.contrato)

@@ -5,6 +5,9 @@ import { ClientsDto } from '../../modules/clients/dto/Clients.dto';
 import { TypeClientDto } from '../../modules/type_client/dto/typeClient.dto';
 import { TypeDocumentDto } from '../../modules/type_document/dto/typeDocument.dto';
 
+import { WaterMeter } from '../../modules/meters/meters.entity';
+import { WaterMetersDto } from '../../modules/meters/dto/meters.dto';
+
 
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
@@ -14,22 +17,41 @@ import { TypeDocument } from '../../modules/type_document/type_document.entity';
 export class UtilityService {
 
   
-      generateAuthCode(length = 5): string {
+    generateAuthCode(length = 5): string {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let code = '';
         for (let i = 0; i < length; i++) {
           code += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         return code;
-      }
+    }
       
-      hashMD5(text: string): string {
+    hashMD5(text: string): string {
         return createHash("md5").update(text).digest("hex");
-      }
+    }
       
-      verificarHash(entrada: string, hashEsperado: string): boolean {
+    verificarHash(entrada: string, hashEsperado: string): boolean {
         return this.hashMD5(entrada) === hashEsperado;
-      }
+    }
+    
+    // Función para evaluar cuál nombre está mejor escrito
+    isBetterFormatted(newName: string, existingName: string): boolean {
+          const newNameScore = this.getNameQualityScore(newName);
+          const existingNameScore = this.getNameQualityScore(existingName);
+          return newNameScore > existingNameScore;
+    }
+        
+    // Función que asigna una puntuación a los nombres según calidad
+    getNameQualityScore(name: string): number {
+          let score = 0;
+        
+          if (/^[A-Z]/.test(name)) score += 2; // Comienza con mayúscula
+          if (/^[A-Za-z\s]+$/.test(name)) score += 3; // Solo letras y espacios
+          if (!/\s{2,}/.test(name)) score += 1; // No tiene espacios dobles
+          if (name.length > 2) score += 1; // No es demasiado corto
+        
+          return score;
+    }
 
     mapDtoClientToEntity(clientArray: ClientsDto[], uuid_authsupa: string): Client[] {
         const uniqueClient:Client[]=[];        
@@ -52,16 +74,16 @@ export class UtilityService {
         return uniqueClient;
       }
 
-    mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientArray: TypeClientDto[], uuid_authsupa: string): 
-      { uniqueTypeClient: TypeClient[], 
-        duplicateTypeClient: TypeClientDto[] 
+    mapDtoWaterMeterToEntityAndRemoveDuplicate(waterMeterArray: WaterMetersDto[], uuid_authsupa: string): 
+      { uniqueWaterMeter: WaterMeter[], 
+        duplicateWaterMeter: WaterMetersDto[] 
       } {
         const uniqueTypeClient = new Map<string, TypeClient>();
-        const duplicateTypeClient: TypeClientDto[] = [];
+        const duplicateWaterMeter: TypeClientDto[] = [];
     
-        for (const typeClient of typeClientArray) {
+        for (const waterMeter of waterMeterArray) {
             // Normalizar el nombre para comparación
-            const normalizedName = typeClient.nombre
+            const normalizedName = waterMeter.nombre
                 .trim()
                 .toLowerCase()
                 .replace(/\s+/g, " ") // Normaliza los espacios
@@ -72,12 +94,12 @@ export class UtilityService {
                 const existingClient = uniqueTypeClient.get(normalizedName)!;
     
                 // Comparar cuál está mejor escrita
-                if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {
-                    duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
-                    let newClient = new TypeClient();
-                    newClient.id=typeClient.id;
-                    newClient.id_tipocliente=typeClient.id_tipocliente;
-                    newClient.nombre = typeClient.nombre;
+                if (this.isBetterFormatted(waterMeter.nombre, existingClient.nombre)) {
+                  duplicateWaterMeter.push({ ...existingClient }); // Guardar copia del duplicado
+                    let newWaterMeter = new WaterMeter();
+                    newWaterMeter.id=waterMeter.id;
+                    newWaterMeter.id_medidor=waterMeter.id_medidor;
+                    newWaterMeter.contrato = waterMeter.nombre;
                     // Asignar el usuario que sube el dato
                     newClient.uploaded_by_authsupa = uuid_authsupa;
         
@@ -86,7 +108,7 @@ export class UtilityService {
                     uniqueTypeClient.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
                 } else {
                   typeClient.source_failure='Request';                  
-                  duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
+                  duplicateWaterMeter.push({ ...typeClient }); // Guardar este en duplicados
                 }
             } else {
                 let newClient = new TypeClient();
@@ -104,8 +126,8 @@ export class UtilityService {
         }
     
         return {
-            uniqueTypeClient: Array.from(uniqueTypeClient.values()),
-            duplicateTypeClient,
+          uniqueWaterMeter: Array.from(uniqueTypeClient.values()),
+            duplicateWaterMeter,
         };
     }
 
@@ -233,23 +255,62 @@ export class UtilityService {
       };
     }
     
-    // Función para evaluar cuál nombre está mejor escrito
-    isBetterFormatted(newName: string, existingName: string): boolean {
-      const newNameScore = this.getNameQualityScore(newName);
-      const existingNameScore = this.getNameQualityScore(existingName);
-      return newNameScore > existingNameScore;
-    }
-    
-    // Función que asigna una puntuación a los nombres según calidad
-    getNameQualityScore(name: string): number {
-      let score = 0;
-    
-      if (/^[A-Z]/.test(name)) score += 2; // Comienza con mayúscula
-      if (/^[A-Za-z\s]+$/.test(name)) score += 3; // Solo letras y espacios
-      if (!/\s{2,}/.test(name)) score += 1; // No tiene espacios dobles
-      if (name.length > 2) score += 1; // No es demasiado corto
-    
-      return score;
-    }
+    mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientArray: TypeClientDto[], uuid_authsupa: string): 
+    { uniqueTypeClient: TypeClient[], 
+      duplicateTypeClient: TypeClientDto[] 
+    } {
+      const uniqueTypeClient = new Map<string, TypeClient>();
+      const duplicateTypeClient: TypeClientDto[] = [];
+  
+      for (const typeClient of typeClientArray) {
+          // Normalizar el nombre para comparación
+          const normalizedName = typeClient.nombre
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ") // Normaliza los espacios
+              .normalize("NFD") // Descompone caracteres con tilde
+              .replace(/[\u0300-\u036f]/g, ""); // Remueve diacríticos
+          
+          if (uniqueTypeClient.has(normalizedName)) {
+              const existingClient = uniqueTypeClient.get(normalizedName)!;
+  
+              // Comparar cuál está mejor escrita
+              if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {
+                  duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
+                  let newClient = new TypeClient();
+                  newClient.id=typeClient.id;
+                  newClient.id_tipocliente=typeClient.id_tipocliente;
+                  newClient.nombre = typeClient.nombre;
+                  // Asignar el usuario que sube el dato
+                  newClient.uploaded_by_authsupa = uuid_authsupa;
+      
+                  // Construir el arreglo sync_with
+                  newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
+                  uniqueTypeClient.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
+              } else {
+                typeClient.source_failure='Request';                  
+                duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
+              }
+          } else {
+              let newClient = new TypeClient();
+              newClient.id=typeClient.id;
+              newClient.id_tipocliente=typeClient.id_tipocliente;
+              newClient.nombre = typeClient.nombre;
+              // Asignar el usuario que sube el dato
+              newClient.uploaded_by_authsupa = uuid_authsupa;
+  
+              // Construir el arreglo sync_with
+              newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
+  
+              uniqueTypeClient.set(normalizedName, { ...newClient });
+          }
+      }
+  
+      return {
+          uniqueTypeClient: Array.from(uniqueTypeClient.values()),
+          duplicateTypeClient,
+      };
+  }
+
     
 }

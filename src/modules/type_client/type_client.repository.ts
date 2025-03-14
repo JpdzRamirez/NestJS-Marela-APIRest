@@ -205,6 +205,7 @@ export class TypeClientRepository {
       const entityManager = queryRunner.manager;
       const uniqueTypeClient = typeClientArrayFiltred.uniqueTypeClient;
   
+      if(uniqueTypeClient.length>0){      
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
       const existingClients = await entityManager
         .createQueryBuilder()
@@ -245,6 +246,7 @@ export class TypeClientRepository {
       }
   
       await queryRunner.commitTransaction();
+    }
       return {
         message: "Sincronización completada",
         status: true,

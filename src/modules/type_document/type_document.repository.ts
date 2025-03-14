@@ -95,8 +95,8 @@ export class TypeDocumentRepository {
           .into(`${schema}.tipo_documento`, ['nombre','id_tipodocumento', 'uploaded_by_authsupa', 'sync_with'])
           .values(
             uniqueDocument.map((tc) => ({
-              id_tipodocumento: tc.id_tipodocumento,
               nombre: tc.nombre,
+              id_tipodocumento: tc.id_tipodocumento,
               uploaded_by_authsupa: tc.uploaded_by_authsupa,
               sync_with: () => `'${JSON.stringify(tc.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
             }))
@@ -144,7 +144,7 @@ export class TypeDocumentRepository {
 
   ): Promise<{
     message: string,
-    type_client:TypeDocument[]
+    type_documents:TypeDocument[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -170,14 +170,14 @@ export class TypeDocumentRepository {
       return {
         message:
           'Sincronización exitosa, se han obtenido los siguientes resultados:',
-        type_client: notSyncTypeClient
+        type_documents: notSyncTypeClient
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllTypeClient:', error);
       return {
         message: '¡La Sincronización ha fallado, retornando desde la base de datos!',
-        type_client: []
+        type_documents: []
       };
     } finally {
       await queryRunner.release();
@@ -203,7 +203,8 @@ export class TypeDocumentRepository {
     try {
       const entityManager = queryRunner.manager;
       const uniqueTypeDocument = typeDocumentArrayFiltred.uniqueTypeDocument;
-  
+      
+      if(uniqueTypeDocument.length>0){  
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
       const existingTypeDocuments = await entityManager
         .createQueryBuilder()
@@ -244,6 +245,7 @@ export class TypeDocumentRepository {
       }
   
       await queryRunner.commitTransaction();
+    }
       return {
         message: "Sincronización completada",
         status: true,

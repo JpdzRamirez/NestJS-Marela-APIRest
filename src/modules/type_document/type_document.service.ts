@@ -35,7 +35,7 @@ export class TypeDocumentServices {
 
   async getAllTypeDocument(AuthRequest: AuthRequest): Promise<{ 
     message: String,
-    type_client:TypeDocument[]
+    type_documents:TypeDocument[]
   }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
