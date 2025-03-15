@@ -3,7 +3,7 @@ import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { Contract } from './contract.entity';
 import { Client } from '../clients/client.entity';
-import { Meter } from '../meters/meters.entity';
+import { WaterMeter } from '../meters/meters.entity';
 import { TypeService } from '../type_services/type_service.entity';
 import { SalesRate } from '../sales_rate/sales_rate.entity';
 import { MunicipalUnit } from '../municipal_unit/municipal_unit.entity';
@@ -41,7 +41,7 @@ export class ContractRepository {
         entityManager.connection.getMetadata(TypeClient).tablePath = `${schema}.tipo_cliente`;
         entityManager.connection.getMetadata(TypeDocument).tablePath = `${schema}.tipo_documento`;
 
-        entityManager.connection.getMetadata(Meter).tablePath = `${schema}.medidores`;
+        entityManager.connection.getMetadata(WaterMeter).tablePath = `${schema}.medidores`;
         entityManager.connection.getMetadata(Brand).tablePath = `${schema}.marcas`;
 
         entityManager.connection.getMetadata(TypeService).tablePath = `${schema}.tipo_servicio`;
@@ -100,7 +100,7 @@ export class ContractRepository {
           entityManager.connection.getMetadata(TypeClient).tablePath = `${schema}.tipo_cliente`;
           entityManager.connection.getMetadata(TypeDocument).tablePath = `${schema}.tipo_documento`;
   
-          entityManager.connection.getMetadata(Meter).tablePath = `${schema}.medidores`;
+          entityManager.connection.getMetadata(WaterMeter).tablePath = `${schema}.medidores`;
           entityManager.connection.getMetadata(Brand).tablePath = `${schema}.marcas`;
   
           entityManager.connection.getMetadata(TypeService).tablePath = `${schema}.tipo_servicio`;

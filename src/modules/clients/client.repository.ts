@@ -17,13 +17,13 @@ export class ClientRepository {
     async submitAllClients(schema: string, newClients: Client[]): Promise<{ 
       message: string,
       status: boolean,
-      inserted: { id: number; id_client: string; nombre: string }[]     
+      inserted: { id: number; id_cliente: string; nombre: string }[]     
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
       
-      const insertedClients: { id: number; id_client: string; nombre: string }[] = [];
+      const insertedClients: { id: number; id_cliente: string; nombre: string }[] = [];
       try {
         const entityManager = queryRunner.manager;
     
@@ -32,7 +32,7 @@ export class ClientRepository {
           .createQueryBuilder()
           .insert()
           .into(`${schema}.clientes`, [
-            'id_client',
+            'id_cliente',
             'nombre',
             'apellido', 
             'documento', 
@@ -45,7 +45,7 @@ export class ClientRepository {
             'sync_with'])
           .values(
             newClients.map((tc) => ({
-              id_client: tc.id_client,
+              id_cliente: tc.id_cliente,
               nombre: tc.nombre,
               apellido: tc.apellido,
               documento: tc.documento,
@@ -58,14 +58,14 @@ export class ClientRepository {
               sync_with: () => `'${JSON.stringify(tc.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
             }))
           )
-          .returning(["id", "id_client", "nombre"]) 
+          .returning(["id", "id_cliente", "nombre"]) 
           .execute();
           
         // 🔥 Asociar los nombres insertados con los IDs originales
         insertedClients.push(
           ...newClients.map((tc) => ({
               id: tc.id,
-              id_client:tc.id_client,
+              id_cliente:tc.id_cliente,
               nombre: tc.nombre,
             }))
         ); 

@@ -1,4 +1,27 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { WaterMeter } from './meters.entity';
 
-@Module({})
+import { WaterMeterRepository } from './meters.repository';
+import { WaterMeterService  } from './meters.service';
+import { WaterMeterController } from './meters.controller';
+
+import { AuthModule } from '../auth/auth.module';
+import { SupabaseModule } from '../../config/supabase.module';
+import { UtilityModule } from '../../shared/utility/utility.module';
+import { UserModule } from '../users/users.module';
+
+@Module({
+    imports: [
+      TypeOrmModule.forFeature([WaterMeter]),
+      forwardRef(() => AuthModule),
+      UtilityModule,
+      SupabaseModule,
+      UserModule
+    ],  
+  providers: [WaterMeterService,WaterMeterRepository],
+  controllers: [WaterMeterController],
+  exports: [WaterMeterRepository, WaterMeterService, TypeOrmModule],
+})
 export class WaterMeterModule {}
+

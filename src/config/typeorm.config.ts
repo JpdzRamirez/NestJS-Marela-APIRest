@@ -12,7 +12,7 @@ import { InvoiceFooter } from '../modules/invoice_footer/invoice_footer.entity';
 import { Client } from '../modules/clients/client.entity';
 import { Brand } from '../modules/brands/brand.entity';
 import { City } from '../modules/cities/city.entity';
-import { Meter } from '../modules/meters/meters.entity';
+import { WaterMeter } from '../modules/meters/meters.entity';
 import { TypeClient } from '../modules/type_client/type_client.entity';
 import { TypeDocument } from '../modules/type_document/type_document.entity';
 import { TypeService } from '../modules/type_services/type_service.entity';
@@ -30,7 +30,7 @@ export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOption
   logging: false,
   entities: [
     Activity,User,Role,Schemas,Invoice,Contract,
-    Client,InvoiceHeader,InvoiceFooter,Meter,
+    Client,InvoiceHeader,InvoiceFooter,WaterMeter,
     Brand,City,TypeClient,TypeDocument,TypeService,
     MunicipalUnit,PaymentsActivity,ProductsActivity,Trail,
     SalesRate,State,OverdueDebt

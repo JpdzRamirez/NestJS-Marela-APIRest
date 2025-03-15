@@ -8,6 +8,7 @@ import { TypeDocumentDto } from '../../modules/type_document/dto/typeDocument.dt
 import { WaterMeter } from '../../modules/meters/meters.entity';
 import { WaterMetersDto } from '../../modules/meters/dto/meters.dto';
 
+import { Contract } from '../../modules/contracts/contract.entity';
 
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
@@ -59,7 +60,7 @@ export class UtilityService {
         for (const client of clientArray) {
           let newClient = new Client();
           newClient.id = client.id;
-          newClient.id_client = client.id_client;
+          newClient.id_cliente = client.id_cliente;
           newClient.nombre = client.nombre;
           newClient.apellido = client.apellido;
           newClient.documento = client.numeroDocumento;
@@ -76,64 +77,43 @@ export class UtilityService {
       }
 
     mapDtoWaterMeterToEntityAndRemoveDuplicate(waterMeterArray: WaterMetersDto[], uuid_authsupa: string): 
-      { uniqueWaterMeter: WaterMeter[], 
-        duplicateWaterMeter: WaterMetersDto[] 
+      { uniqueWaterMeters: WaterMeter[], 
+        duplicateWaterMeters: WaterMetersDto[] 
       } {
-        const uniqueTypeClient = new Map<string, TypeClient>();
-        const duplicateWaterMeter: TypeClientDto[] = [];
+        const uniqueWaterMeters = new Map<string, WaterMeter>();
+        const duplicateWaterMeters: WaterMetersDto[] = [];
     
         for (const waterMeter of waterMeterArray) {
-            // Normalizar el nombre para comparación
-            const normalizedName = waterMeter.nombre
-                .trim()
-                .toLowerCase()
-                .replace(/\s+/g, " ") // Normaliza los espacios
-                .normalize("NFD") // Descompone caracteres con tilde
-                .replace(/[\u0300-\u036f]/g, ""); // Remueve diacríticos
-            
-            if (uniqueTypeClient.has(normalizedName)) {
-                const existingClient = uniqueTypeClient.get(normalizedName)!;
-    
-                // Comparar cuál está mejor escrita
-                if (this.isBetterFormatted(waterMeter.nombre, existingClient.nombre)) {
-                  duplicateWaterMeter.push({ ...existingClient }); // Guardar copia del duplicado
-                    let newWaterMeter = new WaterMeter();
-                    newWaterMeter.id=waterMeter.id;
-                    newWaterMeter.id_medidor=waterMeter.id_medidor;
-                    newWaterMeter.numero_referencia = waterMeter.numero_referencia;                    
-                    newWaterMeter.tipo = waterMeter.tipo;                    
-                    newWaterMeter.modelo = waterMeter.modelo;                    
-                    newWaterMeter.diametro = waterMeter.diametro;                    
-                    newWaterMeter.descripcion = waterMeter.descripcion;                    
-                    newWaterMeter.marca = { id_tipocliente: waterMeter.marca_id } as Partial<Brand> as Brand;                   
-                    newWaterMeter.uploaded_by_authsupa = uuid_authsupa;
-        
-                    // Construir el arreglo sync_with
-                    newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
-                    uniqueTypeClient.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
-                } else {
-                  typeClient.source_failure='Request';                  
-                  duplicateWaterMeter.push({ ...typeClient }); // Guardar este en duplicados
-                }
+            // Creamos el nombre clave para realizar la validacion si está repetido
+            const referenceKey = waterMeter.numero_referencia.toString().trim();
+
+            if (uniqueWaterMeters.has(referenceKey)) {
+              waterMeter.source_failure='DataBase'
+              duplicateWaterMeters.push({ ...waterMeter }); // Guardar duplicado
             } else {
-                let newClient = new TypeClient();
-                newClient.id=typeClient.id;
-                newClient.id_tipocliente=typeClient.id_tipocliente;
-                newClient.nombre = typeClient.nombre;
-                // Asignar el usuario que sube el dato
-                newClient.uploaded_by_authsupa = uuid_authsupa;
-    
-                // Construir el arreglo sync_with
-                newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
-    
-                uniqueTypeClient.set(normalizedName, { ...newClient });
+              let newWaterMeter = new WaterMeter();
+              newWaterMeter.id = waterMeter.id;
+              newWaterMeter.id_medidor = waterMeter.id_medidor;
+              newWaterMeter.numero_referencia = waterMeter.numero_referencia;
+              newWaterMeter.tipo = waterMeter.tipo;
+              newWaterMeter.modelo = waterMeter.modelo;
+              newWaterMeter.diametro = waterMeter.diametro;
+              newWaterMeter.descripcion = waterMeter.descripcion;
+              newWaterMeter.marca = { id_medidor: waterMeter.marca_id } as Partial<Brand> as Brand;   
+              newWaterMeter.contrato = { id_contrato: waterMeter.contrato_id } as Partial<Contract> as Contract; 
+              newWaterMeter.uploaded_by_authsupa = uuid_authsupa;
+        
+              // Construir el arreglo sync_with
+              newWaterMeter.sync_with = [{ id: waterMeter.id, uuid_authsupa }];
+        
+              uniqueWaterMeters.set(referenceKey, { ...newWaterMeter });
             }
-        }
-    
-        return {
-          uniqueWaterMeter: Array.from(uniqueTypeClient.values()),
-            duplicateWaterMeter,
-        };
+          }
+        
+          return {
+            uniqueWaterMeters: Array.from(uniqueWaterMeters.values()),
+            duplicateWaterMeters,
+          };
     }
 
     mapDtoToTypeDocumentAndRemoveDuplicateEntity(typeDocumentArray: TypeDocumentDto[], uuid_authsupa: string): 
@@ -158,7 +138,6 @@ export class UtilityService {
                 // Comparar cuál está mejor escrita
                 if (this.isBetterFormatted(typeDocument.nombre, existingClient.nombre)) {
                   existingClient.id_tipodocumento=typeDocument.id_tipodocumento;
-                  duplicateTypeDocument.push({ ...existingClient }); // Guardar copia del duplicado
                     let newClient = new TypeDocument();
                     newClient.id=typeDocument.id;
                     newClient.id_tipodocumento=typeDocument.id_tipodocumento;
@@ -192,6 +171,29 @@ export class UtilityService {
           duplicateTypeDocument,
         };
     }
+    
+    removeDuplicateWaterMeter(waterMeterArray: WaterMetersDto[]) {
+      const uniqueWaterMeters = new Map<string, WaterMetersDto>();
+      const duplicateWaterMeters: WaterMetersDto[] = [];
+    
+      for (const waterMeter of waterMeterArray) {
+        // Normalizar el nombre para comparar sin errores
+        const referenceKey = waterMeter.numero_referencia.toString().trim();
+    
+        if (uniqueWaterMeters.has(referenceKey)) {
+          waterMeter.source_failure='Request'
+          duplicateWaterMeters.push({ ...waterMeter });
+        } else {
+          uniqueWaterMeters.set(referenceKey, { ...waterMeter });
+        }
+      }
+    
+      return {
+        uniqueWaterMeters: Array.from(uniqueWaterMeters.values()),
+        duplicateWaterMeters,
+      };
+    }
+
     removeDuplicateTypeClients(typeClientArray: TypeClientDto[]) {
       const uniqueTypeClient = new Map<string, TypeClientDto>();
       const duplicateTypeClient: TypeClientDto[] = [];

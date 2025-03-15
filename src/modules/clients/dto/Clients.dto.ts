@@ -8,7 +8,7 @@ export class ClientsDto {
 
   @IsNotEmpty({ message: 'El id_client no puede estar vacío' })
   @IsUUID()
-  id_client!: string;
+  id_cliente!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })

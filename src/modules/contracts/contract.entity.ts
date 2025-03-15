@@ -10,7 +10,7 @@ import { Invoice } from '../invoices/invoice.entity';
 import { OverdueDebt } from '../overdue_debt/overdue_debt.entity';
 import { Activity } from '../activities/activity.entity';
 import { Client } from '../clients/client.entity';
-import { Meter } from '../meters/meters.entity';
+import { WaterMeter } from '../meters/meters.entity';
 import { TypeService } from '../type_services/type_service.entity';
 import { MunicipalUnit } from '../municipal_unit/municipal_unit.entity';
 
@@ -30,9 +30,9 @@ export class Contract {
   @JoinColumn({ name: 'cliente_id', referencedColumnName: 'id_cliente' })
   cliente?: Client | null;
 
-  @ManyToOne(() => Meter, { nullable: true, eager: false })
+  @ManyToOne(() => WaterMeter, { nullable: true, eager: false })
   @JoinColumn({ name: 'medidor_id' , referencedColumnName: 'id_medidor'})
-  medidor?: Meter | null;
+  medidor?: WaterMeter | null;
 
   @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
   uploaded_by_authsupa?: string;

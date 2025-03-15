@@ -37,7 +37,7 @@ export class WaterMetersDto {
   @IsNotEmpty({ message: 'El ID del contrato es obligatorio.' })
   @IsUUID('4',{ message: 'El ID del contrato debe ser un UUID Válido.' })
   @Type(() => Number)
-  contrato_id: number;
+  contrato_id: string;
 
   @IsNotEmpty({ message: 'El ID del contrato es obligatorio.' })
   @IsUUID('4',{ message: 'El ID del contrato debe ser un UUID Válido.' })

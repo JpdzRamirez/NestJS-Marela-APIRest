@@ -10,8 +10,8 @@ export class Client {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
-    @Column({ name: 'id_client',type: 'uuid', nullable: false, unique: true })
-    id_client!: string;
+    @Column({ name: 'id_cliente',type: 'uuid', nullable: false, unique: true })
+    id_cliente!: string;
 
     @Column({ name: 'nombre', type: 'varchar', nullable: true })
     nombre!: string;

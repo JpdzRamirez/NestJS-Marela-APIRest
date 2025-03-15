@@ -12,8 +12,8 @@ export class WaterMeter {
     @Column({ name: 'id_medidor',type: 'uuid', nullable: false, unique: true })
     id_medidor!: string;
 
-    @Column({ name: 'numero_referencia',type: 'int4', unique: true, nullable: false })
-    numero_referencia?: bigint;
+    @Column({ name: 'numero_referencia',type: 'int8', unique: true, nullable: false })
+    numero_referencia!: bigint;
 
     @Column({ name: 'tipo',type: 'varchar', length: 100, nullable: true })
     tipo?: string;

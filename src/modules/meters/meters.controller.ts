@@ -29,7 +29,7 @@ export class WaterMeterController {
       @Post('admin/post-all-waterMeters')
       async submitAllTypeClient(@Req() request: AuthRequest,@Body() waterMetersArray: WaterMetersArrayDto ) {    
       
-      return await this.waterMeterServices.submitWaterMeters(request, waterMetersArray.water_meters);
+      return await this.waterMeterServices.submitAllWaterMeter(request, waterMetersArray.water_meters);
       }
     
       /** ✅ Obtener todos los tipos de clientes no sincronizados desde el la base de datos (Solo admin) */

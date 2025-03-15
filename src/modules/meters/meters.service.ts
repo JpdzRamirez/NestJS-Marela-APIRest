@@ -1,5 +1,5 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { TypeClientRepository } from './type_client.repository';
+import { WaterMeterRepository } from './meters.repository';
 import { WaterMetersDto } from './dto/meters.dto';
 import { WaterMeter } from './meters.entity';
 import { AuthRequest } from '../../types';
@@ -9,16 +9,16 @@ import { UtilityService } from '../../shared/utility/utility.service';
 @Injectable()
 export class WaterMeterService {
       constructor(
-        private readonly clientRepository: TypeClientRepository,
+        private readonly waterMeterRepository: WaterMeterRepository,
         private readonly utilityService: UtilityService    
       ) {}
     
 
 /** ✅ Obtener todas los tipos de clientes*/
-  async submitAllTypeClient(AuthRequest: AuthRequest, waterMetersArray: WaterMetersDto[]): Promise<{ 
+  async submitAllWaterMeter(AuthRequest: AuthRequest, waterMetersArray: WaterMetersDto[]): Promise<{ 
     message: string;
     status: boolean;
-    inserted: { id: number; id_tipocliente: string ; nombre: string }[];
+    inserted: { id: number; id_medidor: string ; numero_referencia: bigint }[];
     duplicated: WaterMetersDto[];
 }> {
     const user = AuthRequest.user;
@@ -30,14 +30,14 @@ export class WaterMeterService {
     const newWaterMetersArray = this.utilityService.mapDtoWaterMeterToEntityAndRemoveDuplicate(waterMetersArray, uuidAuthsupa)
     
     // Enviar los clientes al repositorio para inserción en la BD
-    return await this.clientRepository.submitAllTypeClient(user.schemas.name, newWaterMetersArray);
+    return await this.waterMeterRepository.submitAllWaterMeter(user.schemas.name, newWaterMetersArray);
 
   }
 
 
-  async getAllTypeClient(AuthRequest: AuthRequest): Promise<{ 
+  async getAllWaterMeters(AuthRequest: AuthRequest): Promise<{ 
     message: String,
-    type_client:TypeClient[]
+    water_meters:WaterMeter[]
   }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
@@ -45,17 +45,17 @@ export class WaterMeterService {
     }
 
     // Enviar los clientes al repositorio para inserción en la BD
-    return await this.clientRepository.getAllTypeClient(user.schemas.name,user.uuid_authsupa);
+    return await this.waterMeterRepository.getAllWaterMeters(user.schemas.name,user.uuid_authsupa);
 
   }
 
 
 
   /** ✅ Sincronizar los tipos de clientes*/
-  async syncTypeClient(AuthRequest: AuthRequest, typeClientsArray: TypeClientDto[]): Promise<{ 
+  async syncWaterMeters(AuthRequest: AuthRequest, waterMeterArray: WaterMetersDto[]): Promise<{ 
     message: String,
     status: Boolean,
-    duplicated: TypeClientDto[] | null   
+    duplicated: WaterMetersDto[] | null   
 }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
@@ -63,10 +63,10 @@ export class WaterMeterService {
     }
     const uuidAuthsupa: string = user.uuid_authsupa;
 
-    const typeClientArrayFiltred = this.utilityService.removeDuplicateTypeClients(typeClientsArray);
+    const waterMetersArrayFiltred = this.utilityService.removeDuplicateWaterMeter(waterMeterArray);
 
     // Enviar los clientes al repositorio para inserción en la BD
-    return await this.clientRepository.syncTypeClient(user.schemas.name, uuidAuthsupa,typeClientArrayFiltred);
+    return await this.waterMeterRepository.syncWaterMeter(user.schemas.name, uuidAuthsupa,waterMetersArrayFiltred);
 
   }
 
