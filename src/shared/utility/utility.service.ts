@@ -12,6 +12,7 @@ import { WaterMetersDto } from '../../modules/meters/dto/meters.dto';
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
 import { TypeDocument } from '../../modules/type_document/type_document.entity';
+import { Brand } from 'src/modules/brands/brand.entity';
 
 @Injectable()
 export class UtilityService {
@@ -99,9 +100,13 @@ export class UtilityService {
                     let newWaterMeter = new WaterMeter();
                     newWaterMeter.id=waterMeter.id;
                     newWaterMeter.id_medidor=waterMeter.id_medidor;
-                    newWaterMeter.contrato = waterMeter.nombre;
-                    // Asignar el usuario que sube el dato
-                    newClient.uploaded_by_authsupa = uuid_authsupa;
+                    newWaterMeter.numero_referencia = waterMeter.numero_referencia;                    
+                    newWaterMeter.tipo = waterMeter.tipo;                    
+                    newWaterMeter.modelo = waterMeter.modelo;                    
+                    newWaterMeter.diametro = waterMeter.diametro;                    
+                    newWaterMeter.descripcion = waterMeter.descripcion;                    
+                    newWaterMeter.marca = { id_tipocliente: waterMeter.marca_id } as Partial<Brand> as Brand;                   
+                    newWaterMeter.uploaded_by_authsupa = uuid_authsupa;
         
                     // Construir el arreglo sync_with
                     newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
