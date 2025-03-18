@@ -25,6 +25,8 @@ export class WaterMeterRepository {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let messageResponse='';
+
     const insertedWaterMeters: { id: number;id_medidor:string ;numero_referencia: string }[] = [];
     const duplicatedWaterMeters=waterMeterArrayFiltred.duplicateWaterMeters;
     const uniqueFilteredWaterMeter = new Map<string, WaterMeter>();
@@ -98,7 +100,11 @@ export class WaterMeterRepository {
             numero_referencia: wm.numero_referencia,
           }))
         );
-      }
+
+        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
+        }else{
+        messageResponse= "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";
+        }
       
       await queryRunner.commitTransaction();
       

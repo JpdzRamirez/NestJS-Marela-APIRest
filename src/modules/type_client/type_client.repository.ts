@@ -25,6 +25,8 @@ export class TypeClientRepository {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let messageResponse='';
+
     const insertedTypeClients: { id: number;id_tipocliente:string ;nombre: string }[] = [];
     const duplicatedTypeClients=typeClientArrayFiltred.duplicateTypeClient;
 
@@ -111,7 +113,10 @@ export class TypeClientRepository {
             nombre: tc.nombre,
           }))
         );
-      }
+        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
+        }else{
+        messageResponse= "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";
+        }
       
       await queryRunner.commitTransaction();
       
@@ -145,7 +150,7 @@ export class TypeClientRepository {
 
   ): Promise<{
     message: string,
-    type_client:TypeClient[]
+    type_clients:TypeClient[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -171,14 +176,14 @@ export class TypeClientRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido los siguientes tipos de clientes no sincronizados:',
-        type_client: notSyncTypeClient
+        type_clients: notSyncTypeClient
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllTypeClient:', error);
       return {
         message: '¡La conexión ha fallado, retornando desde la base de datos! ->'+ error.message,
-        type_client: []
+        type_clients: []
       };
     } finally {
       await queryRunner.release();

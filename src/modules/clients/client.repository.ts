@@ -20,13 +20,21 @@ export class ClientRepository {
     ): Promise<{ 
       message: string,
       status: boolean,
-      inserted: { id: number; id_cliente: string; nombre: string }[];
+      inserted: { 
+        id: number; 
+        id_cliente: string;
+        nombre: string ;
+        apellido: string | null;
+        documento: string;
+      }[];
       duplicated: ClientsDto[]; 
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
       
+      let messageResponse='';
+
       const insertedClients: { 
         id: number; 
         id_cliente: string;
@@ -119,12 +127,14 @@ export class ClientRepository {
             apellido: cl.apellido ?? null,
             documento: cl.documento,
           }))
-        ); 
-
-        await queryRunner.commitTransaction();
+        );         
+        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
+        }else{
+        messageResponse= "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";
         }
+        await queryRunner.commitTransaction();
         return {
-          message: "Cargue exitoso, se han obtenido los siguientes resultados:",
+          message: messageResponse,
           status: true,
           inserted: insertedClients, 
           duplicated: duplicateClients,
@@ -218,14 +228,14 @@ export class ClientRepository {
         .createQueryBuilder()
         .select("clientes.*")
         .from(`${schema}.clientes`, "clientes")
-        .where('clientes.documento IN (:...documento)', {
-          documento: uniqueClients.map((tc) => tc.numeroDocumento.toString()),
+        .where('clientes.id_cliente IN (:...id_cliente)', {
+          id_cliente: uniqueClients.map((tc) => tc.id_cliente.toString()),
       })
       .getRawMany();
   
       for (const client of uniqueClients) {
         const existingClient = existingClients.find(
-          (c) => c.documento.localeCompare(client.numeroDocumento, undefined, { sensitivity: "base" }) === 0
+          (c) => c.id_cliente.localeCompare(client.id_cliente, undefined, { sensitivity: "base" }) === 0
         );
   
         if (existingClient) {
@@ -246,7 +256,7 @@ export class ClientRepository {
               .createQueryBuilder()
               .update(`${schema}.clientes`)
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
-              .where("nombre = :nombre", { nombre: existingClient.nombre })
+              .where("id_cliente = :id_cliente", { id_cliente: existingClient.id_cliente })
               .execute();
           }
         }

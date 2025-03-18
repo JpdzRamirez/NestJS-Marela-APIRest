@@ -15,6 +15,9 @@ import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
 import { TypeDocument } from '../../modules/type_document/type_document.entity';
 import { MunicipalUnit } from '../../modules/municipal_unit/municipal_unit.entity';
+import { City } from '../../modules/cities/city.entity';
+import { State } from '../../modules/states/state.entity';
+import { MunicipalUnitDto } from '../../modules/municipal_unit/dto/municipal_unit.dto';
 
 
 @Injectable()
@@ -81,7 +84,7 @@ export class UtilityService {
               newClient.correo = client.correo;
               newClient.direccion = client.direccion;
               newClient.telefono = client.telefono;          
-              newClient.sync_with = [{ id: newClient.id, uuid_authsupa }];          
+              newClient.sync_with = [{ id: client.id, uuid_authsupa }];          
               newClient.tipo_cliente = { id_tipocliente: client.tipoCliente } as Partial<TypeClient> as TypeClient;
               newClient.tipo_documento = { id_tipodocumento: client.tipoDocumento } as Partial<TypeDocument> as TypeDocument;
               newClient.unidad_municipal = { id_unidadmunicipal: client.unidadMunicipal } as Partial<MunicipalUnit> as MunicipalUnit; 
@@ -136,6 +139,42 @@ export class UtilityService {
             duplicateWaterMeters,
           };
     }
+
+    mapDtoMunicipalUnitToEntityAndRemoveDuplicate(municipal_unitArray: MunicipalUnitDto[], uuid_authsupa: string): 
+    { uniqueMunicipalUnits: MunicipalUnit[], 
+      duplicateMunicipalUnits: MunicipalUnitDto[] 
+    } {
+      const uniqueMunicipalUnits = new Map<string, MunicipalUnit>();
+      const duplicateMunicipalUnits: MunicipalUnitDto[] = [];
+  
+      for (const municipal_unit of municipal_unitArray) {
+          // Creamos el nombre clave para realizar la validacion si está repetido
+          const referenceKey = municipal_unit.id_unidadmunicipal.toString().trim();
+
+          if (uniqueMunicipalUnits.has(referenceKey)) {
+            municipal_unit.source_failure='Request'
+            duplicateMunicipalUnits.push({ ...municipal_unit }); // Guardar duplicado
+          } else {
+            let newMunicipalUnit = new MunicipalUnit();
+            newMunicipalUnit.id = municipal_unit.id;
+            newMunicipalUnit.id_unidadmunicipal = municipal_unit.id_unidadmunicipal;
+            newMunicipalUnit.nombre = municipal_unit.nombre;
+            newMunicipalUnit.ciudad = { id_ciudad: municipal_unit.ciudad_id } as Partial<City> as City;   
+            newMunicipalUnit.departamento = { id_departamento: municipal_unit.departamento_id } as Partial<State> as State; 
+            newMunicipalUnit.uploaded_by_authsupa = uuid_authsupa;
+      
+            // Construir el arreglo sync_with
+            newMunicipalUnit.sync_with = [{ id: municipal_unit.id, uuid_authsupa }];
+      
+            uniqueMunicipalUnits.set(referenceKey, { ...newMunicipalUnit });
+          }
+        }
+      
+        return {
+          uniqueMunicipalUnits: Array.from(uniqueMunicipalUnits.values()),
+          duplicateMunicipalUnits,
+        };
+  }
 
     mapDtoToTypeDocumentAndRemoveDuplicateEntity(typeDocumentArray: TypeDocumentDto[], uuid_authsupa: string): 
       { uniqueTypeDocument: TypeDocument[], 
@@ -268,6 +307,27 @@ export class UtilityService {
       return {
         uniqueWaterMeters: Array.from(uniqueWaterMeters.values()),
         duplicateWaterMeters,
+      };
+    }
+    removeDuplicateMunicipalUnits(municipal_unitArray: MunicipalUnitDto[]) {
+      const uniqueMunicipalUnits = new Map<string, MunicipalUnitDto>();
+      const duplicateMunicipalUnits: MunicipalUnitDto[] = [];
+    
+      for (const municipal_unit of municipal_unitArray) {
+        // Normalizar el nombre para comparar sin errores
+        const referenceKey = municipal_unit.id_unidadmunicipal.toString().trim();
+    
+        if (uniqueMunicipalUnits.has(referenceKey)) {
+          municipal_unit.source_failure='Request'
+          duplicateMunicipalUnits.push({ ...municipal_unit });
+        } else {
+          uniqueMunicipalUnits.set(referenceKey, { ...municipal_unit });
+        }
+      }
+    
+      return {
+        uniqueMunicipalUnits: Array.from(uniqueMunicipalUnits.values()),
+        duplicateMunicipalUnits,
       };
     }
     /*Eliminar posibles datos redundantes al patch de clientes*/

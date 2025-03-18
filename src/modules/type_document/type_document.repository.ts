@@ -25,6 +25,8 @@ export class TypeDocumentRepository {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let messageResponse='';
+
     const insertedTypeDocuments: { id: number;id_tipodocumento: string ; nombre: string }[] = [];
     const duplicatedTypeDocuments=typeDocumentArrayFiltred.duplicateTypeDocument;
 
@@ -110,8 +112,10 @@ export class TypeDocumentRepository {
             nombre: tc.nombre,
           }))
         );
-      }
-      
+        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
+        }else{
+        messageResponse= "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";
+        }
       await queryRunner.commitTransaction();
       
       return {

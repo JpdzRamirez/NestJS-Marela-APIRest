@@ -17,7 +17,13 @@ export class ClientServices {
   async submitAllClients(AuthRequest: AuthRequest, clientsArray: ClientsDto[]): Promise<{ 
       message: string,
       status: boolean,
-      inserted: { id: number; id_cliente: string; nombre: string }[];
+      inserted: { 
+        id: number;
+        id_cliente: string;
+        nombre: string;
+        apellido: string | null;
+        documento: string;
+       }[];
       duplicated: ClientsDto[];      
   }> {
     const user = AuthRequest.user;

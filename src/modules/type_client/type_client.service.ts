@@ -37,7 +37,7 @@ export class TypeClientServices {
 
   async getAllTypeClient(AuthRequest: AuthRequest): Promise<{ 
     message: String,
-    type_client:TypeClient[]
+    type_clients:TypeClient[]
   }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {

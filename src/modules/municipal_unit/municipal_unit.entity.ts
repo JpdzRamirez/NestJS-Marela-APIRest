@@ -14,16 +14,22 @@ export class MunicipalUnit {
     id_unidadmunicipal!: string;
 
     @Column({ name: 'nombre',type: 'varchar', length: 50, nullable: false })
-    nombre?: string;
+    nombre!: string;
 
-    @ManyToOne(() => City, { nullable: false, eager: true })
-    @JoinColumn({ name: 'ciudad_id' })
-    ciudad?: City | null;
+    @ManyToOne(() => City, { nullable: true, eager: true })
+    @JoinColumn({ name: 'ciudad_id', referencedColumnName: 'id_ciudad'  })
+    ciudad!: City;
 
-    @ManyToOne(() => State, { nullable: false, eager: true })
-    @JoinColumn({ name: 'departamento_id' })
-    departamento?: State | null;
+    @ManyToOne(() => State, { nullable: true, eager: true })
+    @JoinColumn({ name: 'departamento_id', referencedColumnName: 'id_departamento'  })
+    departamento!: State;
+    
+    @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+    created_at!: Date;
 
-    @OneToMany(() => Contract, (contract) => contract.unidad_municipal)
-    contrato?: Contract[];
+    @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
+    uploaded_by_authsupa?: string;
+
+    @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
+    sync_with?: Record<string, any>[] | null;
 }
