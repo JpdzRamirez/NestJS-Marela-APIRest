@@ -6,6 +6,7 @@ import { TypeClientDto } from '../../modules/type_client/dto/typeClient.dto';
 import { TypeDocumentDto } from '../../modules/type_document/dto/typeDocument.dto';
 
 import { WaterMeter } from '../../modules/meters/meters.entity';
+import { Brand } from 'src/modules/brands/brand.entity';
 import { WaterMetersDto } from '../../modules/meters/dto/meters.dto';
 
 import { Contract } from '../../modules/contracts/contract.entity';
@@ -13,7 +14,8 @@ import { Contract } from '../../modules/contracts/contract.entity';
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
 import { TypeDocument } from '../../modules/type_document/type_document.entity';
-import { Brand } from 'src/modules/brands/brand.entity';
+import { MunicipalUnit } from '../../modules/municipal_unit/municipal_unit.entity';
+
 
 @Injectable()
 export class UtilityService {
@@ -55,25 +57,44 @@ export class UtilityService {
           return score;
     }
 
-    mapDtoClientToEntity(clientArray: ClientsDto[], uuid_authsupa: string): Client[] {
-        const uniqueClient:Client[]=[];        
+    mapDtoClientToEntityAndRemoveDuplicate(clientArray: ClientsDto[], uuid_authsupa: string):
+    { uniqueClients: Client[], 
+      duplicateClients: ClientsDto[] 
+    } {
+        const uniqueClients = new Map<string, Client>();
+        const duplicateClients: ClientsDto[] = [];
+    
         for (const client of clientArray) {
-          let newClient = new Client();
-          newClient.id = client.id;
-          newClient.id_cliente = client.id_cliente;
-          newClient.nombre = client.nombre;
-          newClient.apellido = client.apellido;
-          newClient.documento = client.numeroDocumento;
-          newClient.correo = client.correo;
-          newClient.direccion = client.direccion;
-          newClient.telefono = client.telefono;          
-          newClient.sync_with = [{ id: newClient.id, uuid_authsupa }];          
-          newClient.tipo_cliente = { id_tipocliente: client.tipoCliente } as Partial<TypeClient> as TypeClient;
-          newClient.tipo_documento = { id_tipodocumento: client.tipoDocumento } as Partial<TypeDocument> as TypeDocument;        
-          newClient.uploaded_by_authsupa = uuid_authsupa;
-          uniqueClient.push(newClient);
-        }
-        return uniqueClient;
+            // Creamos el nombre clave para realizar la validacion si está repetido
+            const referenceKey = client.numeroDocumento.toString().trim();
+
+            if (uniqueClients.has(referenceKey)) {
+              client.source_failure='Request'
+              duplicateClients.push({ ...client }); // Guardar duplicado
+            } else {
+              let newClient = new Client();
+              newClient.id = client.id;
+              newClient.id_cliente = client.id_cliente;
+              newClient.nombre = client.nombre;
+              newClient.apellido = client.apellido ?? null;
+              newClient.documento = client.numeroDocumento;
+              newClient.correo = client.correo;
+              newClient.direccion = client.direccion;
+              newClient.telefono = client.telefono;          
+              newClient.sync_with = [{ id: newClient.id, uuid_authsupa }];          
+              newClient.tipo_cliente = { id_tipocliente: client.tipoCliente } as Partial<TypeClient> as TypeClient;
+              newClient.tipo_documento = { id_tipodocumento: client.tipoDocumento } as Partial<TypeDocument> as TypeDocument;
+              newClient.unidad_municipal = { id_unidadmunicipal: client.unidadMunicipal } as Partial<MunicipalUnit> as MunicipalUnit; 
+              newClient.uploaded_by_authsupa = uuid_authsupa;
+        
+              uniqueClients.set(referenceKey, { ...newClient });
+            }
+          }
+        
+          return {
+            uniqueClients: Array.from(uniqueClients.values()),
+            duplicateClients,
+          };
       }
 
     mapDtoWaterMeterToEntityAndRemoveDuplicate(waterMeterArray: WaterMetersDto[], uuid_authsupa: string): 
@@ -88,7 +109,7 @@ export class UtilityService {
             const referenceKey = waterMeter.numero_referencia.toString().trim();
 
             if (uniqueWaterMeters.has(referenceKey)) {
-              waterMeter.source_failure='DataBase'
+              waterMeter.source_failure='Request'
               duplicateWaterMeters.push({ ...waterMeter }); // Guardar duplicado
             } else {
               let newWaterMeter = new WaterMeter();
@@ -99,7 +120,7 @@ export class UtilityService {
               newWaterMeter.modelo = waterMeter.modelo;
               newWaterMeter.diametro = waterMeter.diametro;
               newWaterMeter.descripcion = waterMeter.descripcion;
-              newWaterMeter.marca = { id_medidor: waterMeter.marca_id } as Partial<Brand> as Brand;   
+              newWaterMeter.marca = { id_marca: waterMeter.marca_id } as Partial<Brand> as Brand;   
               newWaterMeter.contrato = { id_contrato: waterMeter.contrato_id } as Partial<Contract> as Contract; 
               newWaterMeter.uploaded_by_authsupa = uuid_authsupa;
         
@@ -171,7 +192,63 @@ export class UtilityService {
           duplicateTypeDocument,
         };
     }
-    
+    mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientArray: TypeClientDto[], uuid_authsupa: string): 
+    { uniqueTypeClient: TypeClient[], 
+      duplicateTypeClient: TypeClientDto[] 
+    } {
+      const uniqueTypeClient = new Map<string, TypeClient>();
+      const duplicateTypeClient: TypeClientDto[] = [];
+  
+      for (const typeClient of typeClientArray) {
+          // Normalizar el nombre para comparación
+          const normalizedName = typeClient.nombre
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ") // Normaliza los espacios
+              .normalize("NFD") // Descompone caracteres con tilde
+              .replace(/[\u0300-\u036f]/g, ""); // Remueve diacríticos
+          
+          if (uniqueTypeClient.has(normalizedName)) {
+              const existingClient = uniqueTypeClient.get(normalizedName)!;
+  
+              // Comparar cuál está mejor escrita
+              if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {
+                  duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
+                  let newClient = new TypeClient();
+                  newClient.id=typeClient.id;
+                  newClient.id_tipocliente=typeClient.id_tipocliente;
+                  newClient.nombre = typeClient.nombre;
+                  // Asignar el usuario que sube el dato
+                  newClient.uploaded_by_authsupa = uuid_authsupa;
+      
+                  // Construir el arreglo sync_with
+                  newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
+                  uniqueTypeClient.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
+              } else {
+                typeClient.source_failure='Request';                  
+                duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
+              }
+          } else {
+              let newClient = new TypeClient();
+              newClient.id=typeClient.id;
+              newClient.id_tipocliente=typeClient.id_tipocliente;
+              newClient.nombre = typeClient.nombre;
+              // Asignar el usuario que sube el dato
+              newClient.uploaded_by_authsupa = uuid_authsupa;
+  
+              // Construir el arreglo sync_with
+              newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
+  
+              uniqueTypeClient.set(normalizedName, { ...newClient });
+          }
+      }
+  
+      return {
+          uniqueTypeClient: Array.from(uniqueTypeClient.values()),
+          duplicateTypeClient,
+      };
+  }
+    /*Eliminar posibles datos redundantes al patch de medidores de agua*/
     removeDuplicateWaterMeter(waterMeterArray: WaterMetersDto[]) {
       const uniqueWaterMeters = new Map<string, WaterMetersDto>();
       const duplicateWaterMeters: WaterMetersDto[] = [];
@@ -192,6 +269,28 @@ export class UtilityService {
         uniqueWaterMeters: Array.from(uniqueWaterMeters.values()),
         duplicateWaterMeters,
       };
+    }
+    /*Eliminar posibles datos redundantes al patch de clientes*/
+    removeDuplicateClients(clientsArray: ClientsDto[]) {
+          const uniqueClients = new Map<string, ClientsDto>();
+          const duplicateClients: ClientsDto[] = [];
+        
+          for (const client of clientsArray) {
+            // Normalizar el nombre para comparar sin errores
+            const referenceKey = client.numeroDocumento.toString().trim();
+        
+            if (uniqueClients.has(referenceKey)) {
+              client.source_failure='Request'
+              duplicateClients.push({ ...client });
+            } else {
+              uniqueClients.set(referenceKey, { ...client });
+            }
+          }
+        
+          return {
+            uniqueClients: Array.from(uniqueClients.values()),
+            duplicateClients,
+          };
     }
 
     removeDuplicateTypeClients(typeClientArray: TypeClientDto[]) {
@@ -262,62 +361,6 @@ export class UtilityService {
       };
     }
     
-    mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientArray: TypeClientDto[], uuid_authsupa: string): 
-    { uniqueTypeClient: TypeClient[], 
-      duplicateTypeClient: TypeClientDto[] 
-    } {
-      const uniqueTypeClient = new Map<string, TypeClient>();
-      const duplicateTypeClient: TypeClientDto[] = [];
-  
-      for (const typeClient of typeClientArray) {
-          // Normalizar el nombre para comparación
-          const normalizedName = typeClient.nombre
-              .trim()
-              .toLowerCase()
-              .replace(/\s+/g, " ") // Normaliza los espacios
-              .normalize("NFD") // Descompone caracteres con tilde
-              .replace(/[\u0300-\u036f]/g, ""); // Remueve diacríticos
-          
-          if (uniqueTypeClient.has(normalizedName)) {
-              const existingClient = uniqueTypeClient.get(normalizedName)!;
-  
-              // Comparar cuál está mejor escrita
-              if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {
-                  duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
-                  let newClient = new TypeClient();
-                  newClient.id=typeClient.id;
-                  newClient.id_tipocliente=typeClient.id_tipocliente;
-                  newClient.nombre = typeClient.nombre;
-                  // Asignar el usuario que sube el dato
-                  newClient.uploaded_by_authsupa = uuid_authsupa;
-      
-                  // Construir el arreglo sync_with
-                  newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
-                  uniqueTypeClient.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
-              } else {
-                typeClient.source_failure='Request';                  
-                duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
-              }
-          } else {
-              let newClient = new TypeClient();
-              newClient.id=typeClient.id;
-              newClient.id_tipocliente=typeClient.id_tipocliente;
-              newClient.nombre = typeClient.nombre;
-              // Asignar el usuario que sube el dato
-              newClient.uploaded_by_authsupa = uuid_authsupa;
-  
-              // Construir el arreglo sync_with
-              newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
-  
-              uniqueTypeClient.set(normalizedName, { ...newClient });
-          }
-      }
-  
-      return {
-          uniqueTypeClient: Array.from(uniqueTypeClient.values()),
-          duplicateTypeClient,
-      };
-  }
-
-    
 }
+
+

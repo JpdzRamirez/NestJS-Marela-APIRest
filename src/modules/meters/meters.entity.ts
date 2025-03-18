@@ -12,8 +12,8 @@ export class WaterMeter {
     @Column({ name: 'id_medidor',type: 'uuid', nullable: false, unique: true })
     id_medidor!: string;
 
-    @Column({ name: 'numero_referencia',type: 'int8', unique: true, nullable: false })
-    numero_referencia!: bigint;
+    @Column({ name: 'numero_referencia',type: 'varchar', unique: true, nullable: false })
+    numero_referencia!: string;
 
     @Column({ name: 'tipo',type: 'varchar', length: 100, nullable: true })
     tipo?: string;
@@ -27,11 +27,11 @@ export class WaterMeter {
     @Column({ name: 'descripcion',type: 'varchar', length: 250, nullable: true })
     descripcion?: string;
     
-    @ManyToOne(() => Brand, { nullable: false, eager: false })
+    @ManyToOne(() => Brand, { nullable: true, eager: false })
     @JoinColumn({ name: 'marca_id', referencedColumnName: 'id_marca' })
-    marca?: Brand | null;
+    marca!: Brand | null;
 
-    @ManyToOne(() => Contract, { nullable: false, eager: false})
+    @ManyToOne(() => Contract, { nullable: true, eager: false})
     @JoinColumn({ name: 'contrato_id', referencedColumnName: 'id_contrato' }) 
     contrato: Contract;
 

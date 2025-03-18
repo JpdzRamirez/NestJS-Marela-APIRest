@@ -12,21 +12,68 @@ export class ClientRepository {
   ) {}
 
     /** ✅
-     * Inserta todos los clientes y retorna los clientes insertados
+     * Inserta todos los clientes y retorna los clientes insertados o duplicados
      */
-    async submitAllClients(schema: string, newClients: Client[]): Promise<{ 
+    async submitAllClients(
+      schema: string, 
+      clientsArrayFiltred: { uniqueClients: Client[]; duplicateClients: ClientsDto[] }
+    ): Promise<{ 
       message: string,
       status: boolean,
-      inserted: { id: number; id_cliente: string; nombre: string }[]     
+      inserted: { id: number; id_cliente: string; nombre: string }[];
+      duplicated: ClientsDto[]; 
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
       
-      const insertedClients: { id: number; id_cliente: string; nombre: string }[] = [];
+      const insertedClients: { 
+        id: number; 
+        id_cliente: string;
+        nombre: string;        
+        apellido: string | null; 
+        documento: string; 
+       }[] = [];
+      const duplicateClients=clientsArrayFiltred.duplicateClients;
+      const uniqueFilteredClients = new Map<string, Client>();
       try {
         const entityManager = queryRunner.manager;
-    
+        
+        // 🔥 Obtener clientes que ya existen en la base de datos
+        const existingClients= await entityManager
+        .createQueryBuilder()
+        .select(['id', 'documento'])
+        .from(`${schema}.clientes`, 'clientes')
+        .where('clientes.documento IN (:...documento)', {
+          documento: clientsArrayFiltred.uniqueClients.map((tc) => tc.documento.toString()),
+        })
+        .getRawMany();
+
+        for (const cliente of clientsArrayFiltred.uniqueClients) {
+        
+            const referenceKey = cliente.id_cliente.toString().trim();
+        
+              if (existingClients.some((wm) => wm.id_cliente === cliente.id_cliente)) {
+                let duplicatedDBClient:ClientsDto = {
+                      id:cliente.id,
+                      id_cliente:cliente.id_cliente,
+                      nombre:cliente.nombre,
+                      apellido:cliente.apellido ?? null,
+                      correo:cliente.correo,
+                      numeroDocumento:cliente.documento,
+                      telefono:cliente.telefono,
+                      direccion:cliente.direccion,                      
+                      tipoDocumento:cliente.tipo_documento.id_tipodocumento,
+                      tipoCliente:cliente.tipo_cliente.id_tipocliente,
+                      unidadMunicipal:cliente.unidad_municipal.id_unidadmunicipal,
+                      source_failure:'DataBase'
+                  };
+                  duplicateClients.push({ ...duplicatedDBClient }); // Guardar duplicado
+              }else {
+                uniqueFilteredClients.set(referenceKey, { ...cliente });
+              }
+        }
+        if (uniqueFilteredClients.size  > 0) {
         // 🔥 Insertar los clientes con el esquema dinámico
           await entityManager
           .createQueryBuilder()
@@ -41,21 +88,23 @@ export class ClientRepository {
             'telefono', 
             'tipocliente_id', 
             'tipodocumento_id', 
+            'unidad_municipal_id',
             'uploaded_by_authsupa', 
             'sync_with'])
           .values(
-            newClients.map((tc) => ({
-              id_cliente: tc.id_cliente,
-              nombre: tc.nombre,
-              apellido: tc.apellido,
-              documento: tc.documento,
-              correo: tc.correo,
-              direccion: tc.direccion,
-              telefono: tc.telefono,
-              tipocliente_id: tc.tipo_cliente?.id_tipocliente,
-              tipodocumento_id: tc.tipo_documento?.id_tipodocumento,
-              uploaded_by_authsupa: tc.uploaded_by_authsupa,
-              sync_with: () => `'${JSON.stringify(tc.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
+            Array.from(uniqueFilteredClients.values()).map((cl) => ({
+              id_cliente: cl.id_cliente,              
+              nombre: cl.nombre,
+              apellido: cl.apellido,
+              documento: cl.documento,
+              correo: cl.correo,
+              direccion: cl.direccion,
+              telefono: cl.telefono,
+              tipocliente_id: cl.tipo_cliente.id_tipocliente,          
+              tipodocumento_id: cl.tipo_documento.id_tipodocumento,     
+              unidad_municipal_id: cl.unidad_municipal.id_unidadmunicipal,                         
+              uploaded_by_authsupa: cl.uploaded_by_authsupa,
+              sync_with: () => `'${JSON.stringify(cl.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
             }))
           )
           .returning(["id", "id_cliente", "nombre"]) 
@@ -63,28 +112,32 @@ export class ClientRepository {
           
         // 🔥 Asociar los nombres insertados con los IDs originales
         insertedClients.push(
-          ...newClients.map((tc) => ({
-              id: tc.id,
-              id_cliente:tc.id_cliente,
-              nombre: tc.nombre,
-            }))
+          ...Array.from(uniqueFilteredClients.values()).map((cl) => ({
+            id: cl.id, 
+            id_cliente: cl.id_cliente,
+            nombre:cl.nombre,
+            apellido: cl.apellido ?? null,
+            documento: cl.documento,
+          }))
         ); 
 
         await queryRunner.commitTransaction();
-    
+        }
         return {
-          message: "Sincronización exitosa, se han obtenido los siguientes resultados:",
+          message: "Cargue exitoso, se han obtenido los siguientes resultados:",
           status: true,
-          inserted: insertedClients, // Convertir resultado
+          inserted: insertedClients, 
+          duplicated: duplicateClients,
         };
       } catch (error) {
         await queryRunner.rollbackTransaction();
         console.error("❌ Error en submitAllClients:", error);
         
         return {
-          message: "¡La sincronización ha fallado!",
+          message: "¡El cargue ha fallado! -> "+ error.message,        
           status: false,
           inserted: [],
+          duplicated: []
         };
       } finally {
         await queryRunner.release();
@@ -125,14 +178,14 @@ export class ClientRepository {
 
       return {
         message:
-          'Sincronización exitosa, se han obtenido los siguientes resultados:',
+          'Conexión exitosa, se han obtenido los siguientes clientes no sincronizados:',
         clients: notSyncTypeClient
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllTypeClient:', error);
       return {
-        message: '¡La Sincronización ha fallado, retornando desde la base de datos!',
+        message: "¡La conexión, retornando desde la base de datos!! -> "+ error.message, 
         clients: []
       };
     } finally {
@@ -146,10 +199,11 @@ export class ClientRepository {
   async syncClient(
     schema: string,
     uuid_authsupa: string,
-    clientArrayFiltred:  Client[] 
+    clientArrayFiltred:  { uniqueClients: ClientsDto[]; duplicateClients: ClientsDto[] }
   ): Promise<{
     message: string,
     status: boolean,
+    duplicated: ClientsDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -157,21 +211,21 @@ export class ClientRepository {
   
     try {
       const entityManager = queryRunner.manager;
-      const uniqueClient = clientArrayFiltred;
+      const uniqueClients = clientArrayFiltred.uniqueClients;
   
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
       const existingClients = await entityManager
         .createQueryBuilder()
         .select("clientes.*")
         .from(`${schema}.clientes`, "clientes")
-        .where("LOWER(unaccent(clientes.nombre)) IN (:...nombres)", {
-          nombres: uniqueClient.map((c) => c.nombre),
-        })
-        .getRawMany();
+        .where('clientes.documento IN (:...documento)', {
+          documento: uniqueClients.map((tc) => tc.numeroDocumento.toString()),
+      })
+      .getRawMany();
   
-      for (const client of uniqueClient) {
+      for (const client of uniqueClients) {
         const existingClient = existingClients.find(
-          (c) => c.nombre.localeCompare(client.nombre, undefined, { sensitivity: "base" }) === 0
+          (c) => c.documento.localeCompare(client.numeroDocumento, undefined, { sensitivity: "base" }) === 0
         );
   
         if (existingClient) {
@@ -201,14 +255,16 @@ export class ClientRepository {
       await queryRunner.commitTransaction();
       return {
         message: "Sincronización completada",
-        status: true
+        status: true,
+        duplicated: clientArrayFiltred.duplicateClients,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncTypeClient:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!",
-        status: false
+        message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
+        status: false,
+        duplicated: [],
       };
     } finally {
       await queryRunner.release();

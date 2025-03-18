@@ -14,11 +14,11 @@ export class WaterMeterService {
       ) {}
     
 
-/** ✅ Obtener todas los tipos de clientes*/
+/** ✅ Subir todos los medidores no sincronizados*/
   async submitAllWaterMeter(AuthRequest: AuthRequest, waterMetersArray: WaterMetersDto[]): Promise<{ 
     message: string;
     status: boolean;
-    inserted: { id: number; id_medidor: string ; numero_referencia: bigint }[];
+    inserted: { id: number; id_medidor: string ; numero_referencia: string }[];
     duplicated: WaterMetersDto[];
 }> {
     const user = AuthRequest.user;
@@ -34,7 +34,7 @@ export class WaterMeterService {
 
   }
 
-
+/** ✅ Obtenero todos los medidores no sincronizados en el celular*/
   async getAllWaterMeters(AuthRequest: AuthRequest): Promise<{ 
     message: String,
     water_meters:WaterMeter[]
@@ -51,7 +51,7 @@ export class WaterMeterService {
 
 
 
-  /** ✅ Sincronizar los tipos de clientes*/
+  /** ✅ Sincronizar los tipos medidores de agua*/
   async syncWaterMeters(AuthRequest: AuthRequest, waterMeterArray: WaterMetersDto[]): Promise<{ 
     message: String,
     status: Boolean,

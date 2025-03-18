@@ -18,7 +18,7 @@ export class ClientsDto {
   @IsOptional()
   @IsString()
   @Matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, { message: 'El apellido solo debe contener letras y espacios' })
-  apellido?: string;
+  apellido?: string | null;
 
   @IsEmail({}, { message: 'El email no es válido' })
   @IsOptional()
@@ -36,21 +36,17 @@ export class ClientsDto {
   @IsString({ message: 'La dirección debe ser una cadena de texto' })
   direccion?: string;
 
-  @IsOptional({ message: 'La ciudad debe ser un numero' })
-  @IsInt()
-  ciudad?: number;
+  @IsNotEmpty({ message: 'El UUID de la tipo de documento es obligatorio.' })
+  @IsUUID()  
+  tipoDocumento!: string;
 
-  @IsOptional()
-  @IsInt()
-  tipoDocumento?: number;
+  @IsNotEmpty({ message: 'El UUID de tipo de documento es obligatorio.' })
+  @IsUUID()  
+  tipoCliente!: string;
 
-  @IsOptional()
-  @IsInt()
-  tipoCliente?: number;
-
-  @IsOptional()
-  @IsUUID()
-  unidadMunicipal?: string;
+  @IsNotEmpty({ message: 'El ID de tipo de documento es obligatorio.' })
+  @IsUUID()  
+  unidadMunicipal!: string;
 
   @IsString()
   @IsOptional() 

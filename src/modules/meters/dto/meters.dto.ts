@@ -6,13 +6,13 @@ export class WaterMetersDto {
   @IsInt({ message: 'El id debe ser entero' })
   id!: number;
 
-  @IsNotEmpty({ message: 'El id_medidor no puede estar vacío' })
+  @IsNotEmpty({ message: 'El ID del medidor no puede estar vacío' })
   @IsUUID() 
   id_medidor!: string;
 
-  @IsInt({ message: 'El número de referencia debe ser un entero.' })
-  @Type(() => Number)
-  numero_referencia: bigint;
+  @IsString({ message: 'El tipo debe ser una cadena de texto.' })
+  @Type(() => String)
+  numero_referencia: string;
 
   @IsOptional()
   @IsString({ message: 'El tipo debe ser una cadena de texto.' })
@@ -35,13 +35,11 @@ export class WaterMetersDto {
   descripcion?: string;
 
   @IsNotEmpty({ message: 'El ID del contrato es obligatorio.' })
-  @IsUUID('4',{ message: 'El ID del contrato debe ser un UUID Válido.' })
-  @Type(() => Number)
+  @IsUUID()
   contrato_id: string;
 
-  @IsNotEmpty({ message: 'El ID del contrato es obligatorio.' })
-  @IsUUID('4',{ message: 'El ID del contrato debe ser un UUID Válido.' })
-  @Type(() => Number)
+  @IsNotEmpty({ message: 'El ID de la marca es obligatorio.' })
+  @IsUUID()  
   marca_id: string;
 
 

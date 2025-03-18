@@ -17,10 +17,10 @@ export class Client {
     nombre!: string;
 
     @Column({ name: 'apellido', type: 'varchar',nullable: true })
-    apellido?: string; 
+    apellido?: string | null; 
 
-    @Column({ name: 'documento', type: 'varchar',nullable: true, unique: true })
-    documento?: string; 
+    @Column({ name: 'documento', type: 'varchar',nullable: false, unique: true })
+    documento!: string; 
 
     @Column({ name: 'correo', type: 'varchar',nullable: true })
     correo?: string; 
@@ -40,16 +40,16 @@ export class Client {
     @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
     sync_with?: Record<string, any>[] | null;
     
-    @ManyToOne(() => TypeClient, { nullable: false, eager: false })
+    @ManyToOne(() => TypeClient, { nullable: true, eager: false })
     @JoinColumn({ name: 'tipocliente_id' , referencedColumnName: 'id_tipocliente' })
-    tipo_cliente?: TypeClient | null;
+    tipo_cliente: TypeClient;
 
-    @ManyToOne(() => TypeDocument, { nullable: false, eager: false }) 
+    @ManyToOne(() => TypeDocument, { nullable: true, eager: false }) 
     @JoinColumn({ name: 'tipodocumento_id', referencedColumnName: 'id_tipodocumento' })
-    tipo_documento?: TypeDocument | null;
+    tipo_documento: TypeDocument;
 
-    @ManyToOne(() => MunicipalUnit, { nullable: false, eager: false })
+    @ManyToOne(() => MunicipalUnit, { nullable: true, eager: false })
     @JoinColumn({ name: 'unidad_municipal_id' , referencedColumnName: 'id_unidadmunicipal' })
-    unidad_municipal?: MunicipalUnit | null;
+    unidad_municipal: MunicipalUnit;
 
 }

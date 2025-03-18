@@ -18,14 +18,14 @@ export class WaterMeterRepository {
   ): Promise<{
     message: string;
     status: boolean;
-    inserted: { id: number; id_medidor: string ;numero_referencia: bigint }[];
+    inserted: { id: number; id_medidor: string ;numero_referencia: string }[];
     duplicated: WaterMetersDto[];
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const insertedWaterMeters: { id: number;id_medidor:string ;numero_referencia: bigint }[] = [];
+    const insertedWaterMeters: { id: number;id_medidor:string ;numero_referencia: string }[] = [];
     const duplicatedWaterMeters=waterMeterArrayFiltred.duplicateWaterMeters;
     const uniqueFilteredWaterMeter = new Map<string, WaterMeter>();
     try {
@@ -56,7 +56,7 @@ export class WaterMeterRepository {
                     descripcion:waterMeter.descripcion,
                     contrato_id:waterMeter.contrato.id_contrato,
                     marca_id:waterMeter.marca!.id_marca,
-                    source_failure:'Request'
+                    source_failure:'DataBase'
                 };
                 duplicatedWaterMeters.push({ ...duplicatedDBWaterMeter }); // Guardar duplicado
             }else {
@@ -83,8 +83,8 @@ export class WaterMeterRepository {
             modelo: wm.modelo,
             diametro: wm.diametro,
             descripcion: wm.descripcion,
-            marca_id: wm.marca ? wm.marca.id_marca : null,
-            contrato_id: wm.contrato ? wm.contrato.id_contrato : null,
+            marca_id: wm.marca!.id_marca,
+            contrato_id: wm.contrato.id_contrato,
             uploaded_by_authsupa: wm.uploaded_by_authsupa,
             sync_with: () => `'${JSON.stringify(wm.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
           }))
@@ -103,19 +103,19 @@ export class WaterMeterRepository {
       await queryRunner.commitTransaction();
       
       return {
-        message: "Sincronización exitosa, se han obtenido los siguientes resultados:",
+        message: "Cargue exitoso, se han obtenido los siguientes resultados:",
         status:true,
         inserted: insertedWaterMeters,
         duplicated: duplicatedWaterMeters,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en submitAllTypeClient:', error);
+      console.error('❌ Error en submitAllWaterMeter:', error);
       return {
-        message: '¡La Sincronización ha fallado!',
+        message: '¡El cargue ha fallado! -> '+ error.message,
         status:false,
         inserted: [],
-        duplicated: [],
+        duplicated: []
       };
     } finally {
       await queryRunner.release();
@@ -142,9 +142,9 @@ export class WaterMeterRepository {
       const entityManager = queryRunner.manager;
 
       // Obtener nombres que ya existen en la base de datos
-      const notSyncTypeClient = await entityManager
+      const notSyncWaterMeters = await entityManager
       .createQueryBuilder()
-      .select('tipo_cliente.*') // Agregado `.*` para seleccionar todos los campos
+      .select('medidores.*') // Agregado `.*` para seleccionar todos los campos
       .from(`${schema}.medidores`, 'medidores')
       .where(`NOT EXISTS (
         SELECT 1 FROM jsonb_array_elements(medidores.sync_with::jsonb) AS elem
@@ -157,14 +157,14 @@ export class WaterMeterRepository {
 
       return {
         message:
-          'Sincronización exitosa, se han obtenido los siguientes resultados:',
-        water_meters: notSyncTypeClient
+          'Conexión exitosa, se han obtenido los siguientes medidores no sincronizados:',
+        water_meters: notSyncWaterMeters
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllWaterMeters:', error);
       return {
-        message: '¡La Sincronización ha fallado, retornando desde la base de datos!',
+        message: '¡La Conexión ha fallado, retornando desde la base de datos! -> '+ error.message, 
         water_meters: []
       };
     } finally {
@@ -199,16 +199,16 @@ export class WaterMeterRepository {
         .select("medidores.*")
         .from(`${schema}.medidores`, "medidores")
         .where('medidores.id_medidor IN (:...id_medidor)', {
-            id_medidor: waterMeterArrayFiltred.uniqueWaterMeters.map((tc) => tc.id_medidor.toString()),
+            id_medidor: uniqueWaterMeter.map((tc) => tc.id_medidor.toString()),
         })
         .getRawMany();
   
       for (const waterMeter of uniqueWaterMeter) {
         const existingWaterMeter = existingWaterMeters.find(
-          (c) => c.nombre.localeCompare(waterMeter.id_medidor, undefined, { sensitivity: "base" }) === 0
+          (c) => c.id_medidor.localeCompare(waterMeter.id_medidor, undefined, { sensitivity: "base" }) === 0
         );
   
-        if (existingWaterMeters) {
+        if (existingWaterMeter) {
           let syncWithArray = existingWaterMeter.sync_with 
           ? (typeof existingWaterMeter.sync_with === "string" 
               ? JSON.parse(existingWaterMeter.sync_with) 
@@ -241,11 +241,11 @@ export class WaterMeterRepository {
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncTypeClient:", error);
+      console.error("❌ Error en syncWaterMeter:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!",
+        message: "¡La Sincronización ha fallado, retornando desde la base de datos! -> "+ error.message,
         status: false,
-        duplicated: null,
+        duplicated: [],
       };
     } finally {
       await queryRunner.release();

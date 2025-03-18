@@ -115,16 +115,16 @@ export class TypeDocumentRepository {
       await queryRunner.commitTransaction();
       
       return {
-        message: "Sincronización exitosa, se han obtenido los siguientes resultados:",
+        message: "Cargue exitoso, se han obtenido los siguientes resultados:",
         status:true,
         inserted: insertedTypeDocuments,
         duplicated: duplicatedTypeDocuments,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en submitAllTypeClient:', error);
+      console.error('❌ Error en submitAllTypeDocument:', error);
       return {
-        message: '¡La Sincronización ha fallado!',
+        message: "¡El cargue de datos ha fallado! -> "+ error.message, 
         status:false,
         inserted: [],
         duplicated: [],
@@ -169,14 +169,14 @@ export class TypeDocumentRepository {
 
       return {
         message:
-          'Sincronización exitosa, se han obtenido los siguientes resultados:',
+          'Conexión exitosa, se han obtenido los siguientes tipos de documentos no sincronizados:',
         type_documents: notSyncTypeClient
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllTypeClient:', error);
+      console.error('❌ Error en getAllTypeDocument:', error);
       return {
-        message: '¡La Sincronización ha fallado, retornando desde la base de datos!',
+        message: "¡La conexión ha fallado! -> "+ error.message,
         type_documents: []
       };
     } finally {
@@ -255,7 +255,7 @@ export class TypeDocumentRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncTypeClient:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!",
+        message: "¡La Sincronización ha fallado ! -> "+ error.message, 
         status: false,
         duplicated: null,
       };
