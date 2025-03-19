@@ -16,6 +16,7 @@ import { TypeClient } from '../../modules/type_client/type_client.entity';
 import { TypeDocument } from '../../modules/type_document/type_document.entity';
 import { MunicipalUnit } from '../../modules/municipal_unit/municipal_unit.entity';
 import { City } from '../../modules/cities/city.entity';
+import { CityDto } from '../../modules/cities/dto/cities.dto';
 import { State } from '../../modules/states/state.entity';
 import { MunicipalUnitDto } from '../../modules/municipal_unit/dto/municipal_unit.dto';
 
@@ -99,6 +100,39 @@ export class UtilityService {
             duplicateClients,
           };
       }
+
+    mapDtoCityToEntityAndRemoveDuplicate(citiesArray: CityDto[], uuid_authsupa: string):
+    { uniqueCities: City[], 
+      duplicateCities: CityDto[] 
+    } {
+          const uniqueCities = new Map<string, City>();
+          const duplicateCities: CityDto[] = [];
+      
+          for (const city of citiesArray) {
+              // Creamos el nombre clave para realizar la validacion si está repetido
+              const referenceKey = city.id_ciudad.toString().trim();
+  
+              if (uniqueCities.has(referenceKey)) {
+                city.source_failure='Request'
+                duplicateCities.push({ ...city }); // Guardar duplicado
+              } else {
+                let newCity = new City();
+                newCity.id = city.id;
+                newCity.id_ciudad = city.id_ciudad;
+                newCity.nombre = city.nombre;
+                newCity.codigo = city.codigo ?? null;
+                newCity.sync_with = [{ id: city.id, uuid_authsupa }];          
+                newCity.uploaded_by_authsupa = uuid_authsupa;
+          
+                uniqueCities.set(referenceKey, { ...newCity });
+              }
+            }
+          
+            return {
+              uniqueCities: Array.from(uniqueCities.values()),
+              duplicateCities,
+            };
+    }
 
     mapDtoWaterMeterToEntityAndRemoveDuplicate(waterMeterArray: WaterMetersDto[], uuid_authsupa: string): 
       { uniqueWaterMeters: WaterMeter[], 

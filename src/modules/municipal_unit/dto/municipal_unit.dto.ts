@@ -30,9 +30,9 @@ export class MunicipalUnitDto {
 }
 
 export class MunicipalUnitArrayDto {
-  @IsArray({ message: 'El cuerpo debe ser un array de clientes' })
+  @IsArray({ message: 'El cuerpo debe ser un array de unidades municipales' })
   @ValidateNested({ each: true })
   @Type(() => MunicipalUnitDto)
-  @IsNotEmpty({ message: 'El array de clientes no puede estar vacío' })
+  @IsNotEmpty({ message: 'El array de unidades municipales no puede estar vacío' })
   municipal_units!: MunicipalUnitDto[];
 }
