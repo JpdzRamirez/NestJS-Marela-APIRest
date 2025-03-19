@@ -10,7 +10,7 @@ export class Brand {
     id_marca!: string;
 
     @Column({ name: 'nombre', unique: true, nullable: false })
-    nombre?: string;
+    nombre!: string;
 
     @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     created_at!: Date;

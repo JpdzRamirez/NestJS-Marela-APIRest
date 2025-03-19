@@ -1,32 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
-import { City } from './city.entity';
+import { TypeService } from './type_service.entity';
 
-import { CityDto } from './dto/cities.dto';
+import { TypeServiceDto } from './dto/type_services.dto';
 
 @Injectable()
-export class CityRepository {
+export class TypeServiceRepository {
   constructor(        
     @InjectDataSource() private readonly dataSource: DataSource
   ) {}
 
     /** ✅
-     * Inserta todos los clientes y retorna los clientes insertados o duplicados
+     * Inserta todos los tipos de servicio y retorna los clientes insertados o duplicados
      */
-    async submitAllCities(
+    async submitAllTypeServices(
       schema: string, 
-      citiesArrayFiltred: { uniqueCities: City[]; duplicateCities: CityDto[] }
+      typeServicesArrayFiltred: { uniqueTypeServices: TypeService[]; duplicateTypeServices: TypeServiceDto[] }
     ): Promise<{ 
       message: string,
       status: boolean,
       inserted: { 
         id: number; 
-        id_ciudad: string;
-        nombre: string;
-        codigo: number;
+        id_tiposervicio: string;
+        nombre: string;   
+        cargo_fijo: number;     
       }[];
-      duplicated: CityDto[]; 
+      duplicated: TypeServiceDto[]; 
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
@@ -34,77 +34,107 @@ export class CityRepository {
 
       let messageResponse='';
 
-      const insertedCities: { 
+      const insertedTypoServicio: { 
         id: number; 
-        id_ciudad: string;
-        nombre: string;        
-        codigo: number;  
+        id_tiposervicio: string;
+        nombre: string;                  
+        cargo_fijo: number; 
        }[] = [];
-      const duplicateCities=citiesArrayFiltred.duplicateCities;
-      const uniqueFilteredCities = new Map<string, City>();
+      const duplicateTypeServices=typeServicesArrayFiltred.duplicateTypeServices;
+      const uniqueFilteredTypeServices = new Map<string, TypeService>();
       try {
         const entityManager = queryRunner.manager;
         
+        const normalizedNewTypeServices = typeServicesArrayFiltred.uniqueTypeServices.map((tc) => ({
+            ...tc,
+            nombre: tc.nombre
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ")
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, ""), // Quitar acentos y espacios innecesarios
+        }));
+
         // 🔥 Obtener clientes que ya existen en la base de datos
-        const existingCities= await entityManager
+        const existingTypeServices= await entityManager
         .createQueryBuilder()
         .select(['id', 'nombre'])
-        .from(`${schema}.ciudades`, 'ciudades')
-        .where("LOWER(unaccent(ciudades.nombre)) IN (:...nombres)", {
-          nombres: citiesArrayFiltred.uniqueCities.map((tc) => tc.nombre.toString()),
+        .from(`${schema}.tipo_servicio`, 'tipo_servicio')
+        .where("LOWER(unaccent(tipo_servicio.nombre)) IN (:...nombres)", {
+          nombres: normalizedNewTypeServices.map((tc) => tc.nombre.toString()),
         })
         .getRawMany();
+        // 🔥 Normalizar nombres existentes para comparación eficiente
+        const existingNames = new Set(
+            existingTypeServices.map((typeservice) =>
+                typeservice.nombre
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, " ")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+            )
+        );
+        
+        // 🔥 Filtrar solo los documentos que no están duplicados
+        const uniqueTypeServices = typeServicesArrayFiltred.uniqueTypeServices.filter((tc) => {
+            const normalizedName = tc.nombre
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
 
-        for (const city of citiesArrayFiltred.uniqueCities) {
-        
-            const referenceKey = city.nombre.toString().trim();
-        
-              if (existingCities.some((cty) => cty.nombre === city.nombre)) {
-                let duplicatedDBCity:CityDto = {
-                      id:city.id,
-                      id_ciudad:city.id_ciudad,
-                      nombre:city.nombre,                                                                  
-                      codigo:city.codigo,     
-                      source_failure:'DataBase'
-                  };
-                  duplicateCities.push({ ...duplicatedDBCity }); // Guardar duplicado
-              }else {
-                uniqueFilteredCities.set(referenceKey, { ...city });
-              }
-        }
-        if (uniqueFilteredCities.size  > 0) {
+            if (existingNames.has(normalizedName)) {
+            let existingTypeService = existingTypeServices.find(
+                (c) => c.nombre.localeCompare(tc.nombre, undefined, { sensitivity: "base" }) === 0
+            );
+
+            if (existingTypeService) {
+                existingTypeService.id=tc.id;
+                existingTypeService.id_tiposervicio=tc.id_tiposervicio;
+                existingTypeService.nombre=tc.nombre;
+                existingTypeService.cargo_fijo=tc.cargo_fijo;
+                existingTypeService.source_failure='DataBase';
+                duplicateTypeServices.push(existingTypeService);
+                return false;
+            }
+            }
+            return true;
+        });
+        if (uniqueTypeServices.length  > 0) {
         // 🔥 Insertar los clientes con el esquema dinámico
           await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.unidad_municipal`, [
-            'id_ciudad',
+          .into(`${schema}.tipo_servicio`, [
+            'id_tiposervicio',
             'nombre',
-            'codigo',              
+            'cargo_fijo',              
             'uploaded_by_authsupa', 
             'sync_with'])
           .values(
-            Array.from(uniqueFilteredCities.values()).map((cty) => ({
-              id_ciudad: cty.id_ciudad,              
-              nombre: cty.nombre,
-              codigo: cty.codigo,    
-              uploaded_by_authsupa: cty.uploaded_by_authsupa,                                  
-              sync_with: () => `'${JSON.stringify(cty.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
+            Array.from(uniqueTypeServices.values()).map((typserv) => ({
+              id_tiposervicio: typserv.id_tiposervicio,              
+              nombre: typserv.nombre,
+              cargo_fijo: typserv.cargo_fijo,    
+              uploaded_by_authsupa: typserv.uploaded_by_authsupa,                                  
+              sync_with: () => `'${JSON.stringify(typserv.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
             }))
           )
-          .returning(["id", "id_ciudad", "nombre","codigo"]) 
+          .returning(["id", "id_tiposervicio", "nombre","cargo_fijo"]) 
           .execute();
           
         // 🔥 Asociar los nombres insertados con los IDs originales
-        insertedCities.push(
-          ...Array.from(uniqueFilteredCities.values()).map((cty) => ({
-            id: cty.id, 
-            id_ciudad: cty.id_ciudad,
-            nombre:cty.nombre,
-            codigo:cty.codigo,
+        insertedTypoServicio.push(
+          ...Array.from(uniqueFilteredTypeServices.values()).map((typserv) => ({
+            id: typserv.id, 
+            id_tiposervicio: typserv.id_tiposervicio,
+            nombre:typserv.nombre,
+            cargo_fijo:typserv.cargo_fijo,
           }))
         );       
-        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
+          messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
         }else{
           messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
           throw new Error(messageResponse);
@@ -115,18 +145,18 @@ export class CityRepository {
         return {
           message: messageResponse,
           status: true,
-          inserted: insertedCities, 
-          duplicated: duplicateCities,
+          inserted: insertedTypoServicio, 
+          duplicated: duplicateTypeServices,
         };
       } catch (error) {
         await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllCities:", error);
+        console.error("❌ Error en submitAllTypeServices:", error);
         
         return {
           message: "¡El cargue ha fallado! -> "+ error.message,        
           status: false,
           inserted: [],
-          duplicated: duplicateCities
+          duplicated: duplicateTypeServices
         };
       } finally {
         await queryRunner.release();
@@ -137,12 +167,12 @@ export class CityRepository {
 /** ✅
    * Retorna todas lass unidades municipales que el usuario no tiene sincronizados
    */
-  async getAllCities(
+  async getAllTypeServices(
     schema: string,
     uuid_authsupa: string,
   ): Promise<{
     message: string,
-    cities:City[]
+    cities:TypeService[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -185,7 +215,7 @@ export class CityRepository {
   /** ✅
    *  Actualiza los registros sincronizados en el mobil
    */
-  async syncCities(
+  async syncTypeServices(
     schema: string,
     uuid_authsupa: string,
     citiesArrayFiltred:  { uniqueCities: CityDto[]; duplicateCities: CityDto[] }

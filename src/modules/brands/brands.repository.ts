@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
-import { City } from './city.entity';
+import { Brand } from './brand.entity';
 
-import { CityDto } from './dto/cities.dto';
+import { BrandDto } from './dto/brand.dto';
 
 @Injectable()
-export class CityRepository {
+export class BrandRepository {
   constructor(        
     @InjectDataSource() private readonly dataSource: DataSource
   ) {}
@@ -14,19 +14,18 @@ export class CityRepository {
     /** ✅
      * Inserta todos los clientes y retorna los clientes insertados o duplicados
      */
-    async submitAllCities(
+    async submitAllBrands(
       schema: string, 
-      citiesArrayFiltred: { uniqueCities: City[]; duplicateCities: CityDto[] }
+      brandsArrayFiltred: { uniqueBrands: Brand[]; duplicateBrands: BrandDto[] }
     ): Promise<{ 
       message: string,
       status: boolean,
       inserted: { 
         id: number; 
-        id_ciudad: string;
-        nombre: string;
-        codigo: number;
+        id_marca: string;
+        nombre: string;        
       }[];
-      duplicated: CityDto[]; 
+      duplicated: BrandDto[]; 
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
@@ -34,74 +33,98 @@ export class CityRepository {
 
       let messageResponse='';
 
-      const insertedCities: { 
+      const insertedBrands: { 
         id: number; 
-        id_ciudad: string;
-        nombre: string;        
-        codigo: number;  
+        id_marca: string;
+        nombre: string;                
        }[] = [];
-      const duplicateCities=citiesArrayFiltred.duplicateCities;
-      const uniqueFilteredCities = new Map<string, City>();
+      const duplicateBrands=brandsArrayFiltred.duplicateBrands;      
       try {
         const entityManager = queryRunner.manager;
         
+        const normalizedNewTypeDocuments = brandsArrayFiltred.uniqueBrands.map((brnd) => ({
+            ...brnd,
+            nombre: brnd.nombre
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ")
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, ""), // Quitar acentos y espacios innecesarios
+        }));
+
         // 🔥 Obtener clientes que ya existen en la base de datos
-        const existingCities= await entityManager
+        const existingBrands= await entityManager
         .createQueryBuilder()
         .select(['id', 'nombre'])
-        .from(`${schema}.ciudades`, 'ciudades')
-        .where("LOWER(unaccent(ciudades.nombre)) IN (:...nombres)", {
-          nombres: citiesArrayFiltred.uniqueCities.map((tc) => tc.nombre.toString()),
+        .from(`${schema}.marcas`, 'marcas')
+        .where("LOWER(unaccent(marcas.nombre)) IN (:...nombres)", {
+          nombres: normalizedNewTypeDocuments.map((brnd) => brnd.nombre.toString()),
         })
         .getRawMany();
 
-        for (const city of citiesArrayFiltred.uniqueCities) {
+        // 🔥 Normalizar nombres existentes para comparación eficiente
+        const existingNames = new Set(
+            existingBrands.map((brand) =>
+            brand.nombre
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, " ")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+            )
+        );
         
-            const referenceKey = city.nombre.toString().trim();
-        
-              if (existingCities.some((cty) => cty.nombre === city.nombre)) {
-                let duplicatedDBCity:CityDto = {
-                      id:city.id,
-                      id_ciudad:city.id_ciudad,
-                      nombre:city.nombre,                                                                  
-                      codigo:city.codigo,     
-                      source_failure:'DataBase'
-                  };
-                  duplicateCities.push({ ...duplicatedDBCity }); // Guardar duplicado
-              }else {
-                uniqueFilteredCities.set(referenceKey, { ...city });
-              }
-        }
-        if (uniqueFilteredCities.size  > 0) {
+        // 🔥 Filtrar solo las marcas que no están duplicadas
+        const uniqueBrands = brandsArrayFiltred.uniqueBrands.filter((brnd) => {
+            const normalizedName = brnd.nombre
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+
+            if (existingNames.has(normalizedName)) {
+            let existingBrand = existingBrands.find(
+                (c) => c.nombre.localeCompare(brnd.nombre, undefined, { sensitivity: "base" }) === 0
+            );
+
+            if (existingBrand) {
+                existingBrand.id=brnd.id;
+                existingBrand.source_failure='DataBase';
+                duplicateBrands.push(existingBrand);
+                return false;
+            }
+            }
+            return true;
+        });
+        if (uniqueBrands.length  > 0) {
         // 🔥 Insertar los clientes con el esquema dinámico
           await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.unidad_municipal`, [
+          .into(`${schema}.marcas`, [
             'id_ciudad',
             'nombre',
             'codigo',              
             'uploaded_by_authsupa', 
             'sync_with'])
           .values(
-            Array.from(uniqueFilteredCities.values()).map((cty) => ({
-              id_ciudad: cty.id_ciudad,              
-              nombre: cty.nombre,
-              codigo: cty.codigo,    
-              uploaded_by_authsupa: cty.uploaded_by_authsupa,                                  
-              sync_with: () => `'${JSON.stringify(cty.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
+            Array.from(uniqueBrands.values()).map((brnd) => ({
+              id_marca: brnd.id_marca,              
+              nombre: brnd.nombre,              
+              uploaded_by_authsupa: brnd.uploaded_by_authsupa,                                  
+              sync_with: () => `'${JSON.stringify(brnd.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
             }))
           )
-          .returning(["id", "id_ciudad", "nombre","codigo"]) 
+          .returning(["id", "id_marca", "nombre"]) 
           .execute();
           
         // 🔥 Asociar los nombres insertados con los IDs originales
-        insertedCities.push(
-          ...Array.from(uniqueFilteredCities.values()).map((cty) => ({
-            id: cty.id, 
-            id_ciudad: cty.id_ciudad,
-            nombre:cty.nombre,
-            codigo:cty.codigo,
+        insertedBrands.push(
+          ...Array.from(uniqueBrands.values()).map((brnd) => ({
+            id: brnd.id, 
+            id_marca: brnd.id_marca,
+            nombre:brnd.nombre,           
           }))
         );       
         messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
@@ -115,8 +138,8 @@ export class CityRepository {
         return {
           message: messageResponse,
           status: true,
-          inserted: insertedCities, 
-          duplicated: duplicateCities,
+          inserted: insertedBrands, 
+          duplicated: duplicateBrands,
         };
       } catch (error) {
         await queryRunner.rollbackTransaction();
@@ -126,7 +149,7 @@ export class CityRepository {
           message: "¡El cargue ha fallado! -> "+ error.message,        
           status: false,
           inserted: [],
-          duplicated: duplicateCities
+          duplicated: duplicateBrands
         };
       } finally {
         await queryRunner.release();
@@ -137,12 +160,12 @@ export class CityRepository {
 /** ✅
    * Retorna todas lass unidades municipales que el usuario no tiene sincronizados
    */
-  async getAllCities(
+  async getAllBrands(
     schema: string,
     uuid_authsupa: string,
   ): Promise<{
     message: string,
-    cities:City[]
+    brands:Brand[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -152,12 +175,12 @@ export class CityRepository {
       const entityManager = queryRunner.manager;
 
       // Obtener nombres que ya existen en la base de datos
-      const notSyncCities = await entityManager
+      const notSyncBrands = await entityManager
       .createQueryBuilder()
-      .select('ciudades.*') // Agregado `.*` para seleccionar todos los campos
-      .from(`${schema}.ciudades`, 'ciudades')
+      .select('marcas.*') // Agregado `.*` para seleccionar todos los campos
+      .from(`${schema}.marcas`, 'marcas')
       .where(`NOT EXISTS (
-        SELECT 1 FROM jsonb_array_elements(ciudades.sync_with::jsonb) AS elem
+        SELECT 1 FROM jsonb_array_elements(marcas.sync_with::jsonb) AS elem
         WHERE elem->>'uuid_authsupa' = :uuid_authsupa
       )`, { uuid_authsupa })
       .getRawMany();
@@ -168,14 +191,14 @@ export class CityRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes unidades municipales no sincronizados:',
-          cities: notSyncCities
+        brands: notSyncBrands
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllCities:', error);
       return {
         message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
-        cities: []
+        brands: []
       };
     } finally {
       await queryRunner.release();
@@ -185,14 +208,14 @@ export class CityRepository {
   /** ✅
    *  Actualiza los registros sincronizados en el mobil
    */
-  async syncCities(
+  async syncBrands(
     schema: string,
     uuid_authsupa: string,
-    citiesArrayFiltred:  { uniqueCities: CityDto[]; duplicateCities: CityDto[] }
+    brandsArrayFiltred:  { uniqueBrands: BrandDto[]; duplicateBrands: BrandDto[] }
   ): Promise<{
     message: string,
     status: boolean,
-    duplicated: CityDto[] | null;
+    duplicated: BrandDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -203,46 +226,46 @@ export class CityRepository {
     try {
       const entityManager = queryRunner.manager;      
   
-      if(citiesArrayFiltred.uniqueCities.length>0){ 
+      if(brandsArrayFiltred.uniqueBrands.length>0){ 
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
-      const existingCities = await entityManager
+      const existingBrands = await entityManager
         .createQueryBuilder()
-        .select("ciudades.*")
-        .from(`${schema}.ciudades`, "ciudades")
-        .where("LOWER(unaccent(ciudades.nombre)) IN (:...nombres)", {
-          nombres: citiesArrayFiltred.uniqueCities.map((tc) => tc.nombre.toString()),
+        .select("marcas.*")
+        .from(`${schema}.marcas`, "marcas")
+        .where("LOWER(unaccent(marcas.nombre)) IN (:...nombres)", {
+          nombres: brandsArrayFiltred.uniqueBrands.map((brnd) => brnd.nombre.toString()),
       })
       .getRawMany();
   
-      for (const city of citiesArrayFiltred.uniqueCities) {
-        const existingCity= existingCities.find(
-          (c) => c.nombre.localeCompare(city.nombre, undefined, { sensitivity: "base" }) === 0
+      for (const brand of brandsArrayFiltred.uniqueBrands) {
+        const existingBrand= existingBrands.find(
+          (c) => c.nombre.localeCompare(brand.nombre, undefined, { sensitivity: "base" }) === 0
         );
   
-        if (existingCity) {
-          let syncWithArray = existingCity.sync_with 
-          ? (typeof existingCity.sync_with === "string" 
-              ? JSON.parse(existingCity.sync_with) 
-              : existingCity.sync_with) 
+        if (existingBrand) {
+          let syncWithArray = existingBrand.sync_with 
+          ? (typeof existingBrand.sync_with === "string" 
+              ? JSON.parse(existingBrand.sync_with) 
+              : existingBrand.sync_with) 
           : [];
   
           // 🔥 Verificar si ya existe el uuid en `sync_with`
           const alreadyExists = syncWithArray.some((entry: any) => entry.uuid_authsupa === uuid_authsupa);
   
           if (!alreadyExists) {
-            syncWithArray.push({ id: existingCity.id, uuid_authsupa });
+            syncWithArray.push({ id: existingBrand.id, uuid_authsupa });
   
             // 🔥 Actualizar `sync_with` correctamente
             await entityManager
               .createQueryBuilder()
-              .update(`${schema}.ciudades`)
+              .update(`${schema}.marcas`)
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
-              .where("id_ciudad = :id_ciudad", { id_ciudad: existingCity.id_ciudad })
+              .where("id_marca = :id_marca", { id_marca: existingBrand.id_marca })
               .execute();
           }
         }
       }
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados";
+        messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados";
       }else{
         messageResponse= "No hay datos pendientes por sincronizar";        
         throw new Error(messageResponse);
@@ -251,7 +274,7 @@ export class CityRepository {
       return {
         message: messageResponse,
         status: true,
-        duplicated: citiesArrayFiltred.duplicateCities,
+        duplicated: brandsArrayFiltred.duplicateBrands,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -259,7 +282,7 @@ export class CityRepository {
       return {
         message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
-        duplicated: citiesArrayFiltred.duplicateCities,
+        duplicated: brandsArrayFiltred.duplicateBrands,
       };
     } finally {
       await queryRunner.release();

@@ -102,14 +102,16 @@ export class WaterMeterRepository {
         );
 
         messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-        }else{
-        messageResponse= "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";
+        }else {
+          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";      
+          
+          throw new Error(messageResponse);
         }
       
       await queryRunner.commitTransaction();
       
       return {
-        message: "Cargue exitoso, se han obtenido los siguientes resultados:",
+        message: messageResponse,
         status:true,
         inserted: insertedWaterMeters,
         duplicated: duplicatedWaterMeters,
@@ -121,7 +123,7 @@ export class WaterMeterRepository {
         message: '¡El cargue ha fallado! -> '+ error.message,
         status:false,
         inserted: [],
-        duplicated: []
+        duplicated: duplicatedWaterMeters
       };
     } finally {
       await queryRunner.release();
@@ -193,23 +195,24 @@ export class WaterMeterRepository {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-  
+    
+    let messageResponse='';
+
     try {
-      const entityManager = queryRunner.manager;
-      const uniqueWaterMeter = waterMeterArrayFiltred.uniqueWaterMeters;
+      const entityManager = queryRunner.manager;      
   
-      if(uniqueWaterMeter.length>0){      
+      if(waterMeterArrayFiltred.uniqueWaterMeters.length>0){      
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
       const existingWaterMeters = await entityManager
         .createQueryBuilder()
         .select("medidores.*")
         .from(`${schema}.medidores`, "medidores")
         .where('medidores.id_medidor IN (:...id_medidor)', {
-            id_medidor: uniqueWaterMeter.map((tc) => tc.id_medidor.toString()),
+            id_medidor: waterMeterArrayFiltred.uniqueWaterMeters.map((tc) => tc.id_medidor.toString()),
         })
         .getRawMany();
   
-      for (const waterMeter of uniqueWaterMeter) {
+      for (const waterMeter of waterMeterArrayFiltred.uniqueWaterMeters) {
         const existingWaterMeter = existingWaterMeters.find(
           (c) => c.id_medidor.localeCompare(waterMeter.id_medidor, undefined, { sensitivity: "base" }) === 0
         );
@@ -238,10 +241,16 @@ export class WaterMeterRepository {
         }
       }
   
-      await queryRunner.commitTransaction();
+      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
+    }else{
+      messageResponse= "No hay datos pendientes por sincronizar";
+
+      throw new Error(messageResponse);
     }
+
+    await queryRunner.commitTransaction();
       return {
-        message: "Sincronización completada",
+        message: messageResponse,
         status: true,
         duplicated: waterMeterArrayFiltred.duplicateWaterMeters,
       };
@@ -249,9 +258,9 @@ export class WaterMeterRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncWaterMeter:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos! -> "+ error.message,
+        message: "¡La Sincronización ha fallado! -> "+ error.message,
         status: false,
-        duplicated: [],
+        duplicated: waterMeterArrayFiltred.duplicateWaterMeters,
       };
     } finally {
       await queryRunner.release();

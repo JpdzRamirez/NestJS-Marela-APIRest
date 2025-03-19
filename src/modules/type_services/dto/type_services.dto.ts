@@ -1,14 +1,14 @@
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsString, Matches, IsArray, IsOptional, ValidateNested, IsInt, IsUUID } from 'class-validator';
-export class StateDto {
+export class TypeServiceDto {
 
   @IsNotEmpty({ message: 'El id es obligatorio' })
   @IsInt({ message: 'El id debe ser entero' })
   id!: number;
 
-  @IsNotEmpty({ message: 'El id_departamento no puede estar vacío' })
+  @IsNotEmpty({ message: 'El id_ciudad no puede estar vacío' })
   @IsUUID()
-  id_departamento!: string;
+  id_tiposervicio!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
@@ -17,7 +17,7 @@ export class StateDto {
   
   @IsNotEmpty({ message: 'El codigo es obligatorio' })
   @IsInt()  
-  codigo!: number;
+  cargo_fijo!: number;
 
   @IsString()
   @IsOptional() 
@@ -25,10 +25,10 @@ export class StateDto {
 
 }
 
-export class StatesArrayDto {
+export class TypeServiceArrayDto {
   @IsArray({ message: 'El cuerpo debe ser un array de clientes' })
   @ValidateNested({ each: true })
-  @Type(() => StateDto)
+  @Type(() => TypeServiceDto)
   @IsNotEmpty({ message: 'El array de clientes no puede estar vacío' })
-  states!: StateDto[];
+  types_services!: TypeServiceDto[];
 }

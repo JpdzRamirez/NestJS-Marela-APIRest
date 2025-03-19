@@ -6,8 +6,9 @@ import { TypeClientDto } from '../../modules/type_client/dto/typeClient.dto';
 import { TypeDocumentDto } from '../../modules/type_document/dto/typeDocument.dto';
 
 import { WaterMeter } from '../../modules/meters/meters.entity';
-import { Brand } from 'src/modules/brands/brand.entity';
 import { WaterMetersDto } from '../../modules/meters/dto/meters.dto';
+import { Brand } from 'src/modules/brands/brand.entity';
+import { BrandDto } from 'src/modules/brands/dto/brand.dto';
 
 import { Contract } from '../../modules/contracts/contract.entity';
 
@@ -18,7 +19,10 @@ import { MunicipalUnit } from '../../modules/municipal_unit/municipal_unit.entit
 import { City } from '../../modules/cities/city.entity';
 import { CityDto } from '../../modules/cities/dto/cities.dto';
 import { State } from '../../modules/states/state.entity';
+import { StateDto } from '../../modules/states/dto/state.dto';
 import { MunicipalUnitDto } from '../../modules/municipal_unit/dto/municipal_unit.dto';
+import { TypeService } from 'src/modules/type_services/type_service.entity';
+import { TypeServiceDto } from 'src/modules/type_services/dto/type_services.dto';
 
 
 @Injectable()
@@ -100,7 +104,38 @@ export class UtilityService {
             duplicateClients,
           };
       }
-
+    mapDtoStateToEntityAndRemoveDuplicate(statesArray: StateDto[], uuid_authsupa: string):
+      { uniqueStates: State[], 
+        duplicateStates: StateDto[] 
+      } {
+            const uniqueStates = new Map<string, State>();
+            const duplicateStates: StateDto[] = [];
+        
+            for (const state of statesArray) {
+                // Creamos el nombre clave para realizar la validacion si está repetido
+                const referenceKey = state.codigo.toString().trim();
+    
+                if (uniqueStates.has(referenceKey)) {
+                  state.source_failure='Request'
+                  duplicateStates.push({ ...state }); // Guardar duplicado
+                } else {
+                  let newState = new State();
+                  newState.id = state.id;
+                  newState.id_departamento = state.id_departamento;
+                  newState.nombre = state.nombre;
+                  newState.codigo = state.codigo ?? null;
+                  newState.sync_with = [{ id: state.id, uuid_authsupa }];          
+                  newState.uploaded_by_authsupa = uuid_authsupa;
+            
+                  uniqueStates.set(referenceKey, { ...newState });
+                }
+              }
+            
+              return {
+                uniqueStates: Array.from(uniqueStates.values()),
+                duplicateStates,
+              };
+    }
     mapDtoCityToEntityAndRemoveDuplicate(citiesArray: CityDto[], uuid_authsupa: string):
     { uniqueCities: City[], 
       duplicateCities: CityDto[] 
@@ -110,7 +145,7 @@ export class UtilityService {
       
           for (const city of citiesArray) {
               // Creamos el nombre clave para realizar la validacion si está repetido
-              const referenceKey = city.id_ciudad.toString().trim();
+              const referenceKey = city.codigo.toString().trim();
   
               if (uniqueCities.has(referenceKey)) {
                 city.source_failure='Request'
@@ -159,11 +194,8 @@ export class UtilityService {
               newWaterMeter.descripcion = waterMeter.descripcion;
               newWaterMeter.marca = { id_marca: waterMeter.marca_id } as Partial<Brand> as Brand;   
               newWaterMeter.contrato = { id_contrato: waterMeter.contrato_id } as Partial<Contract> as Contract; 
-              newWaterMeter.uploaded_by_authsupa = uuid_authsupa;
-        
-              // Construir el arreglo sync_with
-              newWaterMeter.sync_with = [{ id: waterMeter.id, uuid_authsupa }];
-        
+              newWaterMeter.uploaded_by_authsupa = uuid_authsupa;                   
+              newWaterMeter.sync_with = [{ id: waterMeter.id, uuid_authsupa }];        
               uniqueWaterMeters.set(referenceKey, { ...newWaterMeter });
             }
           }
@@ -184,7 +216,6 @@ export class UtilityService {
       for (const municipal_unit of municipal_unitArray) {
           // Creamos el nombre clave para realizar la validacion si está repetido
           const referenceKey = municipal_unit.id_unidadmunicipal.toString().trim();
-
           if (uniqueMunicipalUnits.has(referenceKey)) {
             municipal_unit.source_failure='Request'
             duplicateMunicipalUnits.push({ ...municipal_unit }); // Guardar duplicado
@@ -195,21 +226,107 @@ export class UtilityService {
             newMunicipalUnit.nombre = municipal_unit.nombre;
             newMunicipalUnit.ciudad = { id_ciudad: municipal_unit.ciudad_id } as Partial<City> as City;   
             newMunicipalUnit.departamento = { id_departamento: municipal_unit.departamento_id } as Partial<State> as State; 
-            newMunicipalUnit.uploaded_by_authsupa = uuid_authsupa;
-      
-            // Construir el arreglo sync_with
-            newMunicipalUnit.sync_with = [{ id: municipal_unit.id, uuid_authsupa }];
-      
+            newMunicipalUnit.uploaded_by_authsupa = uuid_authsupa;                  
+            newMunicipalUnit.sync_with = [{ id: municipal_unit.id, uuid_authsupa }];      
             uniqueMunicipalUnits.set(referenceKey, { ...newMunicipalUnit });
           }
-        }
-      
+        }      
         return {
           uniqueMunicipalUnits: Array.from(uniqueMunicipalUnits.values()),
           duplicateMunicipalUnits,
         };
   }
+    mapDtoTypeServiceAndRemoveDuplicateEntity(typeServicesArray: TypeServiceDto[], uuid_authsupa: string): 
+    { uniqueTypeServices: TypeService[], 
+      duplicateTypeServices: TypeServiceDto[] 
+    } {
+      const uniqueTypeServices = new Map<string, TypeService>();
+      const duplicateTypeServices: TypeServiceDto[] = [];
 
+      for (const typeService of typeServicesArray) {
+          // Normalizar el nombre para comparación
+          const normalizedName = typeService.nombre
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ") 
+              .normalize("NFD") 
+              .replace(/[\u0300-\u036f]/g, ""); 
+          
+          if (uniqueTypeServices.has(normalizedName)) {
+              const existingBrand= uniqueTypeServices.get(normalizedName)!;
+              if (this.isBetterFormatted(typeService.nombre, existingBrand.nombre)) {                  
+                  let newTypeService = new TypeService();
+                  newTypeService.id=typeService.id;
+                  newTypeService.id_tiposervicio=typeService.id_tiposervicio;
+                  newTypeService.nombre = typeService.nombre;                    
+                  newTypeService.uploaded_by_authsupa = uuid_authsupa;
+                  newTypeService.sync_with = [{ id: typeService.id, uuid_authsupa }];
+                  uniqueTypeServices.set(normalizedName, { ...newTypeService }); // Reemplazar por el mejor
+              } else {
+                typeService.source_failure='Request';
+                duplicateTypeServices.push({ ...typeService }); // Guardar este en duplicados
+              }
+          } else {
+              let newTypeService = new TypeService();
+              newTypeService.id=typeService.id;
+              newTypeService.id_tiposervicio=typeService.id_tiposervicio;
+              newTypeService.nombre = typeService.nombre;                
+              newTypeService.uploaded_by_authsupa = uuid_authsupa;
+              newTypeService.sync_with = [{ id: typeService.id, uuid_authsupa }];
+              uniqueTypeServices.set(normalizedName, { ...newTypeService });
+          }
+      }
+      return {
+        uniqueTypeServices: Array.from(uniqueTypeServices.values()),
+        duplicateTypeServices,
+      };
+  }
+  //Filtra por medio de nombres y paretezcos en la tipografía
+  mapDtoBrandAndRemoveDuplicateEntity(brandArray: BrandDto[], uuid_authsupa: string): 
+      { uniqueBrands: Brand[], 
+        duplicateBrands: BrandDto[] 
+      } {
+        const uniqueBrands = new Map<string, Brand>();
+        const duplicateBrands: BrandDto[] = [];
+
+        for (const brand of brandArray) {
+            // Normalizar el nombre para comparación
+            const normalizedName = brand.nombre
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, " ") 
+                .normalize("NFD") 
+                .replace(/[\u0300-\u036f]/g, ""); 
+            
+            if (uniqueBrands.has(normalizedName)) {
+                const existingBrand= uniqueBrands.get(normalizedName)!;
+                if (this.isBetterFormatted(brand.nombre, existingBrand.nombre)) {                  
+                    let newBrand = new Brand();
+                    newBrand.id=brand.id;
+                    newBrand.id_marca=brand.id_marca;
+                    newBrand.nombre = brand.nombre;                    
+                    newBrand.uploaded_by_authsupa = uuid_authsupa;
+                    newBrand.sync_with = [{ id: brand.id, uuid_authsupa }];
+                    uniqueBrands.set(normalizedName, { ...newBrand }); // Reemplazar por el mejor
+                } else {
+                  brand.source_failure='Request';
+                  duplicateBrands.push({ ...brand }); // Guardar este en duplicados
+                }
+            } else {
+                let newBrand = new Brand();
+                newBrand.id=brand.id;
+                newBrand.id_marca=brand.id_marca;
+                newBrand.nombre = brand.nombre;                
+                newBrand.uploaded_by_authsupa = uuid_authsupa;
+                newBrand.sync_with = [{ id: brand.id, uuid_authsupa }];
+                uniqueBrands.set(normalizedName, { ...newBrand });
+            }
+        }
+        return {
+          uniqueBrands: Array.from(uniqueBrands.values()),
+          duplicateBrands,
+        };
+    }
     mapDtoToTypeDocumentAndRemoveDuplicateEntity(typeDocumentArray: TypeDocumentDto[], uuid_authsupa: string): 
       { uniqueTypeDocument: TypeDocument[], 
         duplicateTypeDocument: TypeDocumentDto[] 
@@ -227,18 +344,13 @@ export class UtilityService {
                 .replace(/[\u0300-\u036f]/g, ""); // Remueve diacríticos
             
             if (uniqueTypeDocument.has(normalizedName)) {
-                const existingClient = uniqueTypeDocument.get(normalizedName)!;
-    
-                // Comparar cuál está mejor escrita
-                if (this.isBetterFormatted(typeDocument.nombre, existingClient.nombre)) {
-                  existingClient.id_tipodocumento=typeDocument.id_tipodocumento;
+                const existingClient = uniqueTypeDocument.get(normalizedName)!;                
+                if (this.isBetterFormatted(typeDocument.nombre, existingClient.nombre)) {                  
                     let newClient = new TypeDocument();
                     newClient.id=typeDocument.id;
                     newClient.id_tipodocumento=typeDocument.id_tipodocumento;
                     newClient.nombre = typeDocument.nombre;                    
                     newClient.uploaded_by_authsupa = uuid_authsupa;
-        
-                    // Construir el arreglo sync_with
                     newClient.sync_with = [{ id: typeDocument.id, uuid_authsupa }];
                     uniqueTypeDocument.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
                 } else {
@@ -249,17 +361,12 @@ export class UtilityService {
                 let newClient = new TypeDocument();
                 newClient.id=typeDocument.id;
                 newClient.id_tipodocumento=typeDocument.id_tipodocumento;
-                newClient.nombre = typeDocument.nombre;
-                // Asignar el usuario que sube el dato
-                newClient.uploaded_by_authsupa = uuid_authsupa;
-    
-                // Construir el arreglo sync_with
-                newClient.sync_with = [{ id: typeDocument.id, uuid_authsupa }];
-    
+                newClient.nombre = typeDocument.nombre;                
+                newClient.uploaded_by_authsupa = uuid_authsupa;                
+                newClient.sync_with = [{ id: typeDocument.id, uuid_authsupa }];    
                 uniqueTypeDocument.set(normalizedName, { ...newClient });
             }
-        }
-    
+        }    
         return {
           uniqueTypeDocument: Array.from(uniqueTypeDocument.values()),
           duplicateTypeDocument,
@@ -282,40 +389,31 @@ export class UtilityService {
               .replace(/[\u0300-\u036f]/g, ""); // Remueve diacríticos
           
           if (uniqueTypeClient.has(normalizedName)) {
-              const existingClient = uniqueTypeClient.get(normalizedName)!;
-  
+              const existingClient = uniqueTypeClient.get(normalizedName)!;  
               // Comparar cuál está mejor escrita
-              if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {
-                  duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
+              if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {                  
                   let newClient = new TypeClient();
                   newClient.id=typeClient.id;
                   newClient.id_tipocliente=typeClient.id_tipocliente;
                   newClient.nombre = typeClient.nombre;
-                  // Asignar el usuario que sube el dato
                   newClient.uploaded_by_authsupa = uuid_authsupa;
-      
-                  // Construir el arreglo sync_with
                   newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
-                  uniqueTypeClient.set(normalizedName, { ...newClient }); // Reemplazar por el mejor
+                  uniqueTypeClient.set(normalizedName, { ...newClient }); 
               } else {
                 typeClient.source_failure='Request';                  
-                duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
+                duplicateTypeClient.push({ ...typeClient }); 
               }
           } else {
               let newClient = new TypeClient();
               newClient.id=typeClient.id;
               newClient.id_tipocliente=typeClient.id_tipocliente;
-              newClient.nombre = typeClient.nombre;
-              // Asignar el usuario que sube el dato
-              newClient.uploaded_by_authsupa = uuid_authsupa;
-  
-              // Construir el arreglo sync_with
+              newClient.nombre = typeClient.nombre;              
+              newClient.uploaded_by_authsupa = uuid_authsupa;              
               newClient.sync_with = [{ id: typeClient.id, uuid_authsupa }];
   
               uniqueTypeClient.set(normalizedName, { ...newClient });
           }
-      }
-  
+      }  
       return {
           uniqueTypeClient: Array.from(uniqueTypeClient.values()),
           duplicateTypeClient,
@@ -324,12 +422,10 @@ export class UtilityService {
     /*Eliminar posibles datos redundantes al patch de medidores de agua*/
     removeDuplicateWaterMeter(waterMeterArray: WaterMetersDto[]) {
       const uniqueWaterMeters = new Map<string, WaterMetersDto>();
-      const duplicateWaterMeters: WaterMetersDto[] = [];
-    
+      const duplicateWaterMeters: WaterMetersDto[] = [];    
       for (const waterMeter of waterMeterArray) {
         // Normalizar el nombre para comparar sin errores
         const referenceKey = waterMeter.numero_referencia.toString().trim();
-    
         if (uniqueWaterMeters.has(referenceKey)) {
           waterMeter.source_failure='Request'
           duplicateWaterMeters.push({ ...waterMeter });
@@ -337,28 +433,63 @@ export class UtilityService {
           uniqueWaterMeters.set(referenceKey, { ...waterMeter });
         }
       }
-    
       return {
         uniqueWaterMeters: Array.from(uniqueWaterMeters.values()),
         duplicateWaterMeters,
       };
     }
+    removeDuplicateStates(statesArray: StateDto[]) {
+      const uniqueStates = new Map<string, StateDto>();
+      const duplicateStates: StateDto[] = [];
+      for (const state of statesArray) {
+        // Normalizar el nombre para comparar sin errores
+        const referenceKey = state.id_departamento.toString().trim();    
+      if (uniqueStates.has(referenceKey)) {
+          state.source_failure='Request'
+          duplicateStates.push({ ...state });
+        } else {
+          uniqueStates.set(referenceKey, { ...state });
+        }
+      }    
+      return {
+        uniqueStates: Array.from(uniqueStates.values()),
+        duplicateStates,
+      };
+    }
+    removeDuplicateCities(citiesArray: CityDto[]) {
+      const uniqueCities = new Map<string, CityDto>();
+      const duplicateCities: CityDto[] = [];
+    
+      for (const city of citiesArray) {
+        // Normalizar el nombre para comparar sin errores
+        const referenceKey = city.id_ciudad.toString().trim();
+    
+        if (uniqueCities.has(referenceKey)) {
+          city.source_failure='Request'
+          duplicateCities.push({ ...city });
+        } else {
+          uniqueCities.set(referenceKey, { ...city });
+        }
+      }
+    
+      return {
+        uniqueCities: Array.from(uniqueCities.values()),
+        duplicateCities,
+      };
+    }
     removeDuplicateMunicipalUnits(municipal_unitArray: MunicipalUnitDto[]) {
       const uniqueMunicipalUnits = new Map<string, MunicipalUnitDto>();
-      const duplicateMunicipalUnits: MunicipalUnitDto[] = [];
-    
+      const duplicateMunicipalUnits: MunicipalUnitDto[] = [];    
       for (const municipal_unit of municipal_unitArray) {
         // Normalizar el nombre para comparar sin errores
-        const referenceKey = municipal_unit.id_unidadmunicipal.toString().trim();
-    
+        const referenceKey = municipal_unit.id_unidadmunicipal.toString().trim();    
         if (uniqueMunicipalUnits.has(referenceKey)) {
           municipal_unit.source_failure='Request'
           duplicateMunicipalUnits.push({ ...municipal_unit });
         } else {
           uniqueMunicipalUnits.set(referenceKey, { ...municipal_unit });
         }
-      }
-    
+      }    
       return {
         uniqueMunicipalUnits: Array.from(uniqueMunicipalUnits.values()),
         duplicateMunicipalUnits,
@@ -367,54 +498,75 @@ export class UtilityService {
     /*Eliminar posibles datos redundantes al patch de clientes*/
     removeDuplicateClients(clientsArray: ClientsDto[]) {
           const uniqueClients = new Map<string, ClientsDto>();
-          const duplicateClients: ClientsDto[] = [];
-        
-          for (const client of clientsArray) {
-            // Normalizar el nombre para comparar sin errores
-            const referenceKey = client.numeroDocumento.toString().trim();
-        
+          const duplicateClients: ClientsDto[] = [];        
+          for (const client of clientsArray) {            
+            const referenceKey = client.numeroDocumento.toString().trim();        
             if (uniqueClients.has(referenceKey)) {
               client.source_failure='Request'
               duplicateClients.push({ ...client });
             } else {
               uniqueClients.set(referenceKey, { ...client });
             }
-          }
-        
+          }        
           return {
             uniqueClients: Array.from(uniqueClients.values()),
             duplicateClients,
           };
     }
+    
+    removeDuplicateTypeServices(typeServicesArray: TypeServiceDto[]) {
+      const uniqueTypeServices = new Map<string, TypeServiceDto>();
+      const duplicateTypeClient: TypeServiceDto[] = [];   
+
+      for (const typeService of typeServicesArray) {        
+        const normalizedName = typeService.nombre
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ") 
+          .normalize("NFD") 
+          .replace(/[\u0300-\u036f]/g, "");     
+        if (uniqueTypeServices.has(normalizedName)) {
+          const existingTypeService = uniqueTypeServices.get(normalizedName)!;                    
+          if (this.isBetterFormatted(typeService.nombre, existingTypeService.nombre)) {
+            duplicateTypeClient.push({ ...existingTypeService }); 
+            uniqueTypeServices.set(normalizedName, { ...typeService, nombre: normalizedName }); // Reemplazar por el mejor
+          } else {
+            typeService.source_failure='Request';
+            duplicateTypeClient.push({ ...typeService }); 
+          }
+        } else {
+          uniqueTypeServices.set(normalizedName, { ...typeService, nombre: normalizedName });
+        }
+      }    
+      return {
+        uniqueTypeServices: Array.from(uniqueTypeServices.values()),
+        duplicateTypeClient,
+      };
+    }
 
     removeDuplicateTypeClients(typeClientArray: TypeClientDto[]) {
       const uniqueTypeClient = new Map<string, TypeClientDto>();
-      const duplicateTypeClient: TypeClientDto[] = [];
-    
-      for (const typeClient of typeClientArray) {
-        // Normalizar el nombre para comparar sin errores
+      const duplicateTypeClient: TypeClientDto[] = [];    
+      for (const typeClient of typeClientArray) {        
         const normalizedName = typeClient.nombre
           .trim()
           .toLowerCase()
           .replace(/\s+/g, " ") 
           .normalize("NFD") 
-          .replace(/[\u0300-\u036f]/g, ""); 
-    
+          .replace(/[\u0300-\u036f]/g, "");     
         if (uniqueTypeClient.has(normalizedName)) {
-          const existingClient = uniqueTypeClient.get(normalizedName)!;
-          
-          // Comparar cuál está mejor escrita
+          const existingClient = uniqueTypeClient.get(normalizedName)!;                    
           if (this.isBetterFormatted(typeClient.nombre, existingClient.nombre)) {
-            duplicateTypeClient.push({ ...existingClient }); // Guardar copia del duplicado
+            duplicateTypeClient.push({ ...existingClient }); 
             uniqueTypeClient.set(normalizedName, { ...typeClient, nombre: normalizedName }); // Reemplazar por el mejor
           } else {
-            duplicateTypeClient.push({ ...typeClient }); // Guardar este en duplicados
+            typeClient.source_failure='Request';
+            duplicateTypeClient.push({ ...typeClient }); 
           }
         } else {
           uniqueTypeClient.set(normalizedName, { ...typeClient, nombre: normalizedName });
         }
-      }
-    
+      }    
       return {
         uniqueTypeClient: Array.from(uniqueTypeClient.values()),
         duplicateTypeClient,
@@ -425,8 +577,7 @@ export class UtilityService {
       const uniqueTypeDocument = new Map<string, TypeDocumentDto>();
       const duplicateTypeDocument: TypeDocumentDto[] = [];
     
-      for (const typeDocument of typeDocumentArray) {
-        // Normalizar el nombre para comparar sin errores
+      for (const typeDocument of typeDocumentArray) {        
         const normalizedName = typeDocument.nombre
           .trim()
           .toLowerCase()
@@ -435,23 +586,51 @@ export class UtilityService {
           .replace(/[\u0300-\u036f]/g, ""); 
     
         if (uniqueTypeDocument.has(normalizedName)) {
-          const existingClient = uniqueTypeDocument.get(normalizedName)!;
-          
-          // Comparar cuál está mejor escrita
+          const existingClient = uniqueTypeDocument.get(normalizedName)!;          
           if (this.isBetterFormatted(typeDocument.nombre, existingClient.nombre)) {
             duplicateTypeDocument.push({ ...existingClient }); // Guardar copia del duplicado
             uniqueTypeDocument.set(normalizedName, { ...typeDocument, nombre: normalizedName }); // Reemplazar por el mejor
           } else {
+            typeDocument.source_failure='Request';
             duplicateTypeDocument.push({ ...typeDocument }); // Guardar este en duplicados
           }
         } else {
           uniqueTypeDocument.set(normalizedName, { ...typeDocument, nombre: normalizedName });
         }
-      }
-    
+      }    
       return {
         uniqueTypeDocument: Array.from(uniqueTypeDocument.values()),
         duplicateTypeDocument,
+      };
+    }
+
+    removeDuplicateBrands(brandsArray: BrandDto[]) {
+      const uniqueBrands = new Map<string, BrandDto>();
+      const duplicateBrands: BrandDto[] = [];
+    
+      for (const brand of brandsArray) {        
+        const normalizedName = brand.nombre
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ") 
+          .normalize("NFD") 
+          .replace(/[\u0300-\u036f]/g, ""); 
+    
+        if (uniqueBrands.has(normalizedName)) {
+          const existingClient = uniqueBrands.get(normalizedName)!;                    
+          if (this.isBetterFormatted(brand.nombre, existingClient.nombre)) {                        
+            uniqueBrands.set(normalizedName, { ...brand, nombre: normalizedName}); // Reemplazar por el mejor
+          } else {
+            brand.source_failure='Request';
+            duplicateBrands.push({ ...brand }); 
+          }
+        } else {
+          uniqueBrands.set(normalizedName, { ...brand, nombre: normalizedName });
+        }
+      }
+      return {
+        uniqueBrands: Array.from(uniqueBrands.values()),
+        duplicateBrands,
       };
     }
     

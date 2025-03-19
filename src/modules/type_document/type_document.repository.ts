@@ -55,8 +55,8 @@ export class TypeDocumentRepository {
       
       // 🔥 Normalizar nombres existentes para comparación eficiente
       const existingNames = new Set(
-        existingDocuments.map((client) =>
-          client.nombre
+        existingDocuments.map((document) =>
+          document.nombre
             .trim()
             .toLowerCase()
             .replace(/\s+/g, " ")
@@ -66,7 +66,7 @@ export class TypeDocumentRepository {
       );
       
       // 🔥 Filtrar solo los documentos que no están duplicados
-      const uniqueDocument = typeDocumentArrayFiltred.uniqueTypeDocument.filter((tc) => {
+      const uniqueDocuments = typeDocumentArrayFiltred.uniqueTypeDocument.filter((tc) => {
         const normalizedName = tc.nombre
           .trim()
           .toLowerCase()
@@ -89,14 +89,18 @@ export class TypeDocumentRepository {
         return true;
       });
 
-      if (uniqueDocument.length > 0) {
+      if (uniqueDocuments.length > 0) {
         // 🔥 Insertar solo los documentos que no estaban duplicados
         await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.tipo_documento`, ['nombre','id_tipodocumento', 'uploaded_by_authsupa', 'sync_with'])
+          .into(`${schema}.tipo_documento`, [
+            'nombre',
+            'id_tipodocumento',
+            'uploaded_by_authsupa',
+            'sync_with'])
           .values(
-            uniqueDocument.map((tc) => ({
+            uniqueDocuments.map((tc) => ({
               nombre: tc.nombre,
               id_tipodocumento: tc.id_tipodocumento,
               uploaded_by_authsupa: tc.uploaded_by_authsupa,
@@ -106,20 +110,22 @@ export class TypeDocumentRepository {
 
         // 🔥 Asociar los nombres insertados con los IDs originales
         insertedTypeDocuments.push(
-          ...uniqueDocument.map((tc) => ({
+          ...uniqueDocuments.map((tc) => ({
             id: tc.id, 
             id_tipodocumento: tc.id_tipodocumento, 
             nombre: tc.nombre,
           }))
         );
         messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-        }else{
-        messageResponse= "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";
+        }else {
+          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
+          throw new Error(messageResponse);
         }
-      await queryRunner.commitTransaction();
+
+        await queryRunner.commitTransaction();
       
       return {
-        message: "Cargue exitoso, se han obtenido los siguientes resultados:",
+        message: messageResponse,
         status:true,
         inserted: insertedTypeDocuments,
         duplicated: duplicatedTypeDocuments,
@@ -131,7 +137,7 @@ export class TypeDocumentRepository {
         message: "¡El cargue de datos ha fallado! -> "+ error.message, 
         status:false,
         inserted: [],
-        duplicated: [],
+        duplicated: duplicatedTypeDocuments,
       };
     } finally {
       await queryRunner.release();
@@ -203,23 +209,24 @@ export class TypeDocumentRepository {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
+    let messageResponse='';
   
     try {
-      const entityManager = queryRunner.manager;
-      const uniqueTypeDocument = typeDocumentArrayFiltred.uniqueTypeDocument;
+      const entityManager = queryRunner.manager;      
       
-      if(uniqueTypeDocument.length>0){  
+      if(typeDocumentArrayFiltred.uniqueTypeDocument.length>0){  
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
       const existingTypeDocuments = await entityManager
         .createQueryBuilder()
         .select("tipo_documento.*")
         .from(`${schema}.tipo_documento`, "tipo_documento")
         .where("LOWER(unaccent(tipo_documento.nombre)) IN (:...nombres)", {
-          nombres: uniqueTypeDocument.map((c) => c.nombre),
+          nombres: typeDocumentArrayFiltred.uniqueTypeDocument.map((c) => c.nombre),
         })
         .getRawMany();
   
-      for (const typeDocument of uniqueTypeDocument) {
+      for (const typeDocument of typeDocumentArrayFiltred.uniqueTypeDocument) {
         const existingTypeDocument = existingTypeDocuments.find(
           (c) => c.nombre.localeCompare(typeDocument.nombre, undefined, { sensitivity: "base" }) === 0
         );
@@ -248,10 +255,17 @@ export class TypeDocumentRepository {
         }
       }
   
+      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
+
+      }else {
+        messageResponse= "No hay datos pendientes por sincronizar";        
+        throw new Error(messageResponse);
+      }
+      
       await queryRunner.commitTransaction();
-    }
+
       return {
-        message: "Sincronización completada",
+        message: messageResponse,
         status: true,
         duplicated: typeDocumentArrayFiltred.duplicateTypeDocument,
       };
@@ -261,7 +275,7 @@ export class TypeDocumentRepository {
       return {
         message: "¡La Sincronización ha fallado ! -> "+ error.message, 
         status: false,
-        duplicated: null,
+        duplicated: typeDocumentArrayFiltred.duplicateTypeDocument,
       };
     } finally {
       await queryRunner.release();

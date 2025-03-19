@@ -15,10 +15,15 @@ export class CityServices {
     private readonly utilityService: UtilityService    
   ) {}
 /** ✅ Obtener todas las facturas*/
-  async submitAllMunicipalUnits(AuthRequest: AuthRequest, cityArray: CityDto[]): Promise<{ 
+  async submitAllCities(AuthRequest: AuthRequest, citiesArray: CityDto[]): Promise<{ 
       message: string,
       status: boolean,
-      inserted: { id: number; id_unidadmunicipal: string; nombre: string }[];
+      inserted: { 
+        id: number;
+        id_ciudad: string;
+        nombre: string;
+        codigo: number;
+       }[];
       duplicated: CityDto[];      
   }> {
     const user = AuthRequest.user;
@@ -27,15 +32,15 @@ export class CityServices {
     }
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades    
-    const newMunicipalUnits = this.utilityService.mapDtoCityToEntityAndRemoveDuplicate(cityArray, uuidAuthsupa)
+    const newCities = this.utilityService.mapDtoCityToEntityAndRemoveDuplicate(citiesArray, uuidAuthsupa)
     // Enviar los clientes al repositorio para inserción en la BD
-    return await this.cityRepository.submitAllCities(user.schemas.name, newMunicipalUnits);
+    return await this.cityRepository.submitAllCities(user.schemas.name, newCities);
 
   }
 
-    async getAllMunicipalUnits(AuthRequest: AuthRequest): Promise<{ 
+    async getAllCities(AuthRequest: AuthRequest): Promise<{ 
       message: String,
-      municipal_units:City[]
+      cities:City[]
       }> {
       const user = AuthRequest.user;
       if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
@@ -46,7 +51,7 @@ export class CityServices {
     }
   
     /** ✅ Sincronizar los tipos de clientes*/
-    async syncMunicipalUnits(AuthRequest: AuthRequest, cityArray: CityDto[]): Promise<{ 
+    async syncCities(AuthRequest: AuthRequest, statesArray: CityDto[]): Promise<{ 
       message: String,
       status: Boolean,
       duplicated: CityDto[] | null    
@@ -57,10 +62,10 @@ export class CityServices {
       }
       const uuidAuthsupa: string = user.uuid_authsupa;
   
-      const clientArrayFiltred = this.utilityService.removeDuplicateMunicipalUnits(cityArray);
+      const citiesArrayFiltred = this.utilityService.removeDuplicateCities(statesArray);
   
       // Enviar los clientes al repositorio para inserción en la BD
-      return await this.cityRepository.syncCities(user.schemas.name, uuidAuthsupa,clientArrayFiltred);
+      return await this.cityRepository.syncCities(user.schemas.name, uuidAuthsupa,citiesArrayFiltred);
   
     }
 

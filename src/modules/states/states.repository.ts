@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
-import { City } from './city.entity';
+import { State } from './state.entity';
 
-import { CityDto } from './dto/cities.dto';
+import { StateDto } from './dto/state.dto';
 
 @Injectable()
-export class CityRepository {
+export class StateRepository {
   constructor(        
     @InjectDataSource() private readonly dataSource: DataSource
   ) {}
@@ -14,19 +14,19 @@ export class CityRepository {
     /** ✅
      * Inserta todos los clientes y retorna los clientes insertados o duplicados
      */
-    async submitAllCities(
+    async submitAllStates(
       schema: string, 
-      citiesArrayFiltred: { uniqueCities: City[]; duplicateCities: CityDto[] }
+      statesArrayFiltred: { uniqueStates: State[]; duplicateStates: StateDto[] }
     ): Promise<{ 
       message: string,
       status: boolean,
       inserted: { 
         id: number; 
-        id_ciudad: string;
+        id_departamento: string;
         nombre: string;
         codigo: number;
       }[];
-      duplicated: CityDto[]; 
+      duplicated: StateDto[]; 
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
@@ -34,74 +34,74 @@ export class CityRepository {
 
       let messageResponse='';
 
-      const insertedCities: { 
+      const insertedStates: { 
         id: number; 
-        id_ciudad: string;
+        id_departamento: string;
         nombre: string;        
         codigo: number;  
        }[] = [];
-      const duplicateCities=citiesArrayFiltred.duplicateCities;
-      const uniqueFilteredCities = new Map<string, City>();
+      const duplicateStates=statesArrayFiltred.duplicateStates;
+      const uniqueFilteredStates = new Map<string, State>();
       try {
         const entityManager = queryRunner.manager;
         
         // 🔥 Obtener clientes que ya existen en la base de datos
-        const existingCities= await entityManager
+        const existingStates= await entityManager
         .createQueryBuilder()
         .select(['id', 'nombre'])
-        .from(`${schema}.ciudades`, 'ciudades')
-        .where("LOWER(unaccent(ciudades.nombre)) IN (:...nombres)", {
-          nombres: citiesArrayFiltred.uniqueCities.map((tc) => tc.nombre.toString()),
+        .from(`${schema}.departamentos`, 'departamentos')
+        .where("LOWER(unaccent(departamentos.nombre)) IN (:...nombres)", {
+          nombres: statesArrayFiltred.uniqueStates.map((tc) => tc.nombre.toString()),
         })
         .getRawMany();
 
-        for (const city of citiesArrayFiltred.uniqueCities) {
+        for (const state of statesArrayFiltred.uniqueStates) {
         
-            const referenceKey = city.nombre.toString().trim();
+            const referenceKey = state.nombre.toString().trim();
         
-              if (existingCities.some((cty) => cty.nombre === city.nombre)) {
-                let duplicatedDBCity:CityDto = {
-                      id:city.id,
-                      id_ciudad:city.id_ciudad,
-                      nombre:city.nombre,                                                                  
-                      codigo:city.codigo,     
+              if (existingStates.some((ste) => ste.nombre === state.nombre)) {
+                let duplicatedDBState:StateDto = {
+                      id:state.id,
+                      id_departamento:state.id_departamento,
+                      nombre:state.nombre,                                                                  
+                      codigo:state.codigo,     
                       source_failure:'DataBase'
                   };
-                  duplicateCities.push({ ...duplicatedDBCity }); // Guardar duplicado
+                  duplicateStates.push({ ...duplicatedDBState }); // Guardar duplicado
               }else {
-                uniqueFilteredCities.set(referenceKey, { ...city });
+                uniqueFilteredStates.set(referenceKey, { ...state });
               }
         }
-        if (uniqueFilteredCities.size  > 0) {
+        if (uniqueFilteredStates.size  > 0) {
         // 🔥 Insertar los clientes con el esquema dinámico
           await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.unidad_municipal`, [
-            'id_ciudad',
+          .into(`${schema}.departamentos`, [
+            'id_departamento',
             'nombre',
             'codigo',              
             'uploaded_by_authsupa', 
             'sync_with'])
           .values(
-            Array.from(uniqueFilteredCities.values()).map((cty) => ({
-              id_ciudad: cty.id_ciudad,              
-              nombre: cty.nombre,
-              codigo: cty.codigo,    
-              uploaded_by_authsupa: cty.uploaded_by_authsupa,                                  
-              sync_with: () => `'${JSON.stringify(cty.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
+            Array.from(uniqueFilteredStates.values()).map((ste) => ({
+              id_departamento: ste.id_departamento,              
+              nombre: ste.nombre,
+              codigo: ste.codigo,    
+              uploaded_by_authsupa: ste.uploaded_by_authsupa,                                  
+              sync_with: () => `'${JSON.stringify(ste.sync_with)}'::jsonb`, // 🔥 Convertir a JSONB
             }))
           )
-          .returning(["id", "id_ciudad", "nombre","codigo"]) 
+          .returning(["id", "id_departamento", "nombre","codigo"]) 
           .execute();
           
         // 🔥 Asociar los nombres insertados con los IDs originales
-        insertedCities.push(
-          ...Array.from(uniqueFilteredCities.values()).map((cty) => ({
-            id: cty.id, 
-            id_ciudad: cty.id_ciudad,
-            nombre:cty.nombre,
-            codigo:cty.codigo,
+        insertedStates.push(
+          ...Array.from(uniqueFilteredStates.values()).map((ste) => ({
+            id: ste.id, 
+            id_departamento: ste.id_departamento,
+            nombre:ste.nombre,
+            codigo:ste.codigo,
           }))
         );       
         messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
@@ -115,18 +115,18 @@ export class CityRepository {
         return {
           message: messageResponse,
           status: true,
-          inserted: insertedCities, 
-          duplicated: duplicateCities,
+          inserted: insertedStates, 
+          duplicated: duplicateStates,
         };
       } catch (error) {
         await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllCities:", error);
+        console.error("❌ Error en submitAllStates:", error);
         
         return {
           message: "¡El cargue ha fallado! -> "+ error.message,        
           status: false,
           inserted: [],
-          duplicated: duplicateCities
+          duplicated: duplicateStates
         };
       } finally {
         await queryRunner.release();
@@ -137,12 +137,12 @@ export class CityRepository {
 /** ✅
    * Retorna todas lass unidades municipales que el usuario no tiene sincronizados
    */
-  async getAllCities(
+  async getAllStates(
     schema: string,
     uuid_authsupa: string,
   ): Promise<{
     message: string,
-    cities:City[]
+    states:State[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -152,12 +152,12 @@ export class CityRepository {
       const entityManager = queryRunner.manager;
 
       // Obtener nombres que ya existen en la base de datos
-      const notSyncCities = await entityManager
+      const notSyncStates = await entityManager
       .createQueryBuilder()
-      .select('ciudades.*') // Agregado `.*` para seleccionar todos los campos
-      .from(`${schema}.ciudades`, 'ciudades')
+      .select('departamentos.*') // Agregado `.*` para seleccionar todos los campos
+      .from(`${schema}.departamentos`, 'departamentos')
       .where(`NOT EXISTS (
-        SELECT 1 FROM jsonb_array_elements(ciudades.sync_with::jsonb) AS elem
+        SELECT 1 FROM jsonb_array_elements(departamentos.sync_with::jsonb) AS elem
         WHERE elem->>'uuid_authsupa' = :uuid_authsupa
       )`, { uuid_authsupa })
       .getRawMany();
@@ -167,15 +167,15 @@ export class CityRepository {
 
       return {
         message:
-          'Conexión exitosa, se han obtenido las siguientes unidades municipales no sincronizados:',
-          cities: notSyncCities
+          'Conexión exitosa, se han obtenido los siguientes departamentos no sincronizados:',
+          states: notSyncStates
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllCities:', error);
+      console.error('❌ Error en getAllMunicipalUnits:', error);
       return {
         message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
-        cities: []
+        states: []
       };
     } finally {
       await queryRunner.release();
@@ -185,14 +185,14 @@ export class CityRepository {
   /** ✅
    *  Actualiza los registros sincronizados en el mobil
    */
-  async syncCities(
+  async syncStates(
     schema: string,
     uuid_authsupa: string,
-    citiesArrayFiltred:  { uniqueCities: CityDto[]; duplicateCities: CityDto[] }
+    statesArrayFiltred:  { uniqueStates: StateDto[]; duplicateStates: StateDto[] }
   ): Promise<{
     message: string,
     status: boolean,
-    duplicated: CityDto[] | null;
+    duplicated: StateDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -203,41 +203,41 @@ export class CityRepository {
     try {
       const entityManager = queryRunner.manager;      
   
-      if(citiesArrayFiltred.uniqueCities.length>0){ 
+      if(statesArrayFiltred.uniqueStates.length>0){ 
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
-      const existingCities = await entityManager
+      const existingStates = await entityManager
         .createQueryBuilder()
-        .select("ciudades.*")
-        .from(`${schema}.ciudades`, "ciudades")
-        .where("LOWER(unaccent(ciudades.nombre)) IN (:...nombres)", {
-          nombres: citiesArrayFiltred.uniqueCities.map((tc) => tc.nombre.toString()),
+        .select("departamentos.*")
+        .from(`${schema}.departamentos`, "departamentos")
+        .where("LOWER(unaccent(departamentos.nombre)) IN (:...nombres)", {
+          nombres: statesArrayFiltred.uniqueStates.map((tc) => tc.nombre.toString()),
       })
       .getRawMany();
   
-      for (const city of citiesArrayFiltred.uniqueCities) {
-        const existingCity= existingCities.find(
-          (c) => c.nombre.localeCompare(city.nombre, undefined, { sensitivity: "base" }) === 0
+      for (const state of statesArrayFiltred.uniqueStates) {
+        const existingState= existingStates.find(
+          (c) => c.nombre.localeCompare(state.nombre, undefined, { sensitivity: "base" }) === 0
         );
   
-        if (existingCity) {
-          let syncWithArray = existingCity.sync_with 
-          ? (typeof existingCity.sync_with === "string" 
-              ? JSON.parse(existingCity.sync_with) 
-              : existingCity.sync_with) 
+        if (existingState) {
+          let syncWithArray = existingState.sync_with 
+          ? (typeof existingState.sync_with === "string" 
+              ? JSON.parse(existingState.sync_with) 
+              : existingState.sync_with) 
           : [];
   
           // 🔥 Verificar si ya existe el uuid en `sync_with`
           const alreadyExists = syncWithArray.some((entry: any) => entry.uuid_authsupa === uuid_authsupa);
   
           if (!alreadyExists) {
-            syncWithArray.push({ id: existingCity.id, uuid_authsupa });
+            syncWithArray.push({ id: existingState.id, uuid_authsupa });
   
             // 🔥 Actualizar `sync_with` correctamente
             await entityManager
               .createQueryBuilder()
-              .update(`${schema}.ciudades`)
+              .update(`${schema}.departamentos`)
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
-              .where("id_ciudad = :id_ciudad", { id_ciudad: existingCity.id_ciudad })
+              .where("id_departamento = :id_departamento", { id_departamento: existingState.id_departamento })
               .execute();
           }
         }
@@ -251,7 +251,7 @@ export class CityRepository {
       return {
         message: messageResponse,
         status: true,
-        duplicated: citiesArrayFiltred.duplicateCities,
+        duplicated: statesArrayFiltred.duplicateStates,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -259,7 +259,7 @@ export class CityRepository {
       return {
         message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
-        duplicated: citiesArrayFiltred.duplicateCities,
+        duplicated: statesArrayFiltred.duplicateStates,
       };
     } finally {
       await queryRunner.release();

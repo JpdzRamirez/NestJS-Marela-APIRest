@@ -130,7 +130,8 @@ export class ClientRepository {
         );         
         messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
         }else{
-        messageResponse= "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";
+          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
+          throw new Error(messageResponse);
         }
         await queryRunner.commitTransaction();
         return {
@@ -147,7 +148,7 @@ export class ClientRepository {
           message: "¡El cargue ha fallado! -> "+ error.message,        
           status: false,
           inserted: [],
-          duplicated: []
+          duplicated: duplicateClients
         };
       } finally {
         await queryRunner.release();
@@ -193,9 +194,9 @@ export class ClientRepository {
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllTypeClient:', error);
+      console.error('❌ Error en getAllClients:', error);
       return {
-        message: "¡La conexión, retornando desde la base de datos!! -> "+ error.message, 
+        message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
         clients: []
       };
     } finally {
@@ -218,22 +219,24 @@ export class ClientRepository {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
+    let messageResponse='';
   
     try {
-      const entityManager = queryRunner.manager;
-      const uniqueClients = clientArrayFiltred.uniqueClients;
-  
+      const entityManager = queryRunner.manager;      
+      
+      if(clientArrayFiltred.uniqueClients.length>0){  
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
       const existingClients = await entityManager
         .createQueryBuilder()
         .select("clientes.*")
         .from(`${schema}.clientes`, "clientes")
-        .where('clientes.id_cliente IN (:...id_cliente)', {
-          id_cliente: uniqueClients.map((tc) => tc.id_cliente.toString()),
+        .where('clientes.id_cliente IN (:...id_clientes)', {
+          id_clientes: clientArrayFiltred.uniqueClients.map((tc) => tc.id_cliente.toString()),
       })
       .getRawMany();
   
-      for (const client of uniqueClients) {
+      for (const client of clientArrayFiltred.uniqueClients) {
         const existingClient = existingClients.find(
           (c) => c.id_cliente.localeCompare(client.id_cliente, undefined, { sensitivity: "base" }) === 0
         );
@@ -261,10 +264,16 @@ export class ClientRepository {
           }
         }
       }
-  
+      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
+      }else{
+        messageResponse= "No hay datos pendientes por sincronizar";        
+        throw new Error(messageResponse);
+      }
+      
+
       await queryRunner.commitTransaction();
       return {
-        message: "Sincronización completada",
+        message: messageResponse,
         status: true,
         duplicated: clientArrayFiltred.duplicateClients,
       };
@@ -272,9 +281,9 @@ export class ClientRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncTypeClient:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
+        message: "¡La Sincronización ha fallado! -> "+ error.message, 
         status: false,
-        duplicated: [],
+        duplicated: clientArrayFiltred.duplicateClients,
       };
     } finally {
       await queryRunner.release();

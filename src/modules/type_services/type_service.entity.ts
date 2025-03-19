@@ -12,10 +12,10 @@ export class TypeService {
     id_tiposervicio!: string;
 
     @Column({ name: 'nombre',type: 'varchar', length: 50, nullable: false })
-    nombre?: string;
+    nombre!: string;
     
     @Column({ name: 'cargo_fijo',type: 'float4', nullable: false })
-    cargo_fijo?: number;
+    cargo_fijo!: number;
 
     @OneToMany(() => SalesRate, (salesRate) => salesRate.tipo_servicio,{ eager: false})
     tarifas?: SalesRate[];

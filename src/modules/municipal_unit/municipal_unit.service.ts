@@ -58,10 +58,10 @@ export class MunicipalUnitService {
       }
       const uuidAuthsupa: string = user.uuid_authsupa;
   
-      const clientArrayFiltred = this.utilityService.removeDuplicateMunicipalUnits(municipal_unitArray);
+      const municipal_unitArrayFiltred = this.utilityService.removeDuplicateMunicipalUnits(municipal_unitArray);
   
       // Enviar los clientes al repositorio para inserción en la BD
-      return await this.municipalUnitRepository.syncMunicipalUnits(user.schemas.name, uuidAuthsupa,clientArrayFiltred);
+      return await this.municipalUnitRepository.syncMunicipalUnits(user.schemas.name, uuidAuthsupa,municipal_unitArrayFiltred);
   
     }
 

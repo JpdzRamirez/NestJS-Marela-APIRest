@@ -10,10 +10,10 @@ export class City {
     id_ciudad!: string;
 
     @Column({ name: 'nombre', type: 'varchar',  unique: true, nullable: false })
-    nombre?: string;
+    nombre!: string;
 
     @Column({ name: 'codigo', type: 'int2',  unique: true, nullable: false })
-    codigo?: number;
+    codigo!: number;
 
     @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     created_at!: Date;

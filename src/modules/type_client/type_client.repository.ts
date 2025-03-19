@@ -4,6 +4,7 @@ import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { TypeClient } from './type_client.entity';
 import { TypeClientDto } from './dto/typeClient.dto';
 import { UUID } from 'crypto';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 
 @Injectable()
 export class TypeClientRepository {
@@ -114,14 +115,16 @@ export class TypeClientRepository {
           }))
         );
         messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-        }else{
-        messageResponse= "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";
+        }else {
+          messageResponse= "No hay datos pendientes por sincronizar";
+          
+          throw new Error(messageResponse);
         }
       
       await queryRunner.commitTransaction();
       
       return {
-        message: "Cargue exitoso, se han obtenido los siguientes resultados:",
+        message: messageResponse,
         status:true,
         inserted: insertedTypeClients,
         duplicated: duplicatedTypeClients,
@@ -133,7 +136,7 @@ export class TypeClientRepository {
         message: '¡El cargue ha fallado!! -> '+ error.message, 
         status:false,
         inserted: [],
-        duplicated: [],
+        duplicated: duplicatedTypeClients,
       };
     } finally {
       await queryRunner.release();
@@ -206,22 +209,23 @@ export class TypeClientRepository {
     await queryRunner.connect();
     await queryRunner.startTransaction();
   
+    let messageResponse='';
+
     try {
-      const entityManager = queryRunner.manager;
-      const uniqueTypeClient = typeClientArrayFiltred.uniqueTypeClient;
+      const entityManager = queryRunner.manager;      
   
-      if(uniqueTypeClient.length>0){      
+      if(typeClientArrayFiltred.uniqueTypeClient.length>0){      
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
       const existingClients = await entityManager
         .createQueryBuilder()
         .select("tipo_cliente.*")
         .from(`${schema}.tipo_cliente`, "tipo_cliente")
         .where("LOWER(unaccent(tipo_cliente.nombre)) IN (:...nombres)", {
-          nombres: uniqueTypeClient.map((c) => c.nombre),
+          nombres: typeClientArrayFiltred.uniqueTypeClient.map((c) => c.nombre),
         })
         .getRawMany();
   
-      for (const typeClient of uniqueTypeClient) {
+      for (const typeClient of typeClientArrayFiltred.uniqueTypeClient) {
         const existingTypeClient = existingClients.find(
           (c) => c.nombre.localeCompare(typeClient.nombre, undefined, { sensitivity: "base" }) === 0
         );
@@ -248,12 +252,17 @@ export class TypeClientRepository {
               .execute();
           }
         }
-      }
-  
-      await queryRunner.commitTransaction();
+      }        
+      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
+    }else{
+      messageResponse= "No hay datos pendientes por sincronizar";      
+      throw new Error(messageResponse);
     }
-      return {
-        message: "Sincronización completada",
+
+    await queryRunner.commitTransaction();
+
+    return {
+        message: messageResponse,
         status: true,
         duplicated: typeClientArrayFiltred.duplicateTypeClient,
       };
@@ -261,7 +270,7 @@ export class TypeClientRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncTypeClient:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!",
+        message: "¡La Sincronización ha fallado!",
         status: false,
         duplicated: null,
       };
