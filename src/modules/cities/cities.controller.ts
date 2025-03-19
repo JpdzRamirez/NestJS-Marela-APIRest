@@ -27,21 +27,21 @@ constructor(private readonly citiesServices: CityServices) {}
   /** ✅ Subir todos las ciudades no sincronizados desde el móbil (fontanero y admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
   @Post('admin/post-all-cities')
-    async submitAllClients(@Req() request: AuthRequest,@Body() citiesArray: CitiesArrayDto) {    
+    async submitAllCities(@Req() request: AuthRequest,@Body() citiesArray: CitiesArrayDto) {    
       return await this.citiesServices.submitAllCities(request, citiesArray.cities);
   }
 
   /** ✅ Obtener todos las ciudades no sincronizados desde el la base de datos (fontanero y admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
   @Get('admin/get-all-cities')
-    async getAllTypeClient(@Req() request: AuthRequest ) {    
+    async getAllCities(@Req() request: AuthRequest ) {    
       return await this.citiesServices.getAllCities(request);
   }
   
     /** ✅ Cudades sincronizados en móbil (fontanero y admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
   @Patch('admin/patch-sync-cities')
-    async syncClients(@Req() request: AuthRequest,@Body() citiesArray: CitiesArrayDto ) {    
+    async syncCities(@Req() request: AuthRequest,@Body() citiesArray: CitiesArrayDto ) {    
       return await this.citiesServices.syncCities(request,citiesArray.cities);
   }
 

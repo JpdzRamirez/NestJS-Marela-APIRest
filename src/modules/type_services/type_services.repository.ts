@@ -172,7 +172,7 @@ export class TypeServiceRepository {
     uuid_authsupa: string,
   ): Promise<{
     message: string,
-    cities:TypeService[]
+    type_services:TypeService[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -198,14 +198,14 @@ export class TypeServiceRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes unidades municipales no sincronizados:',
-          cities: notSyncCities
+          type_services: notSyncCities
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllCities:', error);
       return {
         message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
-        cities: []
+        type_services: []
       };
     } finally {
       await queryRunner.release();
@@ -218,11 +218,11 @@ export class TypeServiceRepository {
   async syncTypeServices(
     schema: string,
     uuid_authsupa: string,
-    citiesArrayFiltred:  { uniqueCities: CityDto[]; duplicateCities: CityDto[] }
+    typeServicesArrayFiltred:  { uniqueTypeServices: TypeServiceDto[]; duplicateTypeServices: TypeServiceDto[] }
   ): Promise<{
     message: string,
     status: boolean,
-    duplicated: CityDto[] | null;
+    duplicated: TypeServiceDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -233,41 +233,41 @@ export class TypeServiceRepository {
     try {
       const entityManager = queryRunner.manager;      
   
-      if(citiesArrayFiltred.uniqueCities.length>0){ 
+      if(typeServicesArrayFiltred.uniqueTypeServices.length>0){ 
       // 🔥 Obtener todos los registros existentes que coincida con la lista filtrada
-      const existingCities = await entityManager
+      const existingTypeServices = await entityManager
         .createQueryBuilder()
-        .select("ciudades.*")
-        .from(`${schema}.ciudades`, "ciudades")
-        .where("LOWER(unaccent(ciudades.nombre)) IN (:...nombres)", {
-          nombres: citiesArrayFiltred.uniqueCities.map((tc) => tc.nombre.toString()),
+        .select("tipo_servicio.*")
+        .from(`${schema}.tipo_servicio`, "tipo_servicio")
+        .where("LOWER(unaccent(tipo_servicio.nombre)) IN (:...nombres)", {
+          nombres: typeServicesArrayFiltred.uniqueTypeServices.map((tc) => tc.nombre.toString()),
       })
       .getRawMany();
   
-      for (const city of citiesArrayFiltred.uniqueCities) {
-        const existingCity= existingCities.find(
-          (c) => c.nombre.localeCompare(city.nombre, undefined, { sensitivity: "base" }) === 0
+      for (const typeservice of typeServicesArrayFiltred.uniqueTypeServices) {
+        const existingTypeService= existingTypeServices.find(
+          (c) => c.nombre.localeCompare(typeservice.nombre, undefined, { sensitivity: "base" }) === 0
         );
   
-        if (existingCity) {
-          let syncWithArray = existingCity.sync_with 
-          ? (typeof existingCity.sync_with === "string" 
-              ? JSON.parse(existingCity.sync_with) 
-              : existingCity.sync_with) 
+        if (existingTypeService) {
+          let syncWithArray = existingTypeService.sync_with 
+          ? (typeof existingTypeService.sync_with === "string" 
+              ? JSON.parse(existingTypeService.sync_with) 
+              : existingTypeService.sync_with) 
           : [];
   
           // 🔥 Verificar si ya existe el uuid en `sync_with`
           const alreadyExists = syncWithArray.some((entry: any) => entry.uuid_authsupa === uuid_authsupa);
   
           if (!alreadyExists) {
-            syncWithArray.push({ id: existingCity.id, uuid_authsupa });
+            syncWithArray.push({ id: existingTypeService.id, uuid_authsupa });
   
             // 🔥 Actualizar `sync_with` correctamente
             await entityManager
               .createQueryBuilder()
-              .update(`${schema}.ciudades`)
+              .update(`${schema}.tipo_servicio`)
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
-              .where("id_ciudad = :id_ciudad", { id_ciudad: existingCity.id_ciudad })
+              .where("id_tiposervicio = :id_tiposervicio", { id_tiposervicio: existingTypeService.id_tiposervicio })
               .execute();
           }
         }
@@ -281,15 +281,15 @@ export class TypeServiceRepository {
       return {
         message: messageResponse,
         status: true,
-        duplicated: citiesArrayFiltred.duplicateCities,
+        duplicated: typeServicesArrayFiltred.duplicateTypeServices,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncCities:", error);
+      console.error("❌ Error en syncTypeServices:", error);
       return {
         message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
-        duplicated: citiesArrayFiltred.duplicateCities,
+        duplicated: typeServicesArrayFiltred.duplicateTypeServices,
       };
     } finally {
       await queryRunner.release();

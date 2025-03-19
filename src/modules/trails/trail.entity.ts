@@ -6,8 +6,11 @@ export class Trail {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
+    @Column({ name: 'id_ruta',type: 'uuid', nullable: false, unique: true })
+    id_ruta!: string;
+
     @Column({ name: 'nombre',type: 'varchar', length: 50, nullable: false })
-    nombre?: string;
+    nombre!: string;
     
     @Column({ name: 'unidades_municipales',type: 'jsonb', nullable: true })
     unidades_municipales?: Record<string, any>[] | null;

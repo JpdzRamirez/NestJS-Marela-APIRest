@@ -11,6 +11,8 @@ import { Brand } from 'src/modules/brands/brand.entity';
 import { BrandDto } from 'src/modules/brands/dto/brand.dto';
 
 import { Contract } from '../../modules/contracts/contract.entity';
+import { Trail } from '../../modules/trails/trail.entity';
+import { TrailDto } from '../../modules/trails/dto/trail.dto';
 
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
@@ -236,6 +238,34 @@ export class UtilityService {
           duplicateMunicipalUnits,
         };
   }
+    mapDtoTrailsAndRemoveDuplicate(trailsArray: TrailDto[], uuid_authsupa: string): 
+      { uniqueTrails: Trail[], 
+        duplicateTrails: TrailDto[] 
+      } {
+        const uniqueTrails = new Map<string, Trail>();
+        const duplicateTrails: TrailDto[] = [];
+
+        for (const trail of trailsArray) {
+            // Creamos el nombre clave para realizar la validacion si está repetido
+            const referenceKey = trail.id_ruta.toString().trim();
+            if (uniqueTrails.has(referenceKey)) {
+              trail.source_failure='Request'
+              duplicateTrails.push({ ...trail }); // Guardar duplicado
+            } else {
+              let newTrail = new Trail();
+              newTrail.id = trail.id;
+              newTrail.id_ruta = trail.id_ruta;
+              newTrail.nombre = trail.nombre;
+              newTrail.uploaded_by_authsupa = uuid_authsupa;                  
+              newTrail.sync_with = [{ id: trail.id, uuid_authsupa }];      
+              uniqueTrails.set(referenceKey, { ...newTrail });
+            }
+          }      
+          return {
+            uniqueTrails: Array.from(uniqueTrails.values()),
+            duplicateTrails,
+          };
+    }
     mapDtoTypeServiceAndRemoveDuplicateEntity(typeServicesArray: TypeServiceDto[], uuid_authsupa: string): 
     { uniqueTypeServices: TypeService[], 
       duplicateTypeServices: TypeServiceDto[] 
@@ -438,6 +468,23 @@ export class UtilityService {
         duplicateWaterMeters,
       };
     }
+    removeDuplicateTrails(trailsArray: TrailDto[]) {
+      const uniqueTrails = new Map<string, TrailDto>();
+      const duplicateTrails: TrailDto[] = [];    
+      for (const trail of trailsArray) {
+        const referenceKey = trail.id_ruta.toString().trim();
+        if (uniqueTrails.has(referenceKey)) {
+          trail.source_failure='Request'
+          duplicateTrails.push({ ...trail });
+        } else {
+          uniqueTrails.set(referenceKey, { ...trail });
+        }
+      }
+      return {
+        uniqueTrails: Array.from(uniqueTrails.values()),
+        duplicateTrails,
+      };
+    }
     removeDuplicateStates(statesArray: StateDto[]) {
       const uniqueStates = new Map<string, StateDto>();
       const duplicateStates: StateDto[] = [];
@@ -516,7 +563,7 @@ export class UtilityService {
     
     removeDuplicateTypeServices(typeServicesArray: TypeServiceDto[]) {
       const uniqueTypeServices = new Map<string, TypeServiceDto>();
-      const duplicateTypeClient: TypeServiceDto[] = [];   
+      const duplicateTypeServices: TypeServiceDto[] = [];   
 
       for (const typeService of typeServicesArray) {        
         const normalizedName = typeService.nombre
@@ -528,11 +575,11 @@ export class UtilityService {
         if (uniqueTypeServices.has(normalizedName)) {
           const existingTypeService = uniqueTypeServices.get(normalizedName)!;                    
           if (this.isBetterFormatted(typeService.nombre, existingTypeService.nombre)) {
-            duplicateTypeClient.push({ ...existingTypeService }); 
+            duplicateTypeServices.push({ ...existingTypeService }); 
             uniqueTypeServices.set(normalizedName, { ...typeService, nombre: normalizedName }); // Reemplazar por el mejor
           } else {
             typeService.source_failure='Request';
-            duplicateTypeClient.push({ ...typeService }); 
+            duplicateTypeServices.push({ ...typeService }); 
           }
         } else {
           uniqueTypeServices.set(normalizedName, { ...typeService, nombre: normalizedName });
@@ -540,7 +587,7 @@ export class UtilityService {
       }    
       return {
         uniqueTypeServices: Array.from(uniqueTypeServices.values()),
-        duplicateTypeClient,
+        duplicateTypeServices,
       };
     }
 
