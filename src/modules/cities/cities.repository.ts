@@ -123,7 +123,7 @@ export class CityRepository {
         console.error("❌ Error en submitAllCities:", error);
         
         return {
-          message: "¡El cargue ha fallado! -> "+ error.message,        
+          message: "¡El cargue ha terminado! -> "+ error.message,        
           status: false,
           inserted: [],
           duplicated: duplicateCities
@@ -135,7 +135,7 @@ export class CityRepository {
 
 
 /** ✅
-   * Retorna todas lass unidades municipales que el usuario no tiene sincronizados
+   * Retorna todas lass ciudades que el usuario no tiene sincronizados
    */
   async getAllCities(
     schema: string,
@@ -167,7 +167,7 @@ export class CityRepository {
 
       return {
         message:
-          'Conexión exitosa, se han obtenido las siguientes unidades municipales no sincronizados:',
+          'Conexión exitosa, se han obtenido las siguientes ciudades no sincronizados:',
           cities: notSyncCities
       };
     } catch (error) {
@@ -257,7 +257,7 @@ export class CityRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncCities:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
+        message: "¡La Sincronización ha terminado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
         duplicated: citiesArrayFiltred.duplicateCities,
       };

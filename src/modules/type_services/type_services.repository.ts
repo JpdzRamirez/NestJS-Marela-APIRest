@@ -153,7 +153,7 @@ export class TypeServiceRepository {
         console.error("❌ Error en submitAllTypeServices:", error);
         
         return {
-          message: "¡El cargue ha fallado! -> "+ error.message,        
+          message: "¡El cargue ha terminado! -> "+ error.message,        
           status: false,
           inserted: [],
           duplicated: duplicateTypeServices
@@ -165,7 +165,7 @@ export class TypeServiceRepository {
 
 
 /** ✅
-   * Retorna todas lass unidades municipales que el usuario no tiene sincronizados
+   * Retorna todas los tipos de servicio que el usuario no tiene sincronizados
    */
   async getAllTypeServices(
     schema: string,
@@ -197,7 +197,7 @@ export class TypeServiceRepository {
 
       return {
         message:
-          'Conexión exitosa, se han obtenido las siguientes unidades municipales no sincronizados:',
+          'Conexión exitosa, se han obtenido las siguientes tipos de servicio no sincronizados:',
           type_services: notSyncCities
       };
     } catch (error) {
@@ -287,7 +287,7 @@ export class TypeServiceRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncTypeServices:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
+        message: "¡La Sincronización ha terminado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
         duplicated: typeServicesArrayFiltred.duplicateTypeServices,
       };

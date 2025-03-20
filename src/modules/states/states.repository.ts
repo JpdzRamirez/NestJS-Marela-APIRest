@@ -123,7 +123,7 @@ export class StateRepository {
         console.error("❌ Error en submitAllStates:", error);
         
         return {
-          message: "¡El cargue ha fallado! -> "+ error.message,        
+          message: "¡El cargue ha terminado! -> "+ error.message,        
           status: false,
           inserted: [],
           duplicated: duplicateStates
@@ -135,7 +135,7 @@ export class StateRepository {
 
 
 /** ✅
-   * Retorna todas lass unidades municipales que el usuario no tiene sincronizados
+   * Retorna todas lass departamentos que el usuario no tiene sincronizados
    */
   async getAllStates(
     schema: string,
@@ -257,7 +257,7 @@ export class StateRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncCities:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
+        message: "¡La Sincronización ha terminado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
         duplicated: statesArrayFiltred.duplicateStates,
       };

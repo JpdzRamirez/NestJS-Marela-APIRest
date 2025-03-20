@@ -22,6 +22,7 @@ import { ProductsActivity } from '../modules/products_activity/products_activity
 import { SalesRate } from '../modules/sales_rate/sales_rate.entity';
 import { State } from '../modules/states/state.entity';
 import { Trail } from '../modules/trails/trail.entity';
+import { Unit } from '../modules/units/units.entity';
 
 export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
   type: 'postgres',
@@ -33,7 +34,7 @@ export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOption
     Client,InvoiceHeader,InvoiceFooter,WaterMeter,
     Brand,City,TypeClient,TypeDocument,TypeService,
     MunicipalUnit,PaymentsActivity,ProductsActivity,Trail,
-    SalesRate,State,OverdueDebt
+    SalesRate,State,OverdueDebt,Unit
 
   ],
   migrations: ['src/migrations/**/*.ts'],

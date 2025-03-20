@@ -6,6 +6,9 @@ import { User } from '../users/user.entity';
 export class OverdueDebt {
     @PrimaryGeneratedColumn("increment") // ID autoincremental
     id!: number;
+    
+    @Column({ name: 'id_mora',type: 'uuid', nullable: false, unique: true })
+    id_mora!: string;
 
     @Column({ name: 'mora_maxima', type:'int2',nullable:true })
     mora_maxima?: string | null;  // Puede ser opcional si Supabase lo genera
@@ -25,8 +28,17 @@ export class OverdueDebt {
     @Column({name: 'contrato_id', type:'boolean', nullable: false })
     contrato_id?: number; 
 
-    @ManyToOne(() => Contract, (contract) => contract.moras, { nullable: true})
-    @JoinColumn({ name: 'contrato_id' }) // Nombre de la columna FK en la BD
+    @ManyToOne(() => Contract,{ nullable: true, eager: false })
+    @JoinColumn({ name: 'contrato_id', referencedColumnName: 'id_contrato'}) // Nombre de la columna FK en la BD
     contrato: Contract;
+
+    @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
+    uploaded_by_authsupa?: string;
+
+    @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+    created_at!: Date;
+
+    @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
+    sync_with?: Record<string, any>[] | null;
 
 }

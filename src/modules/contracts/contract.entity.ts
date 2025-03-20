@@ -26,13 +26,19 @@ export class Contract {
   @Column({ name: 'fecha', type: 'timestamp',nullable: false})
   fecha!: Date; 
 
+  @Column({ name: 'cliente_id',type: 'uuid', nullable: false })
+  cliente_id!: string;
+
   @ManyToOne(() => Client, { nullable: true, eager: false })
   @JoinColumn({ name: 'cliente_id', referencedColumnName: 'id_cliente' })
-  cliente?: Client | null;
+  cliente!: Client | null;
+
+  @Column({ name: 'medidor_id',type: 'uuid', nullable: false })
+  medidor_id!: string;
 
   @ManyToOne(() => WaterMeter, { nullable: true, eager: false })
   @JoinColumn({ name: 'medidor_id' , referencedColumnName: 'id_medidor'})
-  medidor?: WaterMeter | null;
+  medidor!: WaterMeter | null;
 
   @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
   uploaded_by_authsupa?: string;
@@ -43,13 +49,19 @@ export class Contract {
   @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
   sync_with?: Record<string, any>[] | null;
 
+  @Column({ name: 'tiposervicio_id',type: 'uuid', nullable: false })
+  tiposervicio_id!: string;
+
   @ManyToOne(() => TypeService, { nullable: true, eager: false })
   @JoinColumn({ name: 'tiposervicio_id', referencedColumnName: 'id_tiposervicio' })
-  tipo_servicio?: TypeService | null;
+  tipo_servicio!: TypeService | null;
 
+  @Column({ name: 'unidad_municipal_id',type: 'uuid', nullable: false })
+  unidad_municipal_id!: string;
+  
   @ManyToOne(() => MunicipalUnit, { nullable: true, eager: false })
   @JoinColumn({ name: 'unidad_municipal_id', referencedColumnName: 'id_unidadmunicipal' })
-  unidad_municipal?: MunicipalUnit | null;
+  unidad_municipal!: MunicipalUnit | null;
 
   @OneToMany(() => Invoice, (invoice) => invoice.contrato)
   facturas?: Invoice[];

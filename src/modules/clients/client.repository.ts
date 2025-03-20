@@ -145,7 +145,7 @@ export class ClientRepository {
         console.error("❌ Error en submitAllClients:", error);
         
         return {
-          message: "¡El cargue ha fallado! -> "+ error.message,        
+          message: "¡El cargue ha terminado! -> "+ error.message,        
           status: false,
           inserted: [],
           duplicated: duplicateClients
@@ -281,7 +281,7 @@ export class ClientRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncTypeClient:", error);
       return {
-        message: "¡La Sincronización ha fallado! -> "+ error.message, 
+        message: "¡La Sincronización ha terminado! -> "+ error.message, 
         status: false,
         duplicated: clientArrayFiltred.duplicateClients,
       };

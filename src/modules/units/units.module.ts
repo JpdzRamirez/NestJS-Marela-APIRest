@@ -1,26 +1,27 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Trail } from './trail.entity';
+import { Unit } from './units.entity';
 
-import { TrailRepository } from './trail.repository';
-import { TrailServices  } from './trails.service';
-import { TrailController } from './trails.controller';
+import { UnitsRepository } from './units.repository';
+import { UnitsService  } from './units.service';
+import { UnitsController } from './units.controller';
 
 import { AuthModule } from '../auth/auth.module';
 import { SupabaseModule } from '../../config/supabase.module';
 import { UtilityModule } from '../../shared/utility/utility.module';
 import { UserModule } from '../users/users.module';
 
+
 @Module({
     imports: [
-      TypeOrmModule.forFeature([Trail]),
+      TypeOrmModule.forFeature([Unit]),
       forwardRef(() => AuthModule),
       UtilityModule,
       SupabaseModule,
       UserModule
     ],  
-  providers: [TrailServices,TrailRepository],
-  controllers: [TrailController],
-  exports: [TrailRepository, TrailServices, TypeOrmModule],
+  providers: [UnitsService,UnitsRepository],
+  controllers: [UnitsController],
+  exports: [UnitsRepository, UnitsService, TypeOrmModule],
 })
-export class TrailModule {}
+export class UnitsModule {}

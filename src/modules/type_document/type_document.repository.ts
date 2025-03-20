@@ -134,7 +134,7 @@ export class TypeDocumentRepository {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en submitAllTypeDocument:', error);
       return {
-        message: "¡El cargue de datos ha fallado! -> "+ error.message, 
+        message: "¡El cargue de datos ha terminado! -> "+ error.message, 
         status:false,
         inserted: [],
         duplicated: duplicatedTypeDocuments,
@@ -186,7 +186,7 @@ export class TypeDocumentRepository {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllTypeDocument:', error);
       return {
-        message: "¡La conexión ha fallado! -> "+ error.message,
+        message: "¡La conexión ha terminado! -> "+ error.message,
         type_documents: []
       };
     } finally {
@@ -273,7 +273,7 @@ export class TypeDocumentRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncTypeClient:", error);
       return {
-        message: "¡La Sincronización ha fallado ! -> "+ error.message, 
+        message: "¡La Sincronización ha terminado ! -> "+ error.message, 
         status: false,
         duplicated: typeDocumentArrayFiltred.duplicateTypeDocument,
       };

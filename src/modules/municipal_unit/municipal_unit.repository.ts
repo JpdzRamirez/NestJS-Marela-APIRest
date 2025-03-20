@@ -123,7 +123,7 @@ export class MunicipalUnitRepository {
         console.error("❌ Error en submitAllMunicipalUnits:", error);
         
         return {
-          message: "¡El cargue ha fallado! -> "+ error.message,        
+          message: "¡El cargue ha terminado! -> "+ error.message,        
           status: false,
           inserted: [],
           duplicated: duplicateMunicipalUnits
@@ -260,7 +260,7 @@ export class MunicipalUnitRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncMunicipalUnits:", error);
       return {
-        message: "¡La Sincronización ha fallado! -> "+ error.message, 
+        message: "¡La Sincronización ha terminado! -> "+ error.message, 
         status: false,
         duplicated: municipal_unitArrayFiltred.duplicateMunicipalUnits,
       };

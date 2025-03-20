@@ -25,9 +25,6 @@ export class Invoice {
     @Column({name: 'pagada', type: 'boolean', nullable: true })
     pagada?: boolean; 
 
-    @Column({name: 'sincronizada', type:'boolean', nullable: false })
-    sincronizada?: boolean; 
-
     @Column({ name: 'fecha_lectura', type: 'timestamp',nullable: false})
     fecha_lectura!: Date; 
 
@@ -43,13 +40,23 @@ export class Invoice {
     @Column({ name: 'fecha_pago_oportuno', type: 'timestamp',nullable: true})
     fecha_pago_oportuno?: Date; 
 
-    @ManyToOne(() => Contract, (contract) => contract.facturas, { nullable: true})
+    @ManyToOne(() => Contract, (contract) => contract.facturas, { nullable: true, eager: false})
     @JoinColumn({ name: 'contrato_id', referencedColumnName: 'id_contrato' }) // Nombre de la columna FK en la BD
     contrato: Contract;
 
-    // Relación uno a uno con la tabla public.users
+    @Column({ name: 'user_id', type:'uuid',nullable:false, unique: true })
+    user_id!: string; 
+        
     @OneToOne(() => User)
     @JoinColumn({ name: 'user_id' , referencedColumnName: 'uuid_authsupa'}) 
     usuario: User;
 
+    @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
+    uploaded_by_authsupa?: string;
+
+    @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
+    sync_with?: Record<string, any>[] | null;
+
+    @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+    created_at!: Date;
 }

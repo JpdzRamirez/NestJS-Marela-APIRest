@@ -1,19 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column,ManyToOne,OneToOne,JoinColumn,OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import "reflect-metadata";
 
-@Entity('rutas')
-export class Trail {
+@Entity('unidades')
+export class Unit {
     @PrimaryGeneratedColumn("increment")
     id!: number;
-
-    @Column({ name: 'id_ruta',type: 'uuid', nullable: false, unique: true })
-    id_ruta!: string;
-
-    @Column({ name: 'nombre',type: 'varchar', length: 50, nullable: false })
-    nombre!: string;
     
-    @Column({ name: 'unidades_municipales',type: 'jsonb', nullable: true })
-    unidades_municipales!: Record<string, any>[] | null;
+    @Column({ name: 'id_unidad',type: 'uuid', nullable: false, unique: true })
+    id_unidad!: string;
+
+    @Column({ name: 'nombre', unique: true, nullable: true })
+    nombre!: string;
 
     @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     created_at!: Date;
@@ -23,4 +20,5 @@ export class Trail {
 
     @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
     sync_with?: Record<string, any>[] | null;
+
 }

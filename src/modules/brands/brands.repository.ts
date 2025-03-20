@@ -146,7 +146,7 @@ export class BrandRepository {
         console.error("❌ Error en submitAllCities:", error);
         
         return {
-          message: "¡El cargue ha fallado! -> "+ error.message,        
+          message: "¡El cargue ha terminado! -> "+ error.message,        
           status: false,
           inserted: [],
           duplicated: duplicateBrands
@@ -158,7 +158,7 @@ export class BrandRepository {
 
 
 /** ✅
-   * Retorna todas lass unidades municipales que el usuario no tiene sincronizados
+   * Retorna todas lass marcas que el usuario no tiene sincronizados
    */
   async getAllBrands(
     schema: string,
@@ -190,7 +190,7 @@ export class BrandRepository {
 
       return {
         message:
-          'Conexión exitosa, se han obtenido las siguientes unidades municipales no sincronizados:',
+          'Conexión exitosa, se han obtenido las siguientes marcas no sincronizados:',
         brands: notSyncBrands
       };
     } catch (error) {
@@ -280,7 +280,7 @@ export class BrandRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncCities:", error);
       return {
-        message: "¡La Sincronización ha fallado, retornando desde la base de datos!! -> "+ error.message, 
+        message: "¡La Sincronización ha terminado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
         duplicated: brandsArrayFiltred.duplicateBrands,
       };

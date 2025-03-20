@@ -27,6 +27,9 @@ export class WaterMeter {
     @Column({ name: 'descripcion',type: 'varchar', length: 250, nullable: true })
     descripcion?: string;
     
+    @Column({ name: 'marca_id', type:'uuid',nullable:false, unique: true })
+    marca_id!: string; 
+
     @ManyToOne(() => Brand, { nullable: true, eager: false })
     @JoinColumn({ name: 'marca_id', referencedColumnName: 'id_marca' })
     marca!: Brand | null;

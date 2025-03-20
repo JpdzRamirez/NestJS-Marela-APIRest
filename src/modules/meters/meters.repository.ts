@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { WaterMeter } from './meters.entity';
+import { Brand } from '../brands/brand.entity';
 import { WaterMetersDto } from './dto/meters.dto';
 import { UUID } from 'crypto';
 
@@ -10,7 +11,7 @@ export class WaterMeterRepository {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   /** ✅
-   * Guarda todas los tipos de clientes no duplicados y se retorna los registros insertados y duplicados
+   * Guarda todas los medidores no duplicados y se retorna los registros insertados y duplicados
    */
   async submitAllWaterMeter(
     schema: string,
@@ -120,7 +121,7 @@ export class WaterMeterRepository {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en submitAllWaterMeter:', error);
       return {
-        message: '¡El cargue ha fallado! -> '+ error.message,
+        message: '¡El cargue ha terminado! -> '+ error.message,
         status:false,
         inserted: [],
         duplicated: duplicatedWaterMeters
@@ -136,8 +137,7 @@ export class WaterMeterRepository {
    */
   async getAllWaterMeters(
     schema: string,
-    uuid_authsupa: string,
-
+    uuid_authsupa: string
   ): Promise<{
     message: string,
     water_meters:WaterMeter[]
@@ -147,32 +147,38 @@ export class WaterMeterRepository {
     await queryRunner.startTransaction();
 
     try {
-      const entityManager = queryRunner.manager;
-
-      // Obtener nombres que ya existen en la base de datos
-      const notSyncWaterMeters = await entityManager
-      .createQueryBuilder()
-      .select('medidores.*') // Agregado `.*` para seleccionar todos los campos
-      .from(`${schema}.medidores`, 'medidores')
-      .where(`NOT EXISTS (
-        SELECT 1 FROM jsonb_array_elements(medidores.sync_with::jsonb) AS elem
-        WHERE elem->>'uuid_authsupa' = :uuid_authsupa
-      )`, { uuid_authsupa })
-      .getRawMany();
-
-
-      await queryRunner.commitTransaction();
-
-      return {
-        message:
-          'Conexión exitosa, se han obtenido los siguientes medidores no sincronizados:',
-        water_meters: notSyncWaterMeters
-      };
+      return this.dataSource.manager.transaction(async (entityManager: EntityManager) => {
+        // 🔥 Configurar dinámicamente el esquema de las entidades principales
+        entityManager.connection.getMetadata(WaterMeter).tablePath = `${schema}.medidores`;
+        entityManager.connection.getMetadata(Brand).tablePath = `${schema}.marcas`;
+      
+        // 🔍 Obtener medidores no sincronizados con la relación de marca correctamente gestionada por TypeORM
+        const waterMeters = await entityManager
+          .createQueryBuilder(WaterMeter, 'medidores')
+          .leftJoinAndSelect('medidores.marca', 'marca')
+          .select([
+            'medidores',  
+            'marca.id',         
+            'marca.id_marca',      
+            'marca.nombre'         
+          ]) 
+          .where(`NOT EXISTS (
+            SELECT 1 FROM jsonb_array_elements(medidores.sync_with::jsonb) AS elem
+            WHERE elem->>'uuid_authsupa' = :uuid_authsupa
+          )`, { uuid_authsupa })
+          .getMany(); // 🔥 `getMany()` en lugar de `getRawMany()`, para obtener objetos `WaterMeter` correctamente formateados
+      
+        return {
+          message: 'Conexión exitosa, se han obtenido los siguientes medidores no sincronizados:',
+          water_meters: waterMeters
+        };
+      });
+      
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllWaterMeters:', error);
       return {
-        message: '¡La Conexión ha fallado, retornando desde la base de datos! -> '+ error.message, 
+        message: '¡La Conexión ha terminado, retornando desde la base de datos! -> '+ error.message, 
         water_meters: []
       };
     } finally {
@@ -258,7 +264,7 @@ export class WaterMeterRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncWaterMeter:", error);
       return {
-        message: "¡La Sincronización ha fallado! -> "+ error.message,
+        message: "¡La Sincronización ha terminado! -> "+ error.message,
         status: false,
         duplicated: waterMeterArrayFiltred.duplicateWaterMeters,
       };

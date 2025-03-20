@@ -11,6 +11,8 @@ import { Brand } from 'src/modules/brands/brand.entity';
 import { BrandDto } from 'src/modules/brands/dto/brand.dto';
 
 import { Contract } from '../../modules/contracts/contract.entity';
+import { ContractsDto } from '../../modules/contracts/dto/contracts.dto';
+
 import { Trail } from '../../modules/trails/trail.entity';
 import { TrailDto } from '../../modules/trails/dto/trail.dto';
 
@@ -207,6 +209,41 @@ export class UtilityService {
             duplicateWaterMeters,
           };
     }
+
+    mapDtoContractsToEntityAndRemoveDuplicate(contractsArray: ContractsDto[], uuid_authsupa: string): 
+    { uniqueContracts: Contract[], 
+      duplicateContracts: ContractsDto[] 
+    } {
+      const uniqueContracts = new Map<string, Contract>();
+      const duplicateContracts: ContractsDto[] = [];
+  
+      for (const contract of contractsArray) {
+          // Creamos el nombre clave para realizar la validacion si está repetido
+          const referenceKey = contract.id_contrato.toString().trim();
+
+          if (uniqueContracts.has(referenceKey)) {
+            contract.source_failure='Request'
+            duplicateContracts.push({ ...contract }); // Guardar duplicado
+          } else {
+            let newContracts = new Contract();
+            newContracts.id = contract.id;
+            newContracts.id_contrato = contract.id_contrato;
+            newContracts.fecha = contract.fecha;            
+            newContracts.cliente = { id_cliente: contract.cliente_id } as Partial<Client> as Client;   
+            newContracts.medidor = { id_medidor: contract.medidor_id } as Partial<WaterMeter> as WaterMeter; 
+            newContracts.tipo_servicio = { id_tiposervicio: contract.tiposervicio_id } as Partial<TypeService> as TypeService; 
+            newContracts.unidad_municipal = { unidad_municipal_id: contract.unidad_municipal_id } as Partial<MunicipalUnit> as MunicipalUnit; 
+            newContracts.uploaded_by_authsupa = uuid_authsupa;                   
+            newContracts.sync_with = [{ id: contract.id, uuid_authsupa }];        
+            uniqueContracts.set(referenceKey, { ...newContracts });
+          }
+        }
+      
+        return {
+          uniqueContracts: Array.from(uniqueContracts.values()),
+          duplicateContracts,
+        };
+  }
 
     mapDtoMunicipalUnitToEntityAndRemoveDuplicate(municipal_unitArray: MunicipalUnitDto[], uuid_authsupa: string): 
     { uniqueMunicipalUnits: MunicipalUnit[], 
@@ -483,6 +520,23 @@ export class UtilityService {
       return {
         uniqueTrails: Array.from(uniqueTrails.values()),
         duplicateTrails,
+      };
+    }
+    removeDuplicateContracts(contractsArray: ContractsDto[]) {
+      const uniqueContracts = new Map<string, ContractsDto>();
+      const duplicateContracts: ContractsDto[] = [];    
+      for (const contract of contractsArray) {
+        const referenceKey = contract.id_contrato.toString().trim();
+        if (uniqueContracts.has(referenceKey)) {
+          contract.source_failure='Request'
+          duplicateContracts.push({ ...contract });
+        } else {
+          uniqueContracts.set(referenceKey, { ...contract });
+        }
+      }
+      return {
+        uniqueContracts: Array.from(uniqueContracts.values()),
+        duplicateContracts,
       };
     }
     removeDuplicateStates(statesArray: StateDto[]) {

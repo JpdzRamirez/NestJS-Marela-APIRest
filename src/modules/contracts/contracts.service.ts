@@ -2,40 +2,79 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ContractRepository } from './contracts.repository';
 import { Contract } from './contract.entity';
 
-import { GetDateRangeContractsDto } from './dto/get-dateRangeContracts.dto';
+import { ContractsDto, GetDateRangeContractsDto } from './dto/contracts.dto';
 
 import { AuthRequest } from '../../types';
 
+import { UtilityService } from '../../shared/utility/utility.service';
+
 @Injectable()
 export class ContractServices {
-  constructor(private readonly contractRepository: ContractRepository) {}
+  constructor(
+    private readonly contractRepository: ContractRepository,
+    private readonly utilityService: UtilityService 
+  ) {}
 
-  async getAllContracts(AuthRequest: AuthRequest): Promise<Contract[]> {
+  /** ✅ Obtener contratos dentro rangos de fecha */
+  async getAllContracts(AuthRequest: AuthRequest): Promise<{ 
+      message: String,
+      contracts:Contract[]
+    }>  {
     const user = AuthRequest.user;
-    if (!user || !user.schemas || !user.schemas.name) {
+    if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa) {
       throw new HttpException('No se encontraro usuario', HttpStatus.NOT_FOUND);
     }
 
-    const invoices = await this.contractRepository.getAllContracts(user.schemas.name,);
+    return await this.contractRepository.getAllContracts(user.schemas.name,user.uuid_authsupa);
 
-    if (!invoices) {
-      throw new HttpException('Sin registros de facturas',HttpStatus.NOT_FOUND,);
-    }
-    return invoices;
   }
 
-  /** ✅ Obtener facturas dentro rangos de fecha */
-  async getDateRangeContracts(AuthRequest: AuthRequest,dateRange:GetDateRangeContractsDto): Promise<Contract[]> {
+  /** ✅ Obtener contratos dentro rangos de fecha */
+  async getDateRangeContracts(AuthRequest: AuthRequest,dateRange:GetDateRangeContractsDto): Promise<{ 
+    message: String,
+    contracts:Contract[]
+  }>  {
       const user = AuthRequest.user;
-      if (!user || !user.schemas || !user.schemas.name ) {
+      if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa ) {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
-  
-      const invoices = await this.contractRepository.getDateRangeContracts(user.schemas.name,dateRange);
-  
-      if (!invoices) {
-        throw new HttpException('Sin registros de contratos', HttpStatus.NOT_FOUND);
+      return await this.contractRepository.getDateRangeContracts(user.schemas.name,dateRange,user.uuid_authsupa);
+  }
+
+  async submitAllContracts(AuthRequest: AuthRequest, contractsArray: ContractsDto[]): Promise<{ 
+      message: string;
+      status: boolean;
+      inserted: { id: number; id_contrato: string ; fecha: Date }[];
+      duplicated: ContractsDto[];
+  }>{
+      const user = AuthRequest.user;
+      if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
+        throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
-      return invoices;
+      const uuidAuthsupa: string = user.uuid_authsupa;
+      // Mapear todos los DTOs a entidades
+      const newContractsArray = this.utilityService.mapDtoContractsToEntityAndRemoveDuplicate(contractsArray, uuidAuthsupa)
+      
+      // Enviar los clientes al repositorio para inserción en la BD
+      return await this.contractRepository.submitAllContracts(user.schemas.name, newContractsArray);  
+  }
+
+  /** ✅ Sincronizar los contratos*/
+  async syncContracts(AuthRequest: AuthRequest, contractsArray: ContractsDto[]): Promise<{ 
+      message: String,
+      status: Boolean,
+      duplicated: ContractsDto[] | null   
+  }>{
+      const user = AuthRequest.user;
+      if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
+        throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
+      }
+      const uuidAuthsupa: string = user.uuid_authsupa;
+  
+      const contractsArrayFiltred = this.utilityService.removeDuplicateContracts(contractsArray);
+  
+      // Enviar los clientes al repositorio para inserción en la BD
+      return await this.contractRepository.syncContracts(user.schemas.name, uuidAuthsupa,contractsArrayFiltred);
+  
   }
 }

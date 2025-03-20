@@ -133,7 +133,7 @@ export class TypeClientRepository {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en submitAllTypeClient:', error);
       return {
-        message: '¡El cargue ha fallado!! -> '+ error.message, 
+        message: '¡El cargue ha terminado!! -> '+ error.message, 
         status:false,
         inserted: [],
         duplicated: duplicatedTypeClients,
@@ -185,7 +185,7 @@ export class TypeClientRepository {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllTypeClient:', error);
       return {
-        message: '¡La conexión ha fallado, retornando desde la base de datos! ->'+ error.message,
+        message: '¡La conexión ha terminado, retornando desde la base de datos! ->'+ error.message,
         type_clients: []
       };
     } finally {
@@ -270,7 +270,7 @@ export class TypeClientRepository {
       await queryRunner.rollbackTransaction();
       console.error("❌ Error en syncTypeClient:", error);
       return {
-        message: "¡La Sincronización ha fallado!",
+        message: "¡La Sincronización ha terminado!",
         status: false,
         duplicated: null,
       };

@@ -8,20 +8,23 @@ export class PaymentsActivity {
     @PrimaryGeneratedColumn("increment")
     id!: number;
 
+    @Column({ name: 'id_pagoactividades',type: 'uuid', nullable: false, unique: true })
+    id_pagoactividades!: string;
+
     @Column({ name: 'nombre',type: 'varchar', length: 50, unique: false, nullable: false })
-    nombre?: string;
+    nombre!: string;
 
     @Column({name: 'total', type: 'float4', nullable: false })
-    total?: number; 
+    total!: number; 
 
     @Column({ name: 'numero_cuotas',type: 'int2', nullable: false })
-    numero_cuotas?: number;
+    numero_cuotas!: number;
 
     @Column({name: 'cuota_actual', type: 'int2', nullable: false,})
-    cuota_actual?: number;
+    cuota_actual!: number;
 
     @Column({name: 'valor_cuota_actual', type: 'float4', nullable: false })
-    valor_cuota_actual?: number; 
+    valor_cuota_actual!: number; 
 
     @Column({name: 'saldo', type: 'float4', nullable: false })
     saldo?: number; 
@@ -29,10 +32,22 @@ export class PaymentsActivity {
     @Column({name: 'pagado', type: 'bool', nullable: false })
     pagado?: Boolean; 
 
-    @Column({ name: 'actividad_id', type:'int2',nullable:false })
-    actividad_id?: number ; 
+    @Column({ name: 'fecha_pago', type: 'timestamp'})
+    fecha_pago!: Date;
 
-    @ManyToOne(() => Activity, (activity) => activity.pagos_actividad, { nullable: false })
-    @JoinColumn({ name: 'actividad_id' }) // Nombre de la columna FK en la BD
+    @Column({ name: 'actividad_id', type:'uuid',nullable:false })
+    actividad_id?: string ; 
+
+    @ManyToOne(() => Activity, (activity) => activity.pagos_actividad, { nullable: false,eager: false })
+    @JoinColumn({ name: 'actividad_id' , referencedColumnName: 'id_actividades' }) // Nombre de la columna FK en la BD
     actividad?: Activity;
+
+    @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
+    uploaded_by_authsupa?: string;
+
+    @Column({ name: 'sync_with', type: 'jsonb', nullable: true })
+    sync_with?: Record<string, any>[] | null;
+
+    @Column({ name: 'created_at', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+    created_at!: Date;
 }
