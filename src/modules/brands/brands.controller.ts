@@ -26,22 +26,22 @@ constructor(private readonly brandsServices: BrandsService) {}
 
   /** ✅ Subir todos las marcas no sincronizados desde el móbil (fontanero y admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-  @Post('admin/post-all-cities')
-    async submitAllClients(@Req() request: AuthRequest,@Body() brandsArray: BrandsArrayDto) {    
+  @Post('admin/post-all-brands')
+    async submitAllBrands(@Req() request: AuthRequest,@Body() brandsArray: BrandsArrayDto) {    
       return await this.brandsServices.submitAllBrands(request, brandsArray.cities);
   }
 
   /** ✅ Obtener todos las marcas no sincronizados desde el la base de datos (fontanero y admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-  @Get('admin/get-all-cities')
-    async getAllTypeClient(@Req() request: AuthRequest ) {    
+  @Get('admin/get-all-brands')
+    async getAllBrands(@Req() request: AuthRequest ) {    
       return await this.brandsServices.getAllBrands(request);
   }
   
     /** ✅ Marcas sincronizados en móbil (fontanero y admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-  @Patch('admin/patch-sync-cities')
-    async syncClients(@Req() request: AuthRequest,@Body() brandsArray: BrandsArrayDto ) {    
+  @Patch('admin/patch-sync-brands')
+    async syncBrands(@Req() request: AuthRequest,@Body() brandsArray: BrandsArrayDto ) {    
       return await this.brandsServices.syncBrands(request,brandsArray.cities);
   }
 
