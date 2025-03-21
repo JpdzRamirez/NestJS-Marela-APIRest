@@ -7,7 +7,8 @@ import {
   HttpStatus, 
   UsePipes, 
   ValidationPipe, 
-  Get
+  Get,
+  HttpCode
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from '../users/user.entity';
@@ -43,6 +44,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(200)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async login(@Body() loginDto: LoginUserDto) {
     try {

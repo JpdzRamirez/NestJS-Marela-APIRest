@@ -21,12 +21,21 @@ export class ContractServices {
       contracts:Contract[]
     }>  {
     const user = AuthRequest.user;
-    if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa) {
-      throw new HttpException('No se encontraro usuario', HttpStatus.NOT_FOUND);
+    if (!user) {
+      throw new HttpException('Usuario no autenticado', HttpStatus.UNAUTHORIZED); // 401
     }
 
-    return await this.contractRepository.getAllContracts(user.schemas.name,user.uuid_authsupa);
+    if (!user.schemas || !user.schemas.name || !user.uuid_authsupa) {
+      throw new HttpException('Datos de usuario incompletos', HttpStatus.BAD_REQUEST); // 400
+    }
 
+    const contracts= await this.contractRepository.getAllContracts(user.schemas.name,user.uuid_authsupa);
+
+    if (!contracts || contracts.contracts.length === 0) {
+      throw new HttpException('No se encontraron contratos', HttpStatus.NOT_FOUND); // 404
+    }
+    
+    return contracts;
   }
 
   /** ✅ Obtener contratos dentro rangos de fecha */
