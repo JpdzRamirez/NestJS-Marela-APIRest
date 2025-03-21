@@ -1,21 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from "crypto";
-
 import { ClientsDto } from '../../modules/clients/dto/Clients.dto';
 import { TypeClientDto } from '../../modules/type_client/dto/typeClient.dto';
 import { TypeDocumentDto } from '../../modules/type_document/dto/typeDocument.dto';
-
 import { WaterMeter } from '../../modules/meters/meters.entity';
 import { WaterMetersDto } from '../../modules/meters/dto/meters.dto';
 import { Brand } from 'src/modules/brands/brand.entity';
 import { BrandDto } from 'src/modules/brands/dto/brand.dto';
-
 import { Contract } from '../../modules/contracts/contract.entity';
 import { ContractsDto } from '../../modules/contracts/dto/contracts.dto';
-
 import { Trail } from '../../modules/trails/trail.entity';
 import { TrailDto } from '../../modules/trails/dto/trail.dto';
-
 import { Client } from '../../modules/clients/client.entity';
 import { TypeClient } from '../../modules/type_client/type_client.entity';
 import { TypeDocument } from '../../modules/type_document/type_document.entity';
@@ -27,6 +22,8 @@ import { StateDto } from '../../modules/states/dto/state.dto';
 import { MunicipalUnitDto } from '../../modules/municipal_unit/dto/municipal_unit.dto';
 import { TypeService } from 'src/modules/type_services/type_service.entity';
 import { TypeServiceDto } from 'src/modules/type_services/dto/type_services.dto';
+import { SalesRate } from 'src/modules/sales_rate/sales_rate.entity';
+import { SalesDto } from 'src/modules/sales_rate/dto/sales.dto';
 
 
 @Injectable()
@@ -275,6 +272,36 @@ export class UtilityService {
           duplicateMunicipalUnits,
         };
   }
+  mapDtoSalesRateAndRemoveDuplicate(salesRateArray: SalesDto[], uuid_authsupa: string): 
+  { uniqueSalesRate: SalesRate[], 
+    duplicateSalesRate: SalesDto[] 
+  } {
+    const uniqueSalesRate = new Map<string, SalesRate>();
+    const duplicateSalesRate: SalesDto[] = [];
+
+    for (const salerate of salesRateArray) {
+        // Creamos el nombre clave para realizar la validacion si está repetido
+        const referenceKey = salerate.id_tarifa.toString().trim();
+        if (uniqueSalesRate.has(referenceKey)) {
+          salerate.source_failure='Request'
+          duplicateSalesRate.push({ ...salerate }); // Guardar duplicado
+        } else {
+          let newSalesRate = new SalesRate();
+          newSalesRate.id = salerate.id;
+          newSalesRate.id_tarifa = salerate.id_tarifa;
+          newSalesRate.nombre = salerate.nombre;
+          newSalesRate.rango_inicial = salerate.rango_inicial;
+          newSalesRate.rango_final = salerate.rango_final;
+          newSalesRate.uploaded_by_authsupa = uuid_authsupa;                  
+          newSalesRate.sync_with = [{ id: salerate.id, uuid_authsupa }];      
+          uniqueSalesRate.set(referenceKey, { ...newSalesRate });
+        }
+      }      
+      return {
+        uniqueSalesRate: Array.from(uniqueSalesRate.values()),
+        duplicateSalesRate,
+      };
+}
     mapDtoTrailsAndRemoveDuplicate(trailsArray: TrailDto[], uuid_authsupa: string): 
       { uniqueTrails: Trail[], 
         duplicateTrails: TrailDto[] 
@@ -596,6 +623,23 @@ export class UtilityService {
         duplicateMunicipalUnits,
       };
     }
+    removeDuplicateSalesRate(salesRateArray: SalesDto[]) {
+      const uniqueSalesRate = new Map<string, SalesDto>();
+      const duplicateSalesRate: SalesDto[] = [];        
+      for (const salesrate of salesRateArray) {            
+        const referenceKey = salesrate.id_tarifa.toString().trim();        
+        if (uniqueSalesRate.has(referenceKey)) {
+          salesrate.source_failure='Request'
+          duplicateSalesRate.push({ ...salesrate });
+        } else {
+          uniqueSalesRate.set(referenceKey, { ...salesrate });
+        }
+      }        
+      return {
+        uniqueSalesRate: Array.from(uniqueSalesRate.values()),
+        duplicateSalesRate,
+      };
+}
     /*Eliminar posibles datos redundantes al patch de clientes*/
     removeDuplicateClients(clientsArray: ClientsDto[]) {
           const uniqueClients = new Map<string, ClientsDto>();
