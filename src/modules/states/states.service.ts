@@ -1,10 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { StateRepository } from './states.repository';
 import { StateDto } from './dto/state.dto';
-
 import { State } from './state.entity';
 import { AuthRequest } from '../../types';
-
 import { UtilityService } from '../../shared/utility/utility.service';
 
 @Injectable()
@@ -14,7 +12,7 @@ export class StatesService {
     private readonly stateRepository: StateRepository,
     private readonly utilityService: UtilityService    
   ) {}
-/** ✅ Obtener todas las facturas*/
+/** ✅ Cargar todos las departamentos*/
   async submitAllStates(AuthRequest: AuthRequest, statesArray: StateDto[]): Promise<{ 
       message: string,
       status: boolean,
@@ -34,7 +32,7 @@ export class StatesService {
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades    
     const newMunicipalUnits = this.utilityService.mapDtoStateToEntityAndRemoveDuplicate(statesArray, uuidAuthsupa)
-    // Enviar los clientes al repositorio para inserción en la BD
+    // Enviar los departamentos al repositorio para inserción en la BD
     const result= await this.stateRepository.submitAllStates(user.schemas.name, newMunicipalUnits);
 
     if (!result.status) {
@@ -53,8 +51,8 @@ export class StatesService {
     return result; 
 
   }
-
-    async getAllStates(AuthRequest: AuthRequest): Promise<{ 
+    /** ✅ Enviar los departamentos pendientes por sincronizar*/
+  async getAllStates(AuthRequest: AuthRequest): Promise<{ 
       message: String,
       status:boolean,
       states:State[]
@@ -80,7 +78,7 @@ export class StatesService {
       return result; 
     }
   
-    /** ✅ Sincronizar los tipos de clientes*/
+    /** ✅ Sincronizar los departamentos*/
     async syncStates(AuthRequest: AuthRequest, statesArray: StateDto[]): Promise<{ 
       message: String,
       status: Boolean,
@@ -95,7 +93,7 @@ export class StatesService {
   
       const statesArrayFiltred = this.utilityService.removeDuplicateStates(statesArray);
   
-      // Enviar los clientes al repositorio para inserción en la BD
+      // Enviar los departamentos al repositorio para inserción en la BD
       const result= await this.stateRepository.syncStates(user.schemas.name, uuidAuthsupa,statesArrayFiltred);
       
       if (!result.status) {

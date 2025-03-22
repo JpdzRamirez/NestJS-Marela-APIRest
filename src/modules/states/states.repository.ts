@@ -12,7 +12,7 @@ export class StateRepository {
   ) {}
 
     /** ✅
-     * Inserta todos los clientes y retorna los clientes insertados o duplicados
+     * Inserta todos los departamentos y retorna los departamentos insertados o duplicados
      */
     async submitAllStates(
       schema: string, 
@@ -45,13 +45,13 @@ export class StateRepository {
       try {
         const entityManager = queryRunner.manager;
         
-        // 🔥 Obtener clientes que ya existen en la base de datos
+        // 🔥 Obtener departamentos que ya existen en la base de datos
         const existingStates= await entityManager
         .createQueryBuilder()
         .select(['id', 'nombre'])
         .from(`${schema}.departamentos`, 'departamentos')
-        .where("LOWER(unaccent(departamentos.nombre)) IN (:...nombres)", {
-          nombres: statesArrayFiltred.uniqueStates.map((tc) => tc.nombre.toString()),
+        .where("departamentos.id_departamento IN (:...id_departamentos)", {
+          id_departamentos: statesArrayFiltred.uniqueStates.map((tc) => tc.id_departamento.toString()),
         })
         .getRawMany();
 
@@ -59,7 +59,7 @@ export class StateRepository {
         
             const referenceKey = state.nombre.toString().trim();
         
-              if (existingStates.some((ste) => ste.nombre === state.nombre)) {
+              if (existingStates.some((ste) => ste.id_departamento === state.id_departamento)) {
                 let duplicatedDBState:StateDto = {
                       id:state.id,
                       id_departamento:state.id_departamento,
@@ -73,7 +73,7 @@ export class StateRepository {
               }
         }
         if (uniqueFilteredStates.size  > 0) {
-        // 🔥 Insertar los clientes con el esquema dinámico
+        // 🔥 Insertar los departamentos con el esquema dinámico
           await entityManager
           .createQueryBuilder()
           .insert()
@@ -217,7 +217,6 @@ export class StateRepository {
       .getRawMany();
   
       for (const state of statesArrayFiltred.uniqueStates) {
-        const referenceKey = state.codigo.toString().trim();
 
         const existingState= existingStates.find(
           (c) => c.nombre.localeCompare(state.nombre, undefined, { sensitivity: "base" }) === 0
@@ -252,9 +251,9 @@ export class StateRepository {
       if(syncronized.length ===0){
         throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
       }
-        
-      
+              
       await queryRunner.commitTransaction();
+
       return {
         message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
@@ -262,7 +261,9 @@ export class StateRepository {
         duplicated: statesArrayFiltred.duplicateStates,
       };
     } catch (error) {
+
       await queryRunner.rollbackTransaction();
+
       return {
         message: `¡La Sincronización ha terminado, retornando desde la base de datos!! -> ${error.message || 'Error desconocido'}`, 
         status: false,

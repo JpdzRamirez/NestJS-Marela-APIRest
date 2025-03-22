@@ -75,6 +75,8 @@ export class AuthController {
   }
 
   @Post('logout')
+  @HttpCode(204)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   async logout(@Req() req: Request) {
     try {
       const authHeader = req.header('Authorization');

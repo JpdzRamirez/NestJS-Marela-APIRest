@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { Brand } from './brand.entity';
@@ -12,7 +12,7 @@ export class BrandRepository {
   ) {}
 
     /** ✅
-     * Inserta todos los clientes y retorna los clientes insertados o duplicados
+     * Inserta todos los marcas y retorna los marcas insertados o duplicados
      */
     async submitAllBrands(
       schema: string, 
@@ -26,6 +26,7 @@ export class BrandRepository {
         nombre: string;        
       }[];
       duplicated: BrandDto[]; 
+      existing:BrandDto[];
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
@@ -38,7 +39,8 @@ export class BrandRepository {
         id_marca: string;
         nombre: string;                
        }[] = [];
-      const duplicateBrands=brandsArrayFiltred.duplicateBrands;      
+      const duplicateBrands=brandsArrayFiltred.duplicateBrands;   
+      const existingBrands: BrandDto[] = [];   
       try {
         const entityManager = queryRunner.manager;
         
@@ -52,7 +54,7 @@ export class BrandRepository {
               .replace(/[\u0300-\u036f]/g, ""), // Quitar acentos y espacios innecesarios
         }));
 
-        // 🔥 Obtener clientes que ya existen en la base de datos
+        // 🔥 Obtener marcas que ya existen en la base de datos
         const existingBrands= await entityManager
         .createQueryBuilder()
         .select(['id', 'nombre'])
@@ -91,14 +93,14 @@ export class BrandRepository {
             if (existingBrand) {
                 existingBrand.id=brnd.id;
                 existingBrand.source_failure='DataBase';
-                duplicateBrands.push(existingBrand);
+                existingBrands.push(existingBrand);
                 return false;
             }
             }
             return true;
         });
         if (uniqueBrands.length  > 0) {
-        // 🔥 Insertar los clientes con el esquema dinámico
+        // 🔥 Insertar las marcas con el esquema dinámico
           await entityManager
           .createQueryBuilder()
           .insert()
@@ -127,10 +129,8 @@ export class BrandRepository {
             nombre:brnd.nombre,           
           }))
         );       
-        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
         }else{
-          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
-          throw new Error(messageResponse);
+          throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
         await queryRunner.commitTransaction();
@@ -140,16 +140,18 @@ export class BrandRepository {
           status: true,
           inserted: insertedBrands, 
           duplicated: duplicateBrands,
+          existing:existingBrands
         };
       } catch (error) {
-        await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllCities:", error);
+
+        await queryRunner.rollbackTransaction();        
         
         return {
           message: "¡El cargue ha terminado! -> "+ error.message,        
           status: false,
           inserted: [],
-          duplicated: duplicateBrands
+          duplicated: duplicateBrands,
+          existing:existingBrands
         };
       } finally {
         await queryRunner.release();
@@ -165,6 +167,7 @@ export class BrandRepository {
     uuid_authsupa: string,
   ): Promise<{
     message: string,
+    status:boolean,
     brands:Brand[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -191,13 +194,16 @@ export class BrandRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes marcas no sincronizados:',
+        status:true,
         brands: notSyncBrands
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllCities:', error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
         message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
+        status:false,
         brands: []
       };
     } finally {
@@ -215,14 +221,15 @@ export class BrandRepository {
   ): Promise<{
     message: string,
     status: boolean,
+    syncronized: BrandDto[],
     duplicated: BrandDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
-    let messageResponse='';
   
+    const syncronized : BrandDto[] = [];
+
     try {
       const entityManager = queryRunner.manager;      
   
@@ -232,14 +239,14 @@ export class BrandRepository {
         .createQueryBuilder()
         .select("marcas.*")
         .from(`${schema}.marcas`, "marcas")
-        .where("LOWER(unaccent(marcas.nombre)) IN (:...nombres)", {
-          nombres: brandsArrayFiltred.uniqueBrands.map((brnd) => brnd.nombre.toString()),
+        .where("marcas.id_marca IN (:...id_marcas)", {
+          id_marcas: brandsArrayFiltred.uniqueBrands.map((brnd) => brnd.id_marca.toString()),
       })
       .getRawMany();
   
       for (const brand of brandsArrayFiltred.uniqueBrands) {
         const existingBrand= existingBrands.find(
-          (c) => c.nombre.localeCompare(brand.nombre, undefined, { sensitivity: "base" }) === 0
+          (c) => c.id_marca.localeCompare(brand.id_marca, undefined, { sensitivity: "base" }) === 0
         );
   
         if (existingBrand) {
@@ -262,26 +269,32 @@ export class BrandRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("id_marca = :id_marca", { id_marca: existingBrand.id_marca })
               .execute();
+
+            syncronized.push({ ...existingBrand });
           }
         }
+      }       
       }
-        messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados";
-      }else{
-        messageResponse= "No hay datos pendientes por sincronizar";        
-        throw new Error(messageResponse);
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
       }
+        
       await queryRunner.commitTransaction();
+      
       return {
-        message: messageResponse,
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
+        syncronized:syncronized,
         duplicated: brandsArrayFiltred.duplicateBrands,
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncCities:", error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
         message: "¡La Sincronización ha terminado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
+        syncronized:syncronized,
         duplicated: brandsArrayFiltred.duplicateBrands,
       };
     } finally {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { City } from './city.entity';
@@ -27,12 +27,11 @@ export class CityRepository {
         codigo: number;
       }[];
       duplicated: CityDto[]; 
+      existing:CityDto[];
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
-
-      let messageResponse='';
 
       const insertedCities: { 
         id: number; 
@@ -41,6 +40,7 @@ export class CityRepository {
         codigo: number;  
        }[] = [];
       const duplicateCities=citiesArrayFiltred.duplicateCities;
+      const existingCities: CityDto[] = [];
       const uniqueFilteredCities = new Map<string, City>();
       try {
         const entityManager = queryRunner.manager;
@@ -50,8 +50,8 @@ export class CityRepository {
         .createQueryBuilder()
         .select(['id', 'nombre'])
         .from(`${schema}.ciudades`, 'ciudades')
-        .where("LOWER(unaccent(ciudades.nombre)) IN (:...nombres)", {
-          nombres: citiesArrayFiltred.uniqueCities.map((tc) => tc.nombre.toString()),
+        .where("ciudades.id_ciudad IN (:...id_ciudades)", {
+          id_ciudades: citiesArrayFiltred.uniqueCities.map((tc) => tc.id_ciudad.toString()),
         })
         .getRawMany();
 
@@ -59,7 +59,7 @@ export class CityRepository {
         
             const referenceKey = city.nombre.toString().trim();
         
-              if (existingCities.some((cty) => cty.nombre === city.nombre)) {
+              if (existingCities.some((cty) => cty.id_ciudad === city.id_ciudad)) {
                 let duplicatedDBCity:CityDto = {
                       id:city.id,
                       id_ciudad:city.id_ciudad,
@@ -67,7 +67,7 @@ export class CityRepository {
                       codigo:city.codigo,     
                       source_failure:'DataBase'
                   };
-                  duplicateCities.push({ ...duplicatedDBCity }); // Guardar duplicado
+                  existingCities.push({ ...duplicatedDBCity }); // Guardar duplicado
               }else {
                 uniqueFilteredCities.set(referenceKey, { ...city });
               }
@@ -104,29 +104,30 @@ export class CityRepository {
             codigo:cty.codigo,
           }))
         );       
-        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-        }else{
-          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
-          throw new Error(messageResponse);
+        
+        }else{                      
+          throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
         await queryRunner.commitTransaction();
 
         return {
-          message: messageResponse,
+          message: "Cargue exitoso, se han obtenido los siguientes resultados:",
           status: true,
           inserted: insertedCities, 
           duplicated: duplicateCities,
+          existing:existingCities
         };
       } catch (error) {
+
         await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllCities:", error);
         
         return {
           message: "¡El cargue ha terminado! -> "+ error.message,        
           status: false,
           inserted: [],
-          duplicated: duplicateCities
+          duplicated: duplicateCities,
+          existing:existingCities
         };
       } finally {
         await queryRunner.release();
@@ -142,6 +143,7 @@ export class CityRepository {
     uuid_authsupa: string,
   ): Promise<{
     message: string,
+    status:boolean,
     cities:City[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -168,13 +170,15 @@ export class CityRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes ciudades no sincronizados:',
-          cities: notSyncCities
+        status:true,
+        cities: notSyncCities
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('❌ Error en getAllCities:', error);
       return {
         message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
+        status:false,
         cities: []
       };
     } finally {
@@ -192,13 +196,14 @@ export class CityRepository {
   ): Promise<{
     message: string,
     status: boolean,
+    syncronized: CityDto[],
     duplicated: CityDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    let messageResponse='';
+    const syncronized : CityDto[] = [];
   
     try {
       const entityManager = queryRunner.manager;      
@@ -209,8 +214,8 @@ export class CityRepository {
         .createQueryBuilder()
         .select("ciudades.*")
         .from(`${schema}.ciudades`, "ciudades")
-        .where("LOWER(unaccent(ciudades.nombre)) IN (:...nombres)", {
-          nombres: citiesArrayFiltred.uniqueCities.map((tc) => tc.nombre.toString()),
+        .where("ciudades.id_ciudad IN (:...id_ciudades)", {
+          id_ciudades: citiesArrayFiltred.uniqueCities.map((tc) => tc.id_ciudad.toString()),
       })
       .getRawMany();
   
@@ -239,26 +244,33 @@ export class CityRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("id_ciudad = :id_ciudad", { id_ciudad: existingCity.id_ciudad })
               .execute();
+
+            syncronized.push({ ...existingCity });
           }
         }
       }
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados";
-      }else{
-        messageResponse= "No hay datos pendientes por sincronizar";        
-        throw new Error(messageResponse);
+
       }
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
+      }
+
       await queryRunner.commitTransaction();
+
       return {
-        message: messageResponse,
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
+        syncronized:syncronized,
         duplicated: citiesArrayFiltred.duplicateCities,
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncCities:", error);
+
+      await queryRunner.rollbackTransaction();      
+      
       return {
         message: "¡La Sincronización ha terminado, retornando desde la base de datos!! -> "+ error.message, 
         status: false,
+        syncronized:syncronized,
         duplicated: citiesArrayFiltred.duplicateCities,
       };
     } finally {
