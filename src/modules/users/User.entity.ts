@@ -14,28 +14,28 @@ export class User {
     schema_id?: number;
 
     @Column({ nullable: true,type: 'varchar', unique: true, length: 50 })
-    document?: string; // No puede ser null y debe ser único
+    document!: string; // No puede ser null y debe ser único
 
     @Column({ nullable: true,type: 'varchar', unique: true, length: 50 })
-    email?: string; // No puede ser null y debe ser único
+    email!: string; // No puede ser null y debe ser único
 
     @Column({ nullable: true,type: 'varchar' })
     password?: string; // No puede ser null
 
     @Column({ nullable: true,type: 'varchar', length: 50 })
-    name?: string; // No puede ser null
+    name!: string; // No puede ser null
 
     @Column({ nullable: true,type: 'varchar', length: 50 })
     lastname?: string;
 
     @Column({ nullable: true,type: 'varchar', length: 50 })
-    mobile?: string; // No puede ser null
+    mobile!: string; // No puede ser null
 
     @Column({ nullable: true,type: 'varchar', length: 50 })
     phone?: string;
 
     @Column({ nullable: true,type: 'varchar', length: 50 })
-    address?: string;
+    address!: string;
 
     @Column({ nullable: true, unique: true, type: 'varchar', length: 50 })
     auth_code?: string;

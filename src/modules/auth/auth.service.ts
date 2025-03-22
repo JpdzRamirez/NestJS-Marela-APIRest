@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException,HttpException, HttpStatus } from '@nestjs/common';
 import { SupabaseService } from '../../config/supabase.service';
 import { UserRepository } from '../users/users.repository';
 import { UtilityService } from '../../shared/utility/utility.service';
@@ -15,40 +15,43 @@ export class AuthService {
 
   async userBuilder(data: Partial<User>): Promise<any> {
     try {
+      
+      if(!data || !data.email){
+        throw new HttpException('Datos inválidos o faltantes', HttpStatus.BAD_REQUEST);
+      }
+      const isregistered= await this.userRepository.findByEmail(data.email);
+
+      if(isregistered){
+        throw new HttpException('El usuario ya existe en el sistema', HttpStatus.CONFLICT);
+      }
+
       return await this.userRepository.createUser(data);
+
     } catch (error) {
       throw error;
     }
   }
 
   async logout(token: string): Promise<boolean> {
-    try {
       const { error } = await this.supabaseService
         .getAdminClient()
         .auth.admin.signOut(token);
       if (error) {
-        throw new Error(error.message);
+        throw new HttpException(`Error al validar los datos enviados -> ${error.message}`, HttpStatus.UNPROCESSABLE_ENTITY);        
       }
       return true;
-    } catch (error) {
-      console.error('❌ Error interno en logout:', error);
-      return false;
-    }
   }
 
   async login(data: LoginData): Promise<{ token: string; user: User } | null> {
-    try {
       // 🔹 Buscar datos complementarios en PostgreSQL
       const complementaryDataUser = await this.userRepository.findByEmail(
         data.email as string,
       );
       // Validamos usuario existe antes de generar token
       if (!complementaryDataUser || !complementaryDataUser.auth_code) {
-        throw new UnauthorizedException(
-          'Usuario no encontrado en la base de datos',
-        );
+        throw new HttpException('Recurso no encontrado', HttpStatus.NOT_FOUND);
       } else if (!this.utilityService.verificarHash(data.auth_code,complementaryDataUser.auth_code)) {
-        throw new UnauthorizedException('Error en codigo de autorizacion');
+        throw new HttpException('Usuario no autenticado', HttpStatus.UNAUTHORIZED);
       }
       // 🔹 Autenticación con Supabase
       const { data: authData, error } = await this.supabaseService
@@ -59,7 +62,7 @@ export class AuthService {
         });
 
       if (error) {
-        throw new UnauthorizedException(error.message);
+        throw new HttpException('Recurso no encontrado', HttpStatus.NOT_FOUND);
       }
       // 🔹 Cerrar sesiones anteriores del usuario autenticado
       await this.supabaseService
@@ -69,7 +72,7 @@ export class AuthService {
       const token = authData.session?.access_token;
 
       if (!token) {
-        throw new UnauthorizedException('Error al generar token de sesión');
+        throw new HttpException('Datos inválidos o faltantes', HttpStatus.BAD_REQUEST);
       }
 
       return {
@@ -83,6 +86,7 @@ export class AuthService {
           name: complementaryDataUser.name,
           lastname: complementaryDataUser.lastname,
           phone: complementaryDataUser.phone,
+          address:complementaryDataUser.address,
           auth_code:complementaryDataUser.auth_code,
           mobile: complementaryDataUser.mobile,
           created_at: complementaryDataUser.created_at,
@@ -95,8 +99,5 @@ export class AuthService {
             : null,
         },
       };
-    } catch (error) {
-      throw error;
-    }
   }
 }

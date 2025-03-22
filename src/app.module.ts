@@ -63,6 +63,8 @@ import { OverdueDebtService } from './modules/overdue_debt/overdue_debt.service'
 import { OverdueDebtController } from './modules/overdue_debt/overdue_debt.controller';
 import { OverdueDebtModule } from './modules/overdue_debt/overdue_debt.module';
 import { UnitsModule } from './modules/units/units.module';
+import { LoggerModule } from './modules/logger/logger.module';
+import { LoggerServices } from './modules/logger/logger.service';
 
 @Module({
   imports: [
@@ -96,8 +98,9 @@ import { UnitsModule } from './modules/units/units.module';
     InvoiceFooterModule,
     OverdueDebtModule,
     UnitsModule,
+    LoggerModule
   ],
   controllers: [AppController, TypeClientController, ClientController, TypeDocumentController, WaterMeterController, BrandsController, TypeServicesController, SalesRateController, MunicipalUnitController, CitiesController, StatesController, TrailController, ActivitiesController, ProductsActivityController, PaymentsActivityController, InvoiceHeaderController, InvoiceFooterController, OverdueDebtController],
-  providers: [AppService, SchemasService, TypeClientServices, ClientServices, TypeDocumentServices, WaterMeterService, BrandsService, TypeServicesService, SalesRateService, MunicipalUnitService, CityServices, StatesService, TrailServices, ActivityServices, ProductsActivityService, PaymentsActivityService, InvoiceHeaderService, InvoiceFooterService, OverdueDebtService],
+  providers: [AppService, SchemasService, TypeClientServices, ClientServices, TypeDocumentServices, WaterMeterService, BrandsService, TypeServicesService, SalesRateService, MunicipalUnitService, CityServices, StatesService, TrailServices, ActivityServices, ProductsActivityService, PaymentsActivityService, InvoiceHeaderService, InvoiceFooterService, OverdueDebtService,LoggerServices],
 })
 export class AppModule {}

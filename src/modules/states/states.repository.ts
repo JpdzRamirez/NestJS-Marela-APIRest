@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { State } from './state.entity';
@@ -27,12 +27,11 @@ export class StateRepository {
         codigo: number;
       }[];
       duplicated: StateDto[]; 
+      existing:StateDto[];
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      let messageResponse='';
+      await queryRunner.startTransaction();      
 
       const insertedStates: { 
         id: number; 
@@ -41,6 +40,7 @@ export class StateRepository {
         codigo: number;  
        }[] = [];
       const duplicateStates=statesArrayFiltred.duplicateStates;
+      const existingStates: StateDto[] = [];
       const uniqueFilteredStates = new Map<string, State>();
       try {
         const entityManager = queryRunner.manager;
@@ -67,7 +67,7 @@ export class StateRepository {
                       codigo:state.codigo,     
                       source_failure:'DataBase'
                   };
-                  duplicateStates.push({ ...duplicatedDBState }); // Guardar duplicado
+                  existingStates.push({ ...duplicatedDBState }); // Guardar duplicado
               }else {
                 uniqueFilteredStates.set(referenceKey, { ...state });
               }
@@ -103,30 +103,29 @@ export class StateRepository {
             nombre:ste.nombre,
             codigo:ste.codigo,
           }))
-        );       
-        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-        }else{
-          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
-          throw new Error(messageResponse);
+        );               
+        }else{                      
+          throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
         await queryRunner.commitTransaction();
 
         return {
-          message: messageResponse,
+          message: "Cargue exitoso, se han obtenido los siguientes resultados:",
           status: true,
           inserted: insertedStates, 
           duplicated: duplicateStates,
+          existing:existingStates
         };
       } catch (error) {
         await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllStates:", error);
         
         return {
-          message: "¡El cargue ha terminado! -> "+ error.message,        
+          message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,      
           status: false,
           inserted: [],
-          duplicated: duplicateStates
+          duplicated: duplicateStates,
+          existing:existingStates
         };
       } finally {
         await queryRunner.release();
@@ -142,6 +141,7 @@ export class StateRepository {
     uuid_authsupa: string,
   ): Promise<{
     message: string,
+    status:boolean,
     states:State[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -162,19 +162,20 @@ export class StateRepository {
       )`, { uuid_authsupa })
       .getRawMany();
 
-
       await queryRunner.commitTransaction();
 
       return {
         message:
           'Conexión exitosa, se han obtenido los siguientes departamentos no sincronizados:',
-          states: notSyncStates
+        status:true,
+        states: notSyncStates
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllMunicipalUnits:', error);
+      
       return {
-        message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
+        message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
+        status:false,
         states: []
       };
     } finally {
@@ -192,14 +193,15 @@ export class StateRepository {
   ): Promise<{
     message: string,
     status: boolean,
+    syncronized: StateDto[],
     duplicated: StateDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    let messageResponse='';
-  
+    const syncronized : StateDto[] = [];
+
     try {
       const entityManager = queryRunner.manager;      
   
@@ -209,12 +211,14 @@ export class StateRepository {
         .createQueryBuilder()
         .select("departamentos.*")
         .from(`${schema}.departamentos`, "departamentos")
-        .where("LOWER(unaccent(departamentos.nombre)) IN (:...nombres)", {
-          nombres: statesArrayFiltred.uniqueStates.map((tc) => tc.nombre.toString()),
+        .where("departamentos.id_departamento IN (:...id_departamentos)", {
+          id_departamentos: statesArrayFiltred.uniqueStates.map((tc) => tc.id_departamento.toString()),
       })
       .getRawMany();
   
       for (const state of statesArrayFiltred.uniqueStates) {
+        const referenceKey = state.codigo.toString().trim();
+
         const existingState= existingStates.find(
           (c) => c.nombre.localeCompare(state.nombre, undefined, { sensitivity: "base" }) === 0
         );
@@ -239,26 +243,30 @@ export class StateRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("id_departamento = :id_departamento", { id_departamento: existingState.id_departamento })
               .execute();
+            
+              syncronized.push({ ...existingState });
           }
         }
       }
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados";
-      }else{
-        messageResponse= "No hay datos pendientes por sincronizar";        
-        throw new Error(messageResponse);
       }
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
+      }
+        
+      
       await queryRunner.commitTransaction();
       return {
-        message: messageResponse,
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
+        syncronized:syncronized,
         duplicated: statesArrayFiltred.duplicateStates,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncCities:", error);
       return {
-        message: "¡La Sincronización ha terminado, retornando desde la base de datos!! -> "+ error.message, 
+        message: `¡La Sincronización ha terminado, retornando desde la base de datos!! -> ${error.message || 'Error desconocido'}`, 
         status: false,
+        syncronized:syncronized,
         duplicated: statesArrayFiltred.duplicateStates,
       };
     } finally {
