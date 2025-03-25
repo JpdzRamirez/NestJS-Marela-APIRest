@@ -78,7 +78,7 @@ export class CityRepository {
           await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.unidad_municipal`, [
+          .into(`${schema}.ciudades`, [
             'id_ciudad',
             'nombre',
             'codigo',              
