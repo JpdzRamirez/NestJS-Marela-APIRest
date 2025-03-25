@@ -51,8 +51,8 @@ export class StatesService {
     return result; 
 
   }
-
-    async getAllStates(AuthRequest: AuthRequest): Promise<{ 
+    /** ✅ Enviar los departamentos pendientes por sincronizar*/
+  async getAllStates(AuthRequest: AuthRequest): Promise<{ 
       message: String,
       status:boolean,
       states:State[]
@@ -93,6 +93,7 @@ export class StatesService {
   
       const statesArrayFiltred = this.utilityService.removeDuplicateStates(statesArray);
   
+      // Enviar los departamentos al repositorio para inserción en la BD
       // Enviar los departamentos al repositorio para inserción en la BD
       const result= await this.stateRepository.syncStates(user.schemas.name, uuidAuthsupa,statesArrayFiltred);
       

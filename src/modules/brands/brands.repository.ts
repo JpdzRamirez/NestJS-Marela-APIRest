@@ -146,6 +146,8 @@ export class BrandRepository {
       } catch (error) {
 
         await queryRunner.rollbackTransaction();        
+
+        await queryRunner.rollbackTransaction();        
         
         return {
           message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,      

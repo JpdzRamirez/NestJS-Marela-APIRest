@@ -1,10 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { CityRepository } from './cities.repository';
 import { CityDto } from './dto/cities.dto';
-
 import { City } from './city.entity';
 import { AuthRequest } from '../../types';
-
 import { UtilityService } from '../../shared/utility/utility.service';
 
 @Injectable()
