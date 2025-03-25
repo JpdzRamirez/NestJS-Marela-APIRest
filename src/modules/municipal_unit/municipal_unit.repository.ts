@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { MunicipalUnit } from './municipal_unit.entity';
@@ -12,7 +12,7 @@ export class MunicipalUnitRepository {
   ) {}
 
     /** ✅
-     * Inserta todos los clientes y retorna los clientes insertados o duplicados
+     * Inserta todos  unidades municipales y las retorna los insertados o duplicados
      */
     async submitAllMunicipalUnits(
       schema: string, 
@@ -25,12 +25,11 @@ export class MunicipalUnitRepository {
         id_unidadmunicipal: string;
         nombre: string }[];
       duplicated: MunicipalUnitDto[]; 
+      existing:MunicipalUnitDto[];
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      let messageResponse='';
+      await queryRunner.startTransaction();      
 
       const insertedMunicipalUnits: { 
         id: number; 
@@ -38,17 +37,18 @@ export class MunicipalUnitRepository {
         nombre: string;        
        }[] = [];
       const duplicateMunicipalUnits=municipalUnitArrayFiltred.duplicateMunicipalUnits;
+      const syncronizedMunicipalUnits: MunicipalUnitDto[] = [];
       const uniqueFilteredMunicipalUnits = new Map<string, MunicipalUnit>();
       try {
         const entityManager = queryRunner.manager;
         
-        // 🔥 Obtener clientes que ya existen en la base de datos
+        // 🔥 Obtener Unidades municipales que ya existen en la base de datos
         const existingMunicipalUnits= await entityManager
         .createQueryBuilder()
-        .select(['id', 'nombre'])
+        .select(['id','id_unidadmunicipal' ,'nombre'])
         .from(`${schema}.unidad_municipal`, 'unidad_municipal')
-        .where('unidad_municipal.nombre IN (:...nombre)', {
-          nombre: municipalUnitArrayFiltred.uniqueMunicipalUnits.map((tc) => tc.nombre.toString()),
+        .where('unidad_municipal.id_unidadmunicipal IN (:...id_unidadmunicipales)', {
+          id_unidadmunicipales: municipalUnitArrayFiltred.uniqueMunicipalUnits.map((tc) => tc.id_unidadmunicipal.toString()),
         })
         .getRawMany();
 
@@ -56,7 +56,7 @@ export class MunicipalUnitRepository {
         
             const referenceKey = municipal_unit.nombre.toString().trim();
         
-              if (existingMunicipalUnits.some((mu) => mu.nombre === municipal_unit.nombre)) {
+              if (existingMunicipalUnits.some((mu) => mu.id_unidadmunicipal === municipal_unit.id_unidadmunicipal)) {
                 let duplicatedDBMunicipalUnit:MunicipalUnitDto = {
                       id:municipal_unit.id,
                       id_unidadmunicipal:municipal_unit.id_unidadmunicipal,
@@ -65,13 +65,13 @@ export class MunicipalUnitRepository {
                       departamento_id:municipal_unit.departamento.id_departamento,                     
                       source_failure:'DataBase'
                   };
-                  duplicateMunicipalUnits.push({ ...duplicatedDBMunicipalUnit }); // Guardar duplicado
+                  syncronizedMunicipalUnits.push({ ...duplicatedDBMunicipalUnit }); // Guardar duplicado
               }else {
                 uniqueFilteredMunicipalUnits.set(referenceKey, { ...municipal_unit });
               }
         }
         if (uniqueFilteredMunicipalUnits.size  > 0) {
-        // 🔥 Insertar los clientes con el esquema dinámico
+        // 🔥 Insertar las unidades municipales con el esquema dinámico
           await entityManager
           .createQueryBuilder()
           .insert()
@@ -103,30 +103,30 @@ export class MunicipalUnitRepository {
             nombre:mu.nombre,
           }))
         );       
-        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-        }else {
-          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";      
-          
-          throw new Error(messageResponse);
+      
+        }else{                      
+            throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
         await queryRunner.commitTransaction();
 
         return {
-          message: messageResponse,
+          message: "Cargue exitoso, se han obtenido los siguientes resultados:",
           status: true,
           inserted: insertedMunicipalUnits, 
           duplicated: duplicateMunicipalUnits,
+          existing:syncronizedMunicipalUnits
         };
       } catch (error) {
+
         await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllMunicipalUnits:", error);
-        
+                
         return {
-          message: "¡El cargue ha terminado! -> "+ error.message,        
+          message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,      
           status: false,
           inserted: [],
-          duplicated: duplicateMunicipalUnits
+          duplicated: duplicateMunicipalUnits,
+          existing:syncronizedMunicipalUnits
         };
       } finally {
         await queryRunner.release();
@@ -142,6 +142,7 @@ export class MunicipalUnitRepository {
     uuid_authsupa: string,
   ): Promise<{
     message: string,
+    status:boolean,
     municipal_units:MunicipalUnit[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -168,13 +169,16 @@ export class MunicipalUnitRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes unidades municipales no sincronizados:',
-          municipal_units: notSyncMunicipalUnits
+        status:true,
+        municipal_units: notSyncMunicipalUnits
       };
     } catch (error) {
+
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllMunicipalUnits:', error);
+      
       return {
-        message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
+        message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
+        status:false,
         municipal_units: []
       };
     } finally {
@@ -192,13 +196,14 @@ export class MunicipalUnitRepository {
   ): Promise<{
     message: string,
     status: boolean,
+    syncronized: MunicipalUnitDto[],
     duplicated: MunicipalUnitDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     
-    let messageResponse='';
+    const syncronized : MunicipalUnitDto[] = [];
 
     try {
       const entityManager = queryRunner.manager;      
@@ -209,8 +214,8 @@ export class MunicipalUnitRepository {
         .createQueryBuilder()
         .select("unidad_municipal.*")
         .from(`${schema}.unidad_municipal`, "unidad_municipal")
-        .where("LOWER(unaccent(unidad_municipal.nombre)) IN (:...nombres)", {
-          nombres: municipal_unitArrayFiltred.uniqueMunicipalUnits.map((tc) => tc.nombre.toString()),
+        .where("unidad_municipal.id_unidadmunicipal IN (:...id_unidadmunicipales)", {
+          id_unidadmunicipales: municipal_unitArrayFiltred.uniqueMunicipalUnits.map((tc) => tc.id_unidadmunicipal.toString()),
       })
       .getRawMany();
   
@@ -239,30 +244,33 @@ export class MunicipalUnitRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("id_unidadmunicipal = :id_unidadmunicipal", { id_unidadmunicipal: existingMunicipalUnit.id_unidadmunicipal })
               .execute();
+
+              syncronized.push({ ...existingMunicipalUnit });
           }
         }
+      }      
+
       }
-
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
-
-      }else{
-        messageResponse= "No hay datos pendientes por sincronizar";
-
-        throw new Error(messageResponse);
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
       }
+      
       await queryRunner.commitTransaction();
       return {
-        message: messageResponse,
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
-        duplicated: municipal_unitArrayFiltred.duplicateMunicipalUnits,
+        syncronized:syncronized,
+        duplicated: municipal_unitArrayFiltred.duplicateMunicipalUnits,        
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncMunicipalUnits:", error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
-        message: "¡La Sincronización ha terminado! -> "+ error.message, 
+        message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
         status: false,
-        duplicated: municipal_unitArrayFiltred.duplicateMunicipalUnits,
+        syncronized:syncronized,
+        duplicated: municipal_unitArrayFiltred.duplicateMunicipalUnits,        
       };
     } finally {
       await queryRunner.release();

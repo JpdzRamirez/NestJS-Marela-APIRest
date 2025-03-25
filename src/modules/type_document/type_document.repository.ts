@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { TypeDocument } from './type_document.entity';
@@ -10,7 +10,7 @@ export class TypeDocumentRepository {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   /** ✅
-   * Guarda todas los tipos de clientes no duplicados y se retorna los registros insertados y duplicados
+   * Guarda todas los tipos de documentos no duplicados y se retorna los registros insertados y duplicados
    */
   async submitAllTypeDocument(
     schema: string,
@@ -18,17 +18,21 @@ export class TypeDocumentRepository {
   ): Promise<{
     message: string;
     status: boolean;
-    inserted: { id: number; id_tipodocumento: string ; nombre: string }[];
+    inserted: { 
+      id: number;
+      id_tipodocumento: string;
+      nombre: string 
+    }[];
     duplicated: TypeDocumentDto[];
+    existing:TypeDocumentDto[];
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    let messageResponse='';
+    await queryRunner.startTransaction();    
 
     const insertedTypeDocuments: { id: number;id_tipodocumento: string ; nombre: string }[] = [];
     const duplicatedTypeDocuments=typeDocumentArrayFiltred.duplicateTypeDocument;
+    const syncronizedTypeDocuments: TypeDocumentDto[] = [];
 
     try {
       const entityManager = queryRunner.manager;
@@ -82,7 +86,7 @@ export class TypeDocumentRepository {
           if (existingDocument) {
             existingDocument.id=tc.id;
             existingDocument.source_failure='DataBase';
-            duplicatedTypeDocuments.push(existingDocument);
+            syncronizedTypeDocuments.push(existingDocument);
             return false;
           }
         }
@@ -116,28 +120,30 @@ export class TypeDocumentRepository {
             nombre: tc.nombre,
           }))
         );
-        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
+        
         }else {
-          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
-          throw new Error(messageResponse);
+          throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
-        await queryRunner.commitTransaction();
+      await queryRunner.commitTransaction();
       
       return {
-        message: messageResponse,
+        message: "Cargue exitoso, se han obtenido los siguientes resultados:",
         status:true,
         inserted: insertedTypeDocuments,
         duplicated: duplicatedTypeDocuments,
+        existing:syncronizedTypeDocuments
       };
     } catch (error) {
+
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en submitAllTypeDocument:', error);
+
       return {
-        message: "¡El cargue de datos ha terminado! -> "+ error.message, 
+        message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,      
         status:false,
         inserted: [],
         duplicated: duplicatedTypeDocuments,
+        existing:syncronizedTypeDocuments
       };
     } finally {
       await queryRunner.release();
@@ -146,14 +152,14 @@ export class TypeDocumentRepository {
 
 
   /** ✅
-   * Retorna todos los tipos de clientes que el usuario no tiene sincronizados
+   * Retorna todos los tipos de documentos que el usuario no tiene sincronizados
    */
   async getAllTypeDocument(
     schema: string,
     uuid_authsupa: string,
-
   ): Promise<{
     message: string,
+    status:boolean,
     type_documents:TypeDocument[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -180,13 +186,16 @@ export class TypeDocumentRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido los siguientes tipos de documentos no sincronizados:',
+        status:true,
         type_documents: notSyncTypeClient
       };
     } catch (error) {
+
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllTypeDocument:', error);
+      
       return {
-        message: "¡La conexión ha terminado! -> "+ error.message,
+        message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
+        status:false,
         type_documents: []
       };
     } finally {
@@ -204,13 +213,14 @@ export class TypeDocumentRepository {
   ): Promise<{
     message: string;
     status: boolean;
+    syncronized: TypeDocumentDto[],
     duplicated: TypeDocumentDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    let messageResponse='';
+    const syncronized : TypeDocumentDto[] = [];
   
     try {
       const entityManager = queryRunner.manager;      
@@ -251,30 +261,33 @@ export class TypeDocumentRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("nombre = :nombre", { nombre: existingTypeDocument.nombre })
               .execute();
+
+              syncronized.push({ ...existingTypeDocument });
           }
         }
-      }
-  
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
+      }      
 
-      }else {
-        messageResponse= "No hay datos pendientes por sincronizar";        
-        throw new Error(messageResponse);
+      }
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
       }
       
       await queryRunner.commitTransaction();
 
       return {
-        message: messageResponse,
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
+        syncronized:syncronized,
         duplicated: typeDocumentArrayFiltred.duplicateTypeDocument,
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncTypeClient:", error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
-        message: "¡La Sincronización ha terminado ! -> "+ error.message, 
+        message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
         status: false,
+        syncronized:syncronized,
         duplicated: typeDocumentArrayFiltred.duplicateTypeDocument,
       };
     } finally {

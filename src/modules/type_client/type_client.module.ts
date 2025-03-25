@@ -10,6 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 import { SupabaseModule } from '../../config/supabase.module';
 import { UtilityModule } from '../../shared/utility/utility.module';
 import { UserModule } from '../users/users.module';
+import { LoggerModule } from '../logger/logger.module';
 
 @Module({
     imports: [
@@ -17,7 +18,8 @@ import { UserModule } from '../users/users.module';
       forwardRef(() => AuthModule),
       UtilityModule,
       SupabaseModule,
-      UserModule
+      UserModule,
+      LoggerModule
     ],  
   providers: [TypeClientServices,TypeClientRepository],
   controllers: [TypeClientController],

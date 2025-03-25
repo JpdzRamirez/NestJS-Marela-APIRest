@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { Contract } from './contract.entity';
@@ -40,15 +40,16 @@ export class ContractRepository {
         status: boolean;
         inserted: { id: number; id_contrato: string ;fecha: Date }[];
         duplicated: ContractsDto[];
+        existing: ContractsDto[]; 
       }> {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
-        await queryRunner.startTransaction();
-    
-        let messageResponse='';
+        await queryRunner.startTransaction();          
     
         const insertedContracts: { id: number; id_contrato:string ;fecha: Date }[] = [];
         const duplicatedContracts=contractsArrayFiltred.duplicateContracts;
+        //Contratos ya presentes en la base de datos
+        const syncronizedContracts: ContractsDto[] = [];
         const uniqueFilteredContracts = new Map<string, Contract>();
         try {
           const entityManager = queryRunner.manager;
@@ -78,7 +79,7 @@ export class ContractRepository {
                         unidad_municipal_id:contract.unidad_municipal_id,
                         source_failure:'DataBase'
                     };
-                    duplicatedContracts.push({ ...duplicatedDBContract }); // Guardar duplicado
+                    syncronizedContracts.push({ ...duplicatedDBContract }); // Guardar duplicado
                 }else {
                   uniqueFilteredContracts.set(referenceKey, { ...contract });
                 }
@@ -114,31 +115,30 @@ export class ContractRepository {
                 id_contrato: ctr.id_contrato,
                 fecha: ctr.fecha,
               }))
-            );
-    
-            messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-            }else {
-              messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";      
-              
-              throw new Error(messageResponse);
+            );                
+            }else{                      
+              throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
             }
           
           await queryRunner.commitTransaction();
           
           return {
-            message: messageResponse,
+            message: "Cargue exitoso, se han obtenido los siguientes resultados:",
             status:true,
             inserted: insertedContracts,
             duplicated: duplicatedContracts,
+            existing:syncronizedContracts
           };
         } catch (error) {
-          await queryRunner.rollbackTransaction();
-          console.error('❌ Error en submitAllContracts:', error);
+
+          await queryRunner.rollbackTransaction();          
+
           return {
-            message: '¡El cargue ha terminado! -> '+ error.message,
+            message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,      
             status:false,
             inserted: [],
-            duplicated: duplicatedContracts
+            duplicated: duplicatedContracts,
+            existing:syncronizedContracts
           };
         } finally {
           await queryRunner.release();
@@ -149,6 +149,7 @@ export class ContractRepository {
     */
     async getAllContracts(schema: string,uuid_authsupa: string): Promise<{
       message: string,
+      status:boolean,
       contracts:Contract[]
     }> {
       try {
@@ -196,19 +197,24 @@ export class ContractRepository {
         
           return {
             message: 'Conexión exitosa, se han obtenido los siguientes contratos no sincronizados:',
+            status:true,
             contracts
           };
         });          
       }catch (error) {
-        console.error('❌ Error en obtener contratos:', error);
-        throw error;
-    }
+        return {
+          message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
+          status:false,
+          contracts: []
+        };
+      }
   }
         /** ✅
          * Obtiene todas las facturas dentro del rango de fechas
          */
     async getDateRangeContracts(schema: string, dateRange:GetDateRangeContractsDto,uuid_authsupa: string):   Promise<{
       message: string,
+      status:boolean,
       contracts:Contract[]
     }>{
       try {
@@ -263,13 +269,17 @@ export class ContractRepository {
         
           return {
             message: 'Conexión exitosa, se han obtenido los siguientes contratos no sincronizados:',
+            status:true,
             contracts
           };
         });     
 
       }catch (error) {
-        console.error('❌ Error en obtener contrato por fechas:', error);
-        throw error;
+        return {
+          message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
+          status:false,
+          contracts: []
+        };
     }
   }
 
@@ -283,13 +293,14 @@ export class ContractRepository {
     ): Promise<{
       message: string;
       status: boolean;
+      syncronized: ContractsDto[];
       duplicated: ContractsDto[] | null;
     }> {
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
       
-      let messageResponse='';
+      const syncronized : ContractsDto[] = [];
   
       try {
         const entityManager = queryRunner.manager;      
@@ -330,29 +341,32 @@ export class ContractRepository {
                 .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
                 .where("id_contrato = :id_contrato", { id_contrato: contract.id_contrato })
                 .execute();
+
+              syncronized.push({ ...existingContract });
             }
           }
-        }
-    
-        messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
-      }else{
-        messageResponse= "No hay datos pendientes por sincronizar";
-  
-        throw new Error(messageResponse);
+        }        
+      }
+
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
       }
   
       await queryRunner.commitTransaction();
         return {
-          message: messageResponse,
+          message: "Sincronización exitosa, se han obtenido los siguientes resultados",
           status: true,
+          syncronized:syncronized,
           duplicated: contractsArrayFiltred.duplicateContracts,
         };
       } catch (error) {
-        await queryRunner.rollbackTransaction();
-        console.error("❌ Error en syncContracts:", error);
+
+        await queryRunner.rollbackTransaction();        
+
         return {
-          message: "¡La Sincronización ha terminado! -> "+ error.message,
+          message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
           status: false,
+          syncronized:syncronized,
           duplicated: contractsArrayFiltred.duplicateContracts,
         };
       } finally {

@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from '../users/users.module';
 import { SupabaseModule } from '../../config/supabase.module';
 import { UtilityModule } from '../../shared/utility/utility.module';
+import { LoggerModule } from '../logger/logger.module';
 @Module({
   imports: [
     forwardRef(() => UserModule), // 🔹 Usa forwardRef() para evitar ciclos
@@ -13,7 +14,8 @@ import { UtilityModule } from '../../shared/utility/utility.module';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
-    UtilityModule
+    UtilityModule,
+    LoggerModule
   ],
   controllers: [AuthController],
   providers: [AuthService],

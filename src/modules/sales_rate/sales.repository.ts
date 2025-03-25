@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { SalesRate } from './sales_rate.entity';
@@ -12,7 +12,7 @@ export class SalesRateRepository {
   ) {}
 
     /** ✅
-     * Inserta todos los clientes y retorna los clientes insertados o duplicados
+     * Inserta todos los tarifas y retorna los tarifas insertados o duplicados
      */
     async submitAllSalesRate(
       schema: string, 
@@ -25,12 +25,11 @@ export class SalesRateRepository {
         id_tarifa: string;
         nombre: string }[];
       duplicated: SalesDto[]; 
+      existing:SalesDto[];
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      let messageResponse='';
+      await queryRunner.startTransaction();      
 
       const insertedSalesRate: { 
         id: number; 
@@ -38,11 +37,12 @@ export class SalesRateRepository {
         nombre: string;        
        }[] = [];
       const duplicateMunicipalUnits=salesRateArrayFiltred.duplicateSalesRate;
+      const syncronizedSalesDate: SalesDto[] = [];
       const uniqueFilteredSalesRate = new Map<string, SalesRate>();
       try {
         const entityManager = queryRunner.manager;
         
-        // 🔥 Obtener clientes que ya existen en la base de datos
+        // 🔥 Obtener tarifas que ya existen en la base de datos
         const existingSalesRate= await entityManager
         .createQueryBuilder()
         .select(['id','id_tarifa', 'nombre'])
@@ -66,13 +66,13 @@ export class SalesRateRepository {
                       rango_final:salesrate.rango_final, 
                       source_failure:'DataBase'
                   };
-                  duplicateMunicipalUnits.push({ ...duplicatedDBSalesRate }); // Guardar duplicado
+                  syncronizedSalesDate.push({ ...duplicatedDBSalesRate }); // Guardar duplicado
               }else {
                 uniqueFilteredSalesRate.set(referenceKey, { ...salesrate });
               }
         }
         if (uniqueFilteredSalesRate.size  > 0) {
-        // 🔥 Insertar los clientes con el esquema dinámico
+        // 🔥 Insertar los tarifas con el esquema dinámico
           await entityManager
           .createQueryBuilder()
           .insert()
@@ -106,30 +106,30 @@ export class SalesRateRepository {
             nombre:srt.nombre,
           }))
         );       
-        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-        }else {
-          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";      
-          
-          throw new Error(messageResponse);
+        
+        }else{                      
+          throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
         await queryRunner.commitTransaction();
 
         return {
-          message: messageResponse,
+          message: "Cargue exitoso, se han obtenido los siguientes resultados:",
           status: true,
           inserted: insertedSalesRate, 
           duplicated: duplicateMunicipalUnits,
+          existing:syncronizedSalesDate
         };
       } catch (error) {
-        await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllMunicipalUnits:", error);
+
+        await queryRunner.rollbackTransaction();        
         
         return {
-          message: "¡El cargue ha terminado! -> "+ error.message,        
+          message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,         
           status: false,
           inserted: [],
-          duplicated: duplicateMunicipalUnits
+          duplicated: duplicateMunicipalUnits,
+          existing:syncronizedSalesDate
         };
       } finally {
         await queryRunner.release();
@@ -137,14 +137,15 @@ export class SalesRateRepository {
     }
 
 
-/** ✅
+  /** ✅
    * Retorna todas lass tarifas que el usuario no tiene sincronizados
-   */
+  */
   async getAllSalesRate(
     schema: string,
     uuid_authsupa: string,
   ): Promise<{
     message: string,
+    status:boolean,
     municipal_units:SalesRate[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -171,17 +172,22 @@ export class SalesRateRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes tarifas no sincronizados:',
-          municipal_units: notSyncSalesRate
+        status:true,
+        municipal_units: notSyncSalesRate
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllSalesRate:', error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
-        message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
+        message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
+        status:false,
         municipal_units: []
       };
     } finally {
+
       await queryRunner.release();
+
     }
   }
 
@@ -195,13 +201,14 @@ export class SalesRateRepository {
   ): Promise<{
     message: string,
     status: boolean,
+    syncronized: SalesDto[],
     duplicated: SalesDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     
-    let messageResponse='';
+    const syncronized : SalesDto[] = [];
 
     try {
       const entityManager = queryRunner.manager;      
@@ -242,29 +249,33 @@ export class SalesRateRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) 
               .where("id_tarifa = :id_tarifa", { id_tarifa: existingSaleRate.id_tarifa })
               .execute();
+
+              syncronized.push({ ...existingSaleRate });
           }
         }
+      }      
+      }
+      
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
       }
 
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
-
-      }else{
-        messageResponse= "No hay datos pendientes por sincronizar";
-
-        throw new Error(messageResponse);
-      }
       await queryRunner.commitTransaction();
+
       return {
-        message: messageResponse,
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
+        syncronized:syncronized,
         duplicated: salesRateArrayFiltred.duplicateSalesRate,
       };
     } catch (error) {
+
       await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncSalesRate:", error);
+      
       return {
-        message: "¡La Sincronización ha terminado! -> "+ error.message, 
+        message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
         status: false,
+        syncronized:syncronized,
         duplicated: salesRateArrayFiltred.duplicateSalesRate,
       };
     } finally {

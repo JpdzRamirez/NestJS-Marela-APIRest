@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { TypeService } from './type_service.entity';
@@ -26,7 +26,8 @@ export class TypeServiceRepository {
         nombre: string;   
         cargo_fijo: number;     
       }[];
-      duplicated: TypeServiceDto[]; 
+      duplicated: TypeServiceDto[];
+      existing:TypeServiceDto[]; 
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
@@ -41,6 +42,7 @@ export class TypeServiceRepository {
         cargo_fijo: number; 
        }[] = [];
       const duplicateTypeServices=typeServicesArrayFiltred.duplicateTypeServices;
+      const syncronizedTypeServices: TypeServiceDto[] = [];
       const uniqueFilteredTypeServices = new Map<string, TypeService>();
       try {
         const entityManager = queryRunner.manager;
@@ -96,7 +98,7 @@ export class TypeServiceRepository {
                 existingTypeService.nombre=tc.nombre;
                 existingTypeService.cargo_fijo=tc.cargo_fijo;
                 existingTypeService.source_failure='DataBase';
-                duplicateTypeServices.push(existingTypeService);
+                syncronizedTypeServices.push(existingTypeService);
                 return false;
             }
             }
@@ -133,30 +135,30 @@ export class TypeServiceRepository {
             nombre:typserv.nombre,
             cargo_fijo:typserv.cargo_fijo,
           }))
-        );       
-          messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
-        }else{
-          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
-          throw new Error(messageResponse);
+        );                 
+        }else{                      
+          throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
         await queryRunner.commitTransaction();
 
         return {
-          message: messageResponse,
+          message: "Cargue exitoso, se han obtenido los siguientes resultados:",
           status: true,
           inserted: insertedTypoServicio, 
           duplicated: duplicateTypeServices,
+          existing:syncronizedTypeServices
         };
       } catch (error) {
-        await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllTypeServices:", error);
+
+        await queryRunner.rollbackTransaction();        
         
         return {
-          message: "¡El cargue ha terminado! -> "+ error.message,        
+          message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,       
           status: false,
           inserted: [],
-          duplicated: duplicateTypeServices
+          duplicated: duplicateTypeServices,
+          existing:syncronizedTypeServices
         };
       } finally {
         await queryRunner.release();
@@ -172,6 +174,7 @@ export class TypeServiceRepository {
     uuid_authsupa: string,
   ): Promise<{
     message: string,
+    status:boolean,
     type_services:TypeService[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -198,13 +201,16 @@ export class TypeServiceRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes tipos de servicio no sincronizados:',
-          type_services: notSyncCities
+        status:true,
+        type_services: notSyncCities
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllCities:', error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
         message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
+        status:false,
         type_services: []
       };
     } finally {
@@ -222,13 +228,14 @@ export class TypeServiceRepository {
   ): Promise<{
     message: string,
     status: boolean,
+    syncronized: TypeServiceDto[],
     duplicated: TypeServiceDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    let messageResponse='';
+    const syncronized : TypeServiceDto[] = [];
   
     try {
       const entityManager = queryRunner.manager;      
@@ -269,26 +276,31 @@ export class TypeServiceRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("id_tiposervicio = :id_tiposervicio", { id_tiposervicio: existingTypeService.id_tiposervicio })
               .execute();
+
+              syncronized.push({ ...existingTypeService });
           }
         }
       }
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados";
-      }else{
-        messageResponse= "No hay datos pendientes por sincronizar";        
-        throw new Error(messageResponse);
+      
+      }
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
       }
       await queryRunner.commitTransaction();
       return {
-        message: messageResponse,
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
+        syncronized:syncronized,
         duplicated: typeServicesArrayFiltred.duplicateTypeServices,
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncTypeServices:", error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
-        message: "¡La Sincronización ha terminado, retornando desde la base de datos!! -> "+ error.message, 
+        message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
         status: false,
+        syncronized:syncronized,
         duplicated: typeServicesArrayFiltred.duplicateTypeServices,
       };
     } finally {

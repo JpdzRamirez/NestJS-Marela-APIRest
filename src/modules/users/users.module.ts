@@ -7,12 +7,14 @@ import { UserController } from './users.controller';
 import { UserServices } from './users.service';
 import { AuthModule } from '../auth/auth.module';
 import { UtilityModule } from '../../shared/utility/utility.module';
+import { LoggerModule } from '../logger/logger.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     SupabaseModule,
     forwardRef(() => AuthModule),
-    UtilityModule
+    UtilityModule,
+    LoggerModule
   ],
   controllers: [UserController],
   providers: [UserRepository, UserServices],

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { TypeClient } from './type_client.entity';
@@ -19,18 +19,24 @@ export class TypeClientRepository {
   ): Promise<{
     message: string;
     status: boolean;
-    inserted: { id: number; id_tipocliente: string ;nombre: string }[];
+    inserted: { 
+      id: number;
+      id_tipocliente: string;
+      nombre: string 
+    }[];
     duplicated: TypeClientDto[];
+    existing:TypeClientDto[];
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    let messageResponse='';
+    
 
     const insertedTypeClients: { id: number;id_tipocliente:string ;nombre: string }[] = [];
     const duplicatedTypeClients=typeClientArrayFiltred.duplicateTypeClient;
-
+    //Tipos de clientes ya presentes en la base de datos
+    const syncronizedTypeClients: TypeClientDto[] = [];
     try {
       const entityManager = queryRunner.manager;
 
@@ -84,7 +90,7 @@ export class TypeClientRepository {
             existingTypeClient.id=tc.id;
             existingTypeClient.id_tipocliente=tc.id_tipocliente;
             existingTypeClient.source_failure='DataBase';
-            duplicatedTypeClients.push(existingTypeClient);
+            syncronizedTypeClients.push(existingTypeClient);
             return false;
           }
         }
@@ -114,29 +120,28 @@ export class TypeClientRepository {
             nombre: tc.nombre,
           }))
         );
-        messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
+        
         }else {
-          messageResponse= "No hay datos pendientes por sincronizar";
-          
-          throw new Error(messageResponse);
+throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
       
       await queryRunner.commitTransaction();
       
       return {
-        message: messageResponse,
+        message: "Cargue exitoso, se han obtenido los siguientes resultados:",
         status:true,
         inserted: insertedTypeClients,
         duplicated: duplicatedTypeClients,
+        existing:syncronizedTypeClients
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('❌ Error en submitAllTypeClient:', error);
       return {
-        message: '¡El cargue ha terminado!! -> '+ error.message, 
+        message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,      
         status:false,
         inserted: [],
         duplicated: duplicatedTypeClients,
+        existing:syncronizedTypeClients
       };
     } finally {
       await queryRunner.release();
@@ -150,9 +155,9 @@ export class TypeClientRepository {
   async getAllTypeClient(
     schema: string,
     uuid_authsupa: string,
-
   ): Promise<{
     message: string,
+    status:boolean,
     type_clients:TypeClient[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -179,13 +184,14 @@ export class TypeClientRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido los siguientes tipos de clientes no sincronizados:',
+        status:true,
         type_clients: notSyncTypeClient
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllTypeClient:', error);
+      await queryRunner.rollbackTransaction();      
       return {
-        message: '¡La conexión ha terminado, retornando desde la base de datos! ->'+ error.message,
+        message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
+        status:false,
         type_clients: []
       };
     } finally {
@@ -195,7 +201,7 @@ export class TypeClientRepository {
 
   /** ✅
    *  Actualiza los registros sincronizados en el mobil
-   */
+  */
   async syncTypeClient(
     schema: string,
     uuid_authsupa: string,
@@ -203,13 +209,14 @@ export class TypeClientRepository {
   ): Promise<{
     message: string;
     status: boolean;
+    syncronized: TypeClientDto[],
     duplicated: TypeClientDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
   
-    let messageResponse='';
+    const syncronized : TypeClientDto[] = [];
 
     try {
       const entityManager = queryRunner.manager;      
@@ -250,28 +257,34 @@ export class TypeClientRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("nombre = :nombre", { nombre: existingTypeClient.nombre })
               .execute();
+
+              syncronized.push({ ...existingTypeClient });
           }
         }
       }        
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados:";
-    }else{
-      messageResponse= "No hay datos pendientes por sincronizar";      
-      throw new Error(messageResponse);
+      
+    }
+
+    if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
     }
 
     await queryRunner.commitTransaction();
 
     return {
-        message: messageResponse,
+        message: "Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
+        syncronized:syncronized,
         duplicated: typeClientArrayFiltred.duplicateTypeClient,
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncTypeClient:", error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
-        message: "¡La Sincronización ha terminado!",
+        message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
         status: false,
+        syncronized:syncronized,
         duplicated: null,
       };
     } finally {

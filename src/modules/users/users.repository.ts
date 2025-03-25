@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,UnprocessableEntityException,HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupabaseService } from '../../config/supabase.service';
@@ -75,14 +75,14 @@ export class UserRepository {
       });
 
       if (!authUserId) {
-        throw new Error('No se pudo crear el usuario en Supabase.');
+        throw new UnprocessableEntityException('No se pudo procesar la solicitud, revisa los datos');
       }
 
       // ✅ 2. Hashear contraseña antes de guardarla en PostgreSQL
       const passwordHashed = bcrypt.hashSync(user.password!, 10);
 
       if (!user.name || !user.lastname) {
-        throw new Error('No se pudo crear el codigo de autenticación por error de campos.');
+        throw new HttpException('Datos inválidos o faltantes', HttpStatus.BAD_REQUEST);
       }
       const authCode= this.utilityService.generateAuthCode();
 
@@ -107,8 +107,7 @@ export class UserRepository {
       savedUser.auth_code=authCode;
       return savedUser;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error('❌ Error al crear usuario:', error);
+      await queryRunner.rollbackTransaction();      
 
       // Si falló, eliminar usuario en Supabase Auth
       if (authUserId) {
