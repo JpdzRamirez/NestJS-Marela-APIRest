@@ -24,6 +24,9 @@ import { State } from '../modules/states/state.entity';
 import { Trail } from '../modules/trails/trail.entity';
 import { Unit } from '../modules/units/units.entity';
 
+import { Logger } from '../modules/logger/logger.entity';
+
+
 export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
   type: 'postgres',
   url: configService.get<string>('DATABASE_URL'), // 🔹 Usa ConfigService para obtener la variable de entorno
@@ -44,3 +47,20 @@ export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOption
     connectionTimeoutMillis: 2000,
   },
 });
+
+// 🔹 Configuración para la segunda base de datos (MySQL)
+export const secondTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
+  type: 'mysql',
+  host: configService.get<string>('DB_HOST_SECOND'),
+  port: parseInt(configService.get<string>('DB_PORT_SECOND') ?? '3306', 10),
+  username: configService.get<string>('DB_USERNAME_SECOND'),
+  password: configService.get<string>('DB_PASSWORD_SECOND'),
+  database: configService.get<string>('DB_DATABASE_SECOND'),
+  synchronize: false,
+  logging: false,
+  entities: [Logger],
+  extra: {
+    connectionLimit: 10,
+  },
+});
+

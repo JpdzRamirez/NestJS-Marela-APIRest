@@ -35,25 +35,27 @@ constructor(
   @UsePipes(new ValidationPipe({ whitelist: true })) 
   @Post('admin/post-all-states')
     async submitAllClients(@Req() request: AuthRequest,@Body() statesArray: StatesArrayDto) {  
-      try {  
+    try {  
       return await this.stateServices.submitAllStates(request, statesArray.states);
-    }  catch (error) {
+    } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
-      
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
       this.logger.error(
         `Error en StatesController.submitAllClients - Status: ${status} - Mensaje: ${errorMessage}`,
         error.stack,
+        request,
+        status,
       );
-  
       throw new HttpException(response, status);
     }
   }
 
   /** ✅ Obtener todos los departamentos no sincronizados desde el la base de datos (fontanero y admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   @Get('admin/get-all-states')
     async getAllTypeClient(@Req() request: AuthRequest ) { 
     try {    
@@ -61,20 +63,23 @@ constructor(
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
-      
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
       this.logger.error(
-        `Error en StatesController.submitAllClients - Status: ${status} - Mensaje: ${errorMessage}`,
+        `Error en StatesController.getAllTypeClient - Status: ${status} - Mensaje: ${errorMessage}`,
         error.stack,
+        request,
+        status,
       );
-  
+
       throw new HttpException(response, status);
     }
   }
   
     /** ✅ Departamentos sincronizados en móbil (fontanero y admin) */
   @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @HttpCode(201)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   @Patch('admin/patch-sync-states')
     async syncClients(@Req() request: AuthRequest,@Body() citiesArray: StatesArrayDto ) { 
     try {   
@@ -82,14 +87,15 @@ constructor(
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
-      
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
       this.logger.error(
-        `Error en StatesController.submitAllClients - Status: ${status} - Mensaje: ${errorMessage}`,
+        `Error en StatesController.syncClients - Status: ${status} - Mensaje: ${errorMessage}`,
         error.stack,
+        request,
+        status,
       );
-  
+
       throw new HttpException(response, status);
     }
   }

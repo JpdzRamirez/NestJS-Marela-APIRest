@@ -1,10 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { StateRepository } from './states.repository';
 import { StateDto } from './dto/state.dto';
-
 import { State } from './state.entity';
 import { AuthRequest } from '../../types';
-
 import { UtilityService } from '../../shared/utility/utility.service';
 
 @Injectable()
@@ -14,7 +12,7 @@ export class StatesService {
     private readonly stateRepository: StateRepository,
     private readonly utilityService: UtilityService    
   ) {}
-/** ✅ Obtener todas las facturas*/
+/** ✅ Obtener todas las departamentos*/
   async submitAllStates(AuthRequest: AuthRequest, statesArray: StateDto[]): Promise<{ 
       message: string,
       status: boolean,
@@ -33,9 +31,9 @@ export class StatesService {
     }
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades    
-    const newMunicipalUnits = this.utilityService.mapDtoStateToEntityAndRemoveDuplicate(statesArray, uuidAuthsupa)
+    const newStates = this.utilityService.mapDtoStateToEntityAndRemoveDuplicate(statesArray, uuidAuthsupa)
     // Enviar los clientes al repositorio para inserción en la BD
-    const result= await this.stateRepository.submitAllStates(user.schemas.name, newMunicipalUnits);
+    const result= await this.stateRepository.submitAllStates(user.schemas.name, newStates);
 
     if (!result.status) {
       throw new HttpException(
@@ -61,7 +59,7 @@ export class StatesService {
       }> {
       const user = AuthRequest.user;
       if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
-        throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
+        throw new HttpException('Usuario sin autorizacion', HttpStatus.NOT_FOUND);
       }
       // Enviar los clientes al repositorio para inserción en la BD
       const result= await this.stateRepository.getAllStates(user.schemas.name,user.uuid_authsupa);
@@ -80,7 +78,7 @@ export class StatesService {
       return result; 
     }
   
-    /** ✅ Sincronizar los tipos de clientes*/
+    /** ✅ Sincronizar los departamentos*/
     async syncStates(AuthRequest: AuthRequest, statesArray: StateDto[]): Promise<{ 
       message: String,
       status: Boolean,
@@ -95,7 +93,7 @@ export class StatesService {
   
       const statesArrayFiltred = this.utilityService.removeDuplicateStates(statesArray);
   
-      // Enviar los clientes al repositorio para inserción en la BD
+      // Enviar los departamentos al repositorio para inserción en la BD
       const result= await this.stateRepository.syncStates(user.schemas.name, uuidAuthsupa,statesArrayFiltred);
       
       if (!result.status) {

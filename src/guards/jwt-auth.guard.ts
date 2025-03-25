@@ -1,25 +1,37 @@
-import { Injectable, CanActivate, ExecutionContext,UnauthorizedException  } from '@nestjs/common';
+import { 
+  Injectable,
+  CanActivate, 
+  ExecutionContext,
+  UnauthorizedException,
+  HttpException,
+  HttpStatus  } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SupabaseService } from '../config/supabase.service';
 import { UserServices } from '../modules/users/users.service';
 import { User } from '../modules/users/user.entity';
 import { AuthRequest } from '../types';
+import { LoggerServices } from '../modules/logger/logger.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly supabaseService: SupabaseService, private reflector: Reflector,private readonly userService: UserServices) {}
+  constructor(
+    private readonly supabaseService: SupabaseService, private reflector: Reflector,
+    private readonly userService: UserServices,
+    private readonly logger: LoggerServices,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<AuthRequest>();
-
-    const authHeader = request.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Acceso denegado. Token no proporcionado o formato incorrecto.');
-    }
-    const token = authHeader.split(' ')[1];
     
-    try {
+      const request = context.switchToHttp().getRequest<AuthRequest>();
+      
+      try {
+      const authHeader = request.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new UnauthorizedException('Acceso denegado. Token no proporcionado o formato incorrecto.');
+      }
+      const token = authHeader.split(' ')[1];    
+ 
       const { data: authData, error: authError } = await this.supabaseService.getAdminClient().auth.getUser(token);
 
       if (authError || !authData.user || !authData.user.email) {
@@ -34,7 +46,7 @@ export class JwtAuthGuard implements CanActivate {
       if(!complementaryDataUser.is_active){
         throw new UnauthorizedException('Acceso denegado. Usuario inactivado.');
       }
-          // 🔹 3. Mapear los datos al modelo `APPUser`
+      // 🔹 3. Mapear los datos al modelo `APPUser`
       const user: User = {
             id: complementaryDataUser.id,
             uuid_authsupa: complementaryDataUser.uuid_authsupa,
@@ -58,13 +70,23 @@ export class JwtAuthGuard implements CanActivate {
       request.user = user; // Guarda la información del usuario en la request
       return true;
     } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        throw new UnauthorizedException('Acceso denegado. Token expirado.');
-      } else if (error.name === 'JsonWebTokenError') {
-        throw new UnauthorizedException('Acceso denegado. Token no válido.');
-      } else {
-        throw new UnauthorizedException('Acceso denegado. Error al verificar el token.');
-      }
+        // 🔹 Obtener detalles del error
+        const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+        const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
+        const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
+
+        // 🔹 Capturar detalles de la petición
+        const url = request.url;
+        const method = request.method;
+
+        // 🔹 Registrar el error en el logger antes de lanzar la excepción
+        this.logger.error(
+          `Error en JwtAuthGuard - Status: ${status} - Método: ${method} - URL: ${url} - Mensaje: ${errorMessage}`,
+          error.stack
+        );
+
+        // 🔹 Lanzar la excepción después de registrarla
+        throw new HttpException(response, status);
     }
   }
 }

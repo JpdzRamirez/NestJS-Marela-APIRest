@@ -24,7 +24,8 @@ export class CityServices {
         nombre: string;
         codigo: number;
        }[];
-      duplicated: CityDto[];      
+      duplicated: CityDto[]; 
+      existing: CityDto[];       
   }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa ) {
@@ -33,27 +34,57 @@ export class CityServices {
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades    
     const newCities = this.utilityService.mapDtoCityToEntityAndRemoveDuplicate(citiesArray, uuidAuthsupa)
-    // Enviar los clientes al repositorio para inserción en la BD
-    return await this.cityRepository.submitAllCities(user.schemas.name, newCities);
+    // Enviar las ciudades al repositorio para inserción en la BD
+    const result= await this.cityRepository.submitAllCities(user.schemas.name, newCities);
 
+    if (!result.status) {
+      throw new HttpException(
+        {
+          message: result.message,
+          status: result.status,
+          inserted: result.inserted,
+          duplicated: result.duplicated,
+          existing: result.existing
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+    
+    return result; 
+  
   }
 
     async getAllCities(AuthRequest: AuthRequest): Promise<{ 
       message: String,
+      status:boolean,
       cities:City[]
       }> {
       const user = AuthRequest.user;
       if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
-      // Enviar los clientes al repositorio para inserción en la BD
-      return await this.cityRepository.getAllCities(user.schemas.name,user.uuid_authsupa);
+      // Enviar los ciudades al repositorio para inserción en la BD
+      const result= await this.cityRepository.getAllCities(user.schemas.name,user.uuid_authsupa);
+
+      if (!result.status) {
+        throw new HttpException(
+          {
+            message: result.message,
+            status: result.status,
+            cities: result.cities
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+      
+      return result; 
     }
   
-    /** ✅ Sincronizar los tipos de clientes*/
+    /** ✅ Sincronizar las ciudades*/
     async syncCities(AuthRequest: AuthRequest, statesArray: CityDto[]): Promise<{ 
       message: String,
       status: Boolean,
+      syncronized: CityDto[],
       duplicated: CityDto[] | null    
   }> {
       const user = AuthRequest.user;
@@ -64,8 +95,22 @@ export class CityServices {
   
       const citiesArrayFiltred = this.utilityService.removeDuplicateCities(statesArray);
   
-      // Enviar los clientes al repositorio para inserción en la BD
-      return await this.cityRepository.syncCities(user.schemas.name, uuidAuthsupa,citiesArrayFiltred);
+      // Enviar las ciudades al repositorio para inserción en la BD
+      const result= await this.cityRepository.syncCities(user.schemas.name, uuidAuthsupa,citiesArrayFiltred);
+
+      if (!result.status) {
+        throw new HttpException(
+          {
+            message: result.message,
+            status: result.status,
+            syncronized: result.syncronized,
+            duplicated: result.duplicated
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+      
+      return result; 
   
     }
 

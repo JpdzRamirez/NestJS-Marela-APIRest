@@ -13,12 +13,17 @@ export class SalesRateService {
     private readonly salesRateRepository: SalesRateRepository,
     private readonly utilityService: UtilityService    
   ) {}
-/** ✅ Obtener todas las facturas*/
+/** ✅ Obtener todas las tarifas*/
   async submitAllSalesRate(AuthRequest: AuthRequest, salesRateArray: SalesDto[]): Promise<{ 
       message: string,
       status: boolean,
-      inserted: { id: number; id_tarifa: string; nombre: string }[];
-      duplicated: SalesDto[];      
+      inserted: { 
+        id: number;
+        id_tarifa: string;
+        nombre: string 
+      }[];
+      duplicated: SalesDto[];   
+      existing: SalesDto[];   
   }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa ) {
@@ -28,12 +33,28 @@ export class SalesRateService {
 
     const newMunicipalUnits = this.utilityService.mapDtoSalesRateAndRemoveDuplicate(salesRateArray, uuidAuthsupa)
 
-    return await this.salesRateRepository.submitAllSalesRate(user.schemas.name, newMunicipalUnits);
+    const result= await this.salesRateRepository.submitAllSalesRate(user.schemas.name, newMunicipalUnits);
 
+    
+    if (!result.status) {
+      throw new HttpException(
+        {
+          message: result.message,
+          status: result.status,
+          inserted: result.inserted,
+          duplicated: result.duplicated,
+          existing: result.existing
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+    
+    return result; 
   }
 
     async getAllSalesRate(AuthRequest: AuthRequest): Promise<{ 
       message: String,
+      status:boolean,
       municipal_units:SalesRate[]
       }> {
       const user = AuthRequest.user;
@@ -41,7 +62,20 @@ export class SalesRateService {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
       // Enviar los clientes al repositorio para inserción en la BD
-      return await this.salesRateRepository.getAllSalesRate(user.schemas.name,user.uuid_authsupa);
+      const result= await this.salesRateRepository.getAllSalesRate(user.schemas.name,user.uuid_authsupa);
+
+      if (!result.status) {
+        throw new HttpException(
+          {
+            message: result.message,
+            status: result.status,
+            municipal_units: result.municipal_units
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+      
+      return result; 
     }
   
   
@@ -50,6 +84,7 @@ export class SalesRateService {
     async syncSalesRate(AuthRequest: AuthRequest, salesRateArray: SalesDto[]): Promise<{ 
       message: String,
       status: Boolean,
+      syncronized: SalesDto[],
       duplicated: SalesDto[] | null    
   }> {
       const user = AuthRequest.user;
@@ -60,9 +95,22 @@ export class SalesRateService {
   
       const salesRateArrayFiltred = this.utilityService.removeDuplicateSalesRate(salesRateArray);
   
-      // Enviar los clientes al repositorio para inserción en la BD
-      return await this.salesRateRepository.syncSalesRate(user.schemas.name, uuidAuthsupa,salesRateArrayFiltred);
-  
-    }
+      // Enviar los tarifas al repositorio para inserción en la BD
+      const result= await this.salesRateRepository.syncSalesRate(user.schemas.name, uuidAuthsupa,salesRateArrayFiltred);      
+            
+      if (!result.status) {
+        throw new HttpException(
+          {
+            message: result.message,
+            status: result.status,
+            syncronized: result.syncronized,
+            duplicated: result.duplicated
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+      
+      return result; 
+    } 
 
 }

@@ -3,7 +3,6 @@ import { TypeClientRepository } from './type_client.repository';
 import { TypeClientDto } from './dto/typeClient.dto';
 import { TypeClient } from './type_client.entity';
 import { AuthRequest } from '../../types';
-
 import { UtilityService } from '../../shared/utility/utility.service';
 
 @Injectable()
@@ -18,8 +17,13 @@ export class TypeClientServices {
   async submitAllTypeClient(AuthRequest: AuthRequest, typeClientsArray: TypeClientDto[]): Promise<{ 
     message: string;
     status: boolean;
-    inserted: { id: number; id_tipocliente: string ; nombre: string }[];
+    inserted: { 
+      id: number;
+      id_tipocliente: string;
+      nombre: string 
+    }[];
     duplicated: TypeClientDto[];
+    existing: TypeClientDto[];     
 }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
@@ -29,8 +33,23 @@ export class TypeClientServices {
     // Mapear todos los DTOs a entidades
     const newTypeClientArray = this.utilityService.mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientsArray, uuidAuthsupa)
     
-    // Enviar los clientes al repositorio para inserción en la BD
-    return await this.clientRepository.submitAllTypeClient(user.schemas.name, newTypeClientArray);
+    // Enviar los tipos de clientes al repositorio para inserción en la BD
+    const result= await this.clientRepository.submitAllTypeClient(user.schemas.name, newTypeClientArray);
+
+  if (!result.status) {
+      throw new HttpException(
+        {
+          message: result.message,
+          status: result.status,
+          inserted: result.inserted,
+          duplicated: result.duplicated,
+          existing: result.existing
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+  }
+    
+    return result; 
 
   }
 
@@ -55,6 +74,7 @@ export class TypeClientServices {
   async syncTypeClient(AuthRequest: AuthRequest, typeClientsArray: TypeClientDto[]): Promise<{ 
     message: String,
     status: Boolean,
+    syncronized: TypeClientDto[],
     duplicated: TypeClientDto[] | null   
 }> {
     const user = AuthRequest.user;
@@ -65,9 +85,22 @@ export class TypeClientServices {
 
     const typeClientArrayFiltred = this.utilityService.removeDuplicateTypeClients(typeClientsArray);
 
-    // Enviar los clientes al repositorio para inserción en la BD
-    return await this.clientRepository.syncTypeClient(user.schemas.name, uuidAuthsupa,typeClientArrayFiltred);
+    // Enviar los tipos de clientes al repositorio para inserción en la BD
+    const result= await this.clientRepository.syncTypeClient(user.schemas.name, uuidAuthsupa,typeClientArrayFiltred);
 
+    if (!result.status) {
+      throw new HttpException(
+        {
+          message: result.message,
+          status: result.status,
+          syncronized: result.syncronized,
+          duplicated: result.duplicated
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+    
+    return result; 
   }
 }
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { Trail } from './trail.entity';
@@ -12,7 +12,7 @@ export class TrailRepository {
   ) {}
 
     /** ✅
-     * Inserta todos los clientes y retorna los clientes insertados o duplicados
+     * Inserta todos las rutas y retorna los rutas insertados o duplicados
      */
     async submitAllTrails(
       schema: string, 
@@ -26,12 +26,13 @@ export class TrailRepository {
         nombre: string;        
       }[];
       duplicated: TrailDto[]; 
+      existing: TrailDto[]; 
     }>{
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
 
-      let messageResponse='';
+
 
       const insertedTrails: { 
         id: number; 
@@ -40,6 +41,8 @@ export class TrailRepository {
         unidades_municipales: Record<string, any>[] | null;                
        }[] = [];
       const duplicateTrails=trailsArrayFiltred.duplicateTrails;
+      //Rutas ya presentes en la base de datos
+      const syncronizedTrails: TrailDto[] = [];
       const uniqueFilteredTrails = new Map<string, Trail>();
       try {
         const entityManager = queryRunner.manager;
@@ -66,7 +69,7 @@ export class TrailRepository {
                       unidades_municipales:trail.unidades_municipales,
                       source_failure:'DataBase'
                   };
-                  duplicateTrails.push({ ...duplicatedDBTrail }); // Guardar duplicado
+                  syncronizedTrails.push({ ...duplicatedDBTrail }); // Guardar duplicado
               }else {
                 uniqueFilteredTrails.set(referenceKey, { ...trail });
               }
@@ -103,29 +106,30 @@ export class TrailRepository {
             unidades_municipales:tra.unidades_municipales,
           }))
         );       
-          messageResponse="Cargue exitoso, se han obtenido los siguientes resultados:";
+          
         }else{
-          messageResponse = "La base de datos ya se encuentra sincronizada; Datos ya presentes en BD";                
-          throw new Error(messageResponse);
+          throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
         await queryRunner.commitTransaction();
 
         return {
-          message: messageResponse,
+          message: "Cargue exitoso, se han obtenido los siguientes resultados:",
           status: true,
           inserted: insertedTrails, 
           duplicated: duplicateTrails,
+          existing:syncronizedTrails
         };
       } catch (error) {
-        await queryRunner.rollbackTransaction();
-        console.error("❌ Error en submitAllCities:", error);
+
+        await queryRunner.rollbackTransaction();        
         
         return {
-          message: "¡El cargue ha terminado! -> "+ error.message,        
+          message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,      
           status: false,
           inserted: [],
-          duplicated: duplicateTrails
+          duplicated: duplicateTrails,
+          existing:syncronizedTrails
         };
       } finally {
         await queryRunner.release();
@@ -141,6 +145,7 @@ export class TrailRepository {
     uuid_authsupa: string,
   ): Promise<{
     message: string,
+    status:boolean,
     cities:Trail[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -167,13 +172,16 @@ export class TrailRepository {
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes rutas no sincronizados:',
-          cities: notSyncTrails
+        status:true,
+        cities: notSyncTrails
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error('❌ Error en getAllTrails:', error);
+
+      await queryRunner.rollbackTransaction();      
+
       return {
-        message: "¡Error en la conexión, retornando desde la base de datos!! -> "+ error.message, 
+        message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
+        status:false,
         cities: []
       };
     } finally {
@@ -191,13 +199,14 @@ export class TrailRepository {
   ): Promise<{
     message: string,
     status: boolean,
+    syncronized: TrailDto[],
     duplicated: TrailDto[] | null;
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    let messageResponse='';
+    const syncronized : TrailDto[] = [];
   
     try {
       const entityManager = queryRunner.manager;      
@@ -238,30 +247,38 @@ export class TrailRepository {
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("id_ruta = :id_ruta", { id_ruta: existingTrail.id_ruta })
               .execute();
+
+              syncronized.push({ ...existingTrail });
           }
         }
       }
-      messageResponse="Sincronización exitosa, se han obtenido los siguientes resultados";
-      }else{
-        messageResponse= "No hay datos pendientes por sincronizar";        
-        throw new Error(messageResponse);
+      
       }
+      if(syncronized.length ===0){
+        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
+      }      
+
       await queryRunner.commitTransaction();
       return {
-        message: messageResponse,
+        message:"Sincronización exitosa, se han obtenido los siguientes resultados",
         status: true,
+        syncronized:syncronized,
         duplicated: trailsArrayFiltred.duplicateTrails,
       };
     } catch (error) {
+
       await queryRunner.rollbackTransaction();
-      console.error("❌ Error en syncCities:", error);
+      
       return {
-        message: "¡La Sincronización ha terminado! -> "+ error.message, 
+        message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
         status: false,
+        syncronized:syncronized,
         duplicated: trailsArrayFiltred.duplicateTrails,
       };
     } finally {
+
       await queryRunner.release();
+      
     }
   }
 

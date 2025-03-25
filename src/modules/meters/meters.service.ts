@@ -18,8 +18,13 @@ export class WaterMeterService {
   async submitAllWaterMeter(AuthRequest: AuthRequest, waterMetersArray: WaterMetersDto[]): Promise<{ 
     message: string;
     status: boolean;
-    inserted: { id: number; id_medidor: string ; numero_referencia: string }[];
+    inserted: { 
+      id: number;
+      id_medidor: string;
+      numero_referencia: string 
+    }[];
     duplicated: WaterMetersDto[];
+    existing: WaterMetersDto[]; 
 }> {
     const user = AuthRequest.user;
     if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
@@ -29,14 +34,31 @@ export class WaterMeterService {
     // Mapear todos los DTOs a entidades
     const newWaterMetersArray = this.utilityService.mapDtoWaterMeterToEntityAndRemoveDuplicate(waterMetersArray, uuidAuthsupa)
     
-    // Enviar los clientes al repositorio para inserción en la BD
-    return await this.waterMeterRepository.submitAllWaterMeter(user.schemas.name, newWaterMetersArray);
+    // Enviar los medidores de agua al repositorio para inserción en la BD
+    const result= await this.waterMeterRepository.submitAllWaterMeter(user.schemas.name, newWaterMetersArray);
+
+    
+    if (!result.status) {
+      throw new HttpException(
+        {
+          message: result.message,
+          status: result.status,
+          inserted: result.inserted,
+          duplicated: result.duplicated,
+          existing: result.existing
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+    
+    return result; 
 
   }
 
 /** ✅ Obtenero todos los medidores no sincronizados en el celular*/
   async getAllWaterMeters(AuthRequest: AuthRequest): Promise<{ 
     message: String,
+    status:boolean,
     water_meters:WaterMeter[]
   }> {
     const user = AuthRequest.user;
@@ -44,9 +66,21 @@ export class WaterMeterService {
       throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
     }
 
-    // Enviar los clientes al repositorio para inserción en la BD
-    return await this.waterMeterRepository.getAllWaterMeters(user.schemas.name,user.uuid_authsupa);
+    // Enviar los medidores de agua al repositorio para inserción en la BD
+    const result= await this.waterMeterRepository.getAllWaterMeters(user.schemas.name,user.uuid_authsupa);
 
+    if (!result.status) {
+      throw new HttpException(
+        {
+          message: result.message,
+          status: result.status,
+          water_meters: result.water_meters
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+    
+    return result; 
   }
 
 
@@ -55,6 +89,7 @@ export class WaterMeterService {
   async syncWaterMeters(AuthRequest: AuthRequest, waterMeterArray: WaterMetersDto[]): Promise<{ 
     message: String,
     status: Boolean,
+    syncronized: WaterMetersDto[],
     duplicated: WaterMetersDto[] | null   
 }> {
     const user = AuthRequest.user;
@@ -65,9 +100,23 @@ export class WaterMeterService {
 
     const waterMetersArrayFiltred = this.utilityService.removeDuplicateWaterMeter(waterMeterArray);
 
-    // Enviar los clientes al repositorio para inserción en la BD
-    return await this.waterMeterRepository.syncWaterMeter(user.schemas.name, uuidAuthsupa,waterMetersArrayFiltred);
+    // Enviar los medidores de aguea al repositorio para inserción en la BD
+    const result= await this.waterMeterRepository.syncWaterMeter(user.schemas.name, uuidAuthsupa,waterMetersArrayFiltred);
 
+          
+    if (!result.status) {
+      throw new HttpException(
+        {
+          message: result.message,
+          status: result.status,
+          syncronized: result.syncronized,
+          duplicated: result.duplicated
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+    
+    return result; 
   }
 
 
