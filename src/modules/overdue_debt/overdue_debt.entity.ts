@@ -11,22 +11,22 @@ export class OverdueDebt {
     id_mora!: string;
 
     @Column({ name: 'mora_maxima', type:'int2',nullable:true })
-    mora_maxima?: string | null;  // Puede ser opcional si Supabase lo genera
+    mora_maxima!: number | null;  // Puede ser opcional si Supabase lo genera
 
     @Column({name: 'nombre_mora',type: 'varchar', nullable: false })
-    nombre_mora?: number; 
+    nombre_mora!: string; 
 
     @Column({name: 'nombre_mora', type: 'float8', nullable: false })
-    valor_unitario?: number; 
+    valor_unitario!: number; 
 
-    @Column({name: 'tipo_mora', type: 'int2',nullable: false, unique: true })
-    tipo_mora?: number; 
+    @Column({name: 'tipo_mora', type: 'int2',nullable: false })
+    tipo_mora!: number; 
 
-    @Column({name: 'factura_id', type: 'int2', nullable: true })
-    factura_id?: number; 
+    @Column({name: 'factura_id', type: 'uuid', nullable: false })
+    factura_id!: string; 
 
-    @Column({name: 'contrato_id', type:'boolean', nullable: false })
-    contrato_id?: number; 
+    @Column({name: 'contrato_id', type:'uuid', nullable: false })
+    contrato_id!: string; 
 
     @ManyToOne(() => Contract,{ nullable: true, eager: false })
     @JoinColumn({ name: 'contrato_id', referencedColumnName: 'id_contrato'}) // Nombre de la columna FK en la BD

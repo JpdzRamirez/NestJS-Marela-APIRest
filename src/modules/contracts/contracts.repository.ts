@@ -1,6 +1,6 @@
 import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
-import { Repository, DataSource, EntityManager, Between } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Contract } from './contract.entity';
 import { Client } from '../clients/client.entity';
 import { WaterMeter } from '../meters/meters.entity';

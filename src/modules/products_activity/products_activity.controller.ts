@@ -42,7 +42,7 @@ constructor(
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
       this.logger.error(
-        `Error en CitiesController.submitAllCities - Status: ${status} - Mensaje: ${errorMessage}`,
+        `Error en ProductsActivityController.submitAllProductsActivity - Status: ${status} - Mensaje: ${errorMessage}`,
         error.stack,
         request,
         status,
@@ -65,7 +65,7 @@ constructor(
         const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
   
         this.logger.error(
-          `Error en CitiesController.getAllCities - Status: ${status} - Mensaje: ${errorMessage}`,
+          `Error en ProductsActivityController.submitAllProductsActivity - Status: ${status} - Mensaje: ${errorMessage}`,
           error.stack,
           request,
           status,
@@ -89,7 +89,7 @@ constructor(
           const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
     
           this.logger.error(
-            `Error en StatesController.syncClients - Status: ${status} - Mensaje: ${errorMessage}`,
+            `Error en ProductsActivityController.submitAllProductsActivity - Status: ${status} - Mensaje: ${errorMessage}`,
             error.stack,
             request,
             status,

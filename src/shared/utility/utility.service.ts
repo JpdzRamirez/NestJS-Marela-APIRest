@@ -28,6 +28,12 @@ import { ProductsActivityDto } from 'src/modules/products_activity/dto/products_
 import { ProductsActivity } from 'src/modules/products_activity/products_activity.entity';
 import { Activity } from 'src/modules/activities/activity.entity';
 import { Unit } from 'src/modules/units/units.entity';
+import { UnitDto } from 'src/modules/units/dto/units.dto';
+import { Invoice } from 'src/modules/invoices/invoice.entity';
+import { InvoiceDto } from 'src/modules/invoices/dto/invoice.dto';
+import { User } from 'src/modules/users/user.entity';
+import { OverdueDebt } from 'src/modules/overdue_debt/overdue_debt.entity';
+import { OverdueDebtDto } from 'src/modules/overdue_debt/dto/overdue_debt.dto';
 
 
 @Injectable()
@@ -246,6 +252,49 @@ export class UtilityService {
         };
   }
 
+  mapDtoInvoicesToEntityAndRemoveDuplicate(invoicesArray: InvoiceDto[], uuid_authsupa: string): 
+  { uniqueInvoices: Invoice[], 
+    duplicateInvoices: InvoiceDto[] 
+  } {
+    const uniqueInvoices = new Map<string, Invoice>();
+    const duplicateInvoices: InvoiceDto[] = [];
+
+    for (const invoice of invoicesArray) {
+        // Creamos el nombre clave para realizar la validacion si está repetido
+        const referenceKey = invoice.id_factura.toString().trim();
+
+        if (uniqueInvoices.has(referenceKey)) {
+          invoice.source_failure='Request'
+          duplicateInvoices.push({ ...invoice }); // Guardar duplicado
+        } else {
+          let newInvoice = new Invoice();
+          newInvoice.id = invoice.id;
+          newInvoice.id_factura = invoice.id_factura;
+          newInvoice.qr = invoice.qr;            
+          newInvoice.consumo = invoice.consumo;      
+          newInvoice.total = invoice.total;      
+          newInvoice.folio = invoice.folio;      
+          newInvoice.pagada = invoice.pagada;      
+          newInvoice.fecha_lectura = invoice.fecha_lectura;      
+          newInvoice.lectura_actual = invoice.lectura_actual;      
+          newInvoice.lectura_anterior = invoice.lectura_anterior;      
+          newInvoice.fecha_pago = invoice.fecha_pago;      
+          newInvoice.fecha_pago_oportuno = invoice.fecha_pago_oportuno ;      
+          newInvoice.contrato = { id_contrato: invoice.contrato_id } as Partial<Contract> as Contract;   
+          newInvoice.usuario = { id_usuario: invoice.user_id } as Partial<User> as User; 
+          newInvoice.uploaded_by_authsupa = uuid_authsupa;                   
+          newInvoice.sync_with = [{ id: invoice.id, uuid_authsupa }];        
+          uniqueInvoices.set(referenceKey, { ...newInvoice });
+        }
+      }
+    
+      return {
+        uniqueInvoices: Array.from(uniqueInvoices.values()),
+        duplicateInvoices,
+      };
+}
+
+
     mapDtoMunicipalUnitToEntityAndRemoveDuplicate(municipal_unitArray: MunicipalUnitDto[], uuid_authsupa: string): 
     { uniqueMunicipalUnits: MunicipalUnit[], 
       duplicateMunicipalUnits: MunicipalUnitDto[] 
@@ -314,7 +363,40 @@ export class UtilityService {
           uniqueProductsActivity: Array.from(uniqueProductsActivity.values()),
           duplicateProductsActivity,
         };
-}
+  }
+  mapDtoOverDueDebtAndRemoveDuplicate(overdueDebtArray: OverdueDebtDto[], uuid_authsupa: string): 
+  { uniqueOverdueDebt: OverdueDebt[], 
+    duplicateOverdueDebt: OverdueDebtDto[] 
+  } {
+    const uniqueOverdueDebt = new Map<string, OverdueDebt>();
+    const duplicateOverdueDebt: OverdueDebtDto[] = [];
+
+    for (const overdue of overdueDebtArray) {
+        // Creamos el nombre clave para realizar la validacion si está repetido
+        const referenceKey = overdue.id_mora.toString().trim();
+        if (uniqueOverdueDebt.has(referenceKey)) {
+          overdue.source_failure='Request'
+          duplicateOverdueDebt.push({ ...overdue }); // Guardar duplicado
+        } else {
+          let newOverDueDebt = new OverdueDebt();
+          newOverDueDebt.id = overdue.id;
+          newOverDueDebt.id_mora = overdue.id_mora;
+          newOverDueDebt.mora_maxima = overdue.mora_maxima;
+          newOverDueDebt.nombre_mora = overdue.nombre_mora;
+          newOverDueDebt.valor_unitario = overdue.valor_unitario;
+          newOverDueDebt.tipo_mora = overdue.tipo_mora;
+          newOverDueDebt.factura_id = overdue.factura_id;
+          newOverDueDebt.contrato_id = overdue.contrato_id;
+          newOverDueDebt.uploaded_by_authsupa = uuid_authsupa;                  
+          newOverDueDebt.sync_with = [{ id: overdue.id, uuid_authsupa }];      
+          uniqueOverdueDebt.set(referenceKey, { ...newOverDueDebt });
+        }
+      }      
+      return {
+        uniqueOverdueDebt: Array.from(uniqueOverdueDebt.values()),
+        duplicateOverdueDebt,
+      };
+  }
   mapDtoSalesRateAndRemoveDuplicate(salesRateArray: SalesDto[], uuid_authsupa: string): 
   { uniqueSalesRate: SalesRate[], 
     duplicateSalesRate: SalesDto[] 
@@ -344,7 +426,35 @@ export class UtilityService {
         uniqueSalesRate: Array.from(uniqueSalesRate.values()),
         duplicateSalesRate,
       };
-}
+  }
+    mapDtoUnitsAndRemoveDuplicate(unitsArray: UnitDto[], uuid_authsupa: string): 
+    { uniqueUnits: Unit[], 
+      duplicateUnits: UnitDto[] 
+    } {
+      const uniqueUnits = new Map<string, Unit>();
+      const duplicateUnits: UnitDto[] = [];
+
+      for (const unit of unitsArray) {
+          // Creamos el nombre clave para realizar la validacion si está repetido
+          const referenceKey = unit.id_unidad.toString().trim();
+          if (uniqueUnits.has(referenceKey)) {
+            unit.source_failure='Request'
+            duplicateUnits.push({ ...unit }); // Guardar duplicado
+          } else {
+            let newUnit = new Unit();
+            newUnit.id = unit.id;
+            newUnit.id_unidad = unit.id_unidad;
+            newUnit.nombre = unit.nombre;
+            newUnit.uploaded_by_authsupa = uuid_authsupa;                  
+            newUnit.sync_with = [{ id: unit.id, uuid_authsupa }];      
+            uniqueUnits.set(referenceKey, { ...newUnit });
+          }
+        }      
+        return {
+          uniqueUnits: Array.from(uniqueUnits.values()),
+          duplicateUnits,
+        };
+    }
     mapDtoTrailsAndRemoveDuplicate(trailsArray: TrailDto[], uuid_authsupa: string): 
       { uniqueTrails: Trail[], 
         duplicateTrails: TrailDto[] 
@@ -627,6 +737,58 @@ export class UtilityService {
       return {
         uniqueContracts: Array.from(uniqueContracts.values()),
         duplicateContracts,
+      };
+    }
+    removeDuplicateInvoices(invoicesArray: InvoiceDto[]) {
+      const uniqueInvoices = new Map<string, InvoiceDto>();
+      const duplicateInvoices: InvoiceDto[] = [];    
+      for (const invoice of invoicesArray) {
+        const referenceKey = invoice.id_factura.toString().trim();
+        if (uniqueInvoices.has(referenceKey)) {
+          invoice.source_failure='Request'
+          duplicateInvoices.push({ ...invoice });
+        } else {
+          uniqueInvoices.set(referenceKey, { ...invoice });
+        }
+      }
+      return {
+        uniqueInvoices: Array.from(uniqueInvoices.values()),
+        duplicateInvoices,
+      };
+    }
+
+    removeDuplicateUnits(unitsArray: UnitDto[]) {
+      const uniqueUnits = new Map<string, UnitDto>();
+      const duplicateUnits: UnitDto[] = [];    
+      for (const unit of unitsArray) {
+        const referenceKey = unit.id_unidad.toString().trim();
+        if (uniqueUnits.has(referenceKey)) {
+          unit.source_failure='Request'
+          duplicateUnits.push({ ...unit });
+        } else {
+          uniqueUnits.set(referenceKey, { ...unit });
+        }
+      }
+      return {
+        uniqueUnits: Array.from(uniqueUnits.values()),
+        duplicateUnits,
+      };
+    }
+    removeDuplicateOverdueDebt(overDueDebtArray: OverdueDebtDto[]) {
+      const uniqueOverdueDebt = new Map<string, OverdueDebtDto>();
+      const duplicateOverdueDebt: OverdueDebtDto[] = [];    
+      for (const overDueDebt of overDueDebtArray) {
+        const referenceKey = overDueDebt.id_mora.toString().trim();
+        if (uniqueOverdueDebt.has(referenceKey)) {
+          overDueDebt.source_failure='Request'
+          duplicateOverdueDebt.push({ ...overDueDebt });
+        } else {
+          uniqueOverdueDebt.set(referenceKey, { ...overDueDebt });
+        }
+      }
+      return {
+        uniqueOverdueDebt: Array.from(uniqueOverdueDebt.values()),
+        duplicateOverdueDebt,
       };
     }
     removeDuplicateStates(statesArray: StateDto[]) {

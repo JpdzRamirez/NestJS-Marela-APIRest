@@ -103,7 +103,21 @@ export class ContractController {
   @HttpCode(200)
   @Patch('admin/patch-sync-contracts')
     async syncContracts(@Req() request: AuthRequest,@Body() contractsArray: ContractsArrayDto ) {    
+  try {
     return await this.contractsServices.syncContracts(request,contractsArray.contracts);
+  } catch (error) {
+    const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
+    const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
+  
+    this.logger.error(
+        `Error en ContractController.syncContracts - Status: ${status} - Mensaje: ${errorMessage}`,
+          error.stack,
+          request,
+          status,
+    );
+    throw new HttpException(response, status);
+    }
   }
 
     

@@ -1,11 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ContractRepository } from './contracts.repository';
 import { Contract } from './contract.entity';
-
 import { ContractsDto, GetDateRangeContractsDto } from './dto/contracts.dto';
-
-import { AuthRequest } from '../../types';
-
+import { AuthRequest } from '../../types'
 import { UtilityService } from '../../shared/utility/utility.service';
 
 @Injectable()
