@@ -9,6 +9,7 @@ import {
     Req,
     UseGuards,
     HttpException,
+    SetMetadata,
     HttpStatus,
     HttpCode,
     UsePipes,
@@ -30,9 +31,10 @@ constructor(
 ) {}
 
   /** ✅ Subir todos las tarifas no sincronizados desde el móbil (fontanero y admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-    @HttpCode(201)
-    @UsePipes(new ValidationPipe({ whitelist: true })) 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
+  @HttpCode(201)
+  @UsePipes(new ValidationPipe({ whitelist: true })) 
   @Post('admin/post-all-salesRate')
     async submitAllSalesRate(@Req() request: AuthRequest,@Body() salesRateArray: SalesDtoArrayDto) {    
     try { 
@@ -53,7 +55,8 @@ constructor(
   }
 
   /** ✅ Obtener todos los tarifas no sincronizados desde el la base de datos (fontanero y admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(200)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @Get('admin/get-all-salesRate')
@@ -77,8 +80,9 @@ constructor(
   }
   
     /** ✅ Tarifas sincronizados en móbil (fontanero y admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-  @Patch('admin/patch-sync-salesRate')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @SetMetadata('roles', [1,3]) 
+    @Patch('admin/patch-sync-salesRate')
     async syncSalesRate(@Req() request: AuthRequest,@Body() salesRateArray: SalesDtoArrayDto ) {    
     try { 
       return await this.salesServices.syncSalesRate(request,salesRateArray.sales_rate);

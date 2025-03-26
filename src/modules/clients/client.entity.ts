@@ -29,7 +29,7 @@ export class Client {
     direccion?: string; 
 
     @Column({ name: 'telefono', type: 'varchar',nullable: true})
-    telefono?: string;  
+    telefono!: string;  
 
     @Column({ name: 'uploaded_by_authsupa', type:'uuid', unique: false, nullable: true })
     uploaded_by_authsupa?: string;

@@ -9,6 +9,7 @@ import {
     Req,
     UseGuards,
     HttpException,
+    SetMetadata,
     HttpStatus,
     HttpCode,
     UsePipes,
@@ -31,7 +32,8 @@ export class OverdueDebtController {
     ) {}
     
       /** ✅ Subir todos las moras no sincronizados desde el móbil (fontanero y admin) */
-      @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+      @UseGuards(JwtAuthGuard, RolesGuard)
+      @SetMetadata('roles', [1,3]) 
       @HttpCode(201)
       @UsePipes(new ValidationPipe({ whitelist: true })) 
       @Post('admin/post-all-overdueDebt')
@@ -54,7 +56,8 @@ export class OverdueDebtController {
       }
     
       /** ✅ Obtener todos las moras no sincronizados desde el la base de datos (fontanero y admin) */
-      @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+      @UseGuards(JwtAuthGuard, RolesGuard)
+      @SetMetadata('roles', [1,3]) 
       @HttpCode(200)
       @UsePipes(new ValidationPipe({ whitelist: true }))
       @Get('admin/get-all-overdueDebt')
@@ -77,7 +80,8 @@ export class OverdueDebtController {
       }
       
         /** ✅ Moras sincronizados en móbil (fontanero y admin) */
-      @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+      @UseGuards(JwtAuthGuard, RolesGuard)
+      @SetMetadata('roles', [1,3]) 
       @HttpCode(201)
       @UsePipes(new ValidationPipe({ whitelist: true }))
       @Patch('admin/patch-sync-overdueDebt')

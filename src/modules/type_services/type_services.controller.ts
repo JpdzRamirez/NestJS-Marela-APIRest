@@ -9,6 +9,7 @@ import {
     Req,
     UseGuards,
     HttpException,
+    SetMetadata,
     HttpStatus,
     HttpCode,
     UsePipes,
@@ -30,7 +31,8 @@ constructor(
 ) {}
 
   /** ✅ Subir todos las tipos de servicios no sincronizados desde el móbil (fontanero y admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(201)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @Post('admin/post-all-services')
@@ -53,7 +55,8 @@ constructor(
   }
 
   /** ✅ Obtener todos las tipos de servicios no sincronizados desde el la base de datos (fontanero y admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(200)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @Get('admin/get-all-services')
@@ -77,7 +80,8 @@ constructor(
   }
   
     /** ✅ Tipos de servicios sincronizados en móbil (fontanero y admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(201)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @Patch('admin/patch-sync-services')

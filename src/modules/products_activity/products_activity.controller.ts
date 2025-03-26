@@ -9,6 +9,7 @@ import {
     Req,
     UseGuards,
     HttpException,
+    SetMetadata,
     HttpStatus,
     HttpCode,
     UsePipes,
@@ -29,7 +30,8 @@ constructor(
 ) {}
 
   /** ✅ Subir todos los productos de las actividades no sincronizados desde el móbil (fontanero y admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3])
   @HttpCode(201)
   @UsePipes(new ValidationPipe({ whitelist: true })) 
   @Post('admin/post-all-productsActivity')
@@ -52,7 +54,8 @@ constructor(
   }
 
     /** ✅ Obtener todos los productos de actividades no sincronizados desde el la base de datos (fontanero y admin) */
-    @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @SetMetadata('roles', [1,3])
     @HttpCode(200)
     @UsePipes(new ValidationPipe({ whitelist: true }))
     @Get('admin/get-all-productsActivity')
@@ -76,7 +79,8 @@ constructor(
 
 
         /** ✅ Cudades sincronizados en móbil (fontanero y admin) */
-      @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+      @UseGuards(JwtAuthGuard, RolesGuard)
+      @SetMetadata('roles', [1,3])
       @HttpCode(201)
       @UsePipes(new ValidationPipe({ whitelist: true }))
       @Patch('admin/patch-sync-productsActivity')

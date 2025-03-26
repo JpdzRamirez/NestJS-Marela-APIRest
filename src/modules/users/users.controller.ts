@@ -9,7 +9,9 @@ import {
   Req,
   UseGuards,
   HttpException,
+  SetMetadata,
   HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { UserServices } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -23,7 +25,9 @@ export class UserController {
   constructor(private readonly userService: UserServices) {}
 
   /** ✅ Obtener todos los usuarios (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1]) 
+  @HttpCode(200)
   @Get('admin/get-users')
   async getAllUsers() {
     const users = await this.userService.getAllUsers();
@@ -35,6 +39,7 @@ export class UserController {
 
   /** ✅ Obtener perfil por ID */
   @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
   @Get('admin/get-profile/:id')
   async getProfile(@Param('id') id: number, @Req() req: AuthRequest) {
     if (isNaN(id)) {
@@ -57,20 +62,26 @@ export class UserController {
   }
 
   /** ✅ Crear un nuevo usuario (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1]) 
+  @HttpCode(201)
   @Post('admin/create-user')
   async createUser(@Body() createUserDto: CreateUserDto) {
     return this.userService.createUser(createUserDto);
   }
 
   /** ✅ Actualizar usuario por id (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1]) 
+  @HttpCode(201)
   @Patch('admin/update-user/:id')
   async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
     return  await this.userService.updateUserById(id, updateUserDto);    
   }
 
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1]) 
+  @HttpCode(201)
   @Get('admin/create-auth-code/:id')
   async createAuthCode(@Param('id') id: number) {
     const userCode=await this.userService.createAuthCode(id);
@@ -81,7 +92,9 @@ export class UserController {
   }
 
   /** ✅ Eliminar usuario (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1]) 
+  @HttpCode(201)
   @Delete('admin/delete-user/:id')
   async deleteUser(@Param('id') id: number,@Req() request: AuthRequest) {
     const deleted = await this.userService.deleteUser(id,request);
@@ -93,7 +106,9 @@ export class UserController {
 
   // 🟢 **Rutas para usuarios normales**
   /** ✅ Obtener perfil propio */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,2]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,2,3]) 
+  @HttpCode(200)
   @Get('profile/my-profile')
   async getMyProfile(@Req() request: AuthRequest) {
     if (!request.user) {
@@ -104,7 +119,9 @@ export class UserController {
   }
 
   /** ✅ Actualizar perfil propio */
-  @UseGuards(JwtAuthGuard, new RolesGuard([2]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,2,3]) 
+  @HttpCode(201)
   @Patch('profile/update-my-profile')
   async updateMyProfile(@Body() updateUserDto: UpdateUserDto, @Req() request: AuthRequest) {    
     if (!request.user) {

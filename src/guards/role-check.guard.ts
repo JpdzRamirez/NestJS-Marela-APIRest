@@ -6,27 +6,35 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { LoggerServices } from '../modules/logger/logger.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
-    private readonly requiredRoles: number[],
-    private readonly logger: LoggerServices,
+    private readonly reflector: Reflector, // 🔹 Obtiene los roles desde los decoradores
+    private readonly logger: LoggerServices, // 🔹 Logger inyectado correctamente
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // 🔹 Obtiene los roles requeridos desde el decorador @SetMetadata()
+    const requiredRoles = this.reflector.get<number[]>('roles', context.getHandler());
+
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true; // 🔹 Si no hay roles definidos, permite el acceso
+    }
+
     const request = context.switchToHttp().getRequest();
     try {
       const user = request.user;
 
       if (!user) {
-        throw new ForbiddenException('Acceso no autorizado');
+        throw new ForbiddenException('Acceso no autorizado. Usuario no encontrado.');
       }
 
       const roleId = user.roles?.id ?? NaN; // Si es undefined/null, asignamos NaN
 
-      if (isNaN(roleId) || !this.requiredRoles.includes(roleId)) {
+      if (isNaN(roleId) || !requiredRoles.includes(roleId)) {
         throw new ForbiddenException('Sin permisos de usuario');
       }
 
@@ -35,7 +43,7 @@ export class RolesGuard implements CanActivate {
       const status =
         error instanceof HttpException
           ? error.getStatus()
-          : HttpStatus.UNAUTHORIZED; // 🔹 Si no es una excepción de Nest, asumimos 401
+          : HttpStatus.UNAUTHORIZED;
 
       const response =
         error instanceof HttpException

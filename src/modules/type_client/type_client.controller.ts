@@ -9,6 +9,7 @@ import {
     Req,
     UseGuards,
     HttpException,
+    SetMetadata,
     HttpStatus,
     HttpCode,
     UsePipes,
@@ -30,7 +31,8 @@ constructor(
 ) {}
 
   /** ✅ Subir todos los tipos de clientes no sincronizados desde el móbil (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(201)
   @UsePipes(new ValidationPipe({ whitelist: true })) 
   @Post('admin/post-all-typeClient')
@@ -53,7 +55,8 @@ constructor(
   }
 
   /** ✅ Obtener todos los tipos de clientes no sincronizados desde el la base de datos (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(200)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @Get('admin/get-all-typeClient')
@@ -77,7 +80,8 @@ constructor(
   }
 
   /** ✅ Tipos de clientes sincronizados en móbil (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @Patch('admin/patch-sync-typeClient')
     async syncTypeClient(@Req() request: AuthRequest,@Body() typeClientArray: TypeClientArrayDto ) {    
   try {   

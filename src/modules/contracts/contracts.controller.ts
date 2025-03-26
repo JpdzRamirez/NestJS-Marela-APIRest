@@ -9,6 +9,7 @@ import {
     Req,
     UseGuards,
     HttpException,
+    SetMetadata,
     HttpStatus,
     UsePipes,
     HttpCode,
@@ -30,7 +31,10 @@ export class ContractController {
     ) {}
 
   /** ✅ Obtener todos los conratos (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
+  @HttpCode(201)
+  @UsePipes(new ValidationPipe({ whitelist: true })) 
   @Get('admin/get-all-contracts')
   async getAllContracts(@Req() request: AuthRequest) {
   try { 
@@ -51,7 +55,9 @@ export class ContractController {
   }
 
   /** ✅ Obtener todas los contratos dentro de un rango de fechas (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
+  @HttpCode(200)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @Post('admin/get-date-range-contracts')
     async getDateRangeContracts(@Req() request: AuthRequest,@Body() dateParameters: GetDateRangeContractsDto) {
@@ -74,9 +80,10 @@ export class ContractController {
   }
 
   /** ✅ Subir todos los contratos no sincronizados desde el móbil (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-  @UsePipes(new ValidationPipe({ whitelist: true }))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(201)
+  @UsePipes(new ValidationPipe({ whitelist: true }))  
   @Post('admin/post-all-contracts')
   async submitAllContracts(@Req() request: AuthRequest,@Body() contractsArray: ContractsArrayDto ) {            
     try {
@@ -98,9 +105,10 @@ export class ContractController {
   
 
   /** ✅ Contratos sincronizados en móbil (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-  @UsePipes(new ValidationPipe({ whitelist: true }))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(200)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   @Patch('admin/patch-sync-contracts')
     async syncContracts(@Req() request: AuthRequest,@Body() contractsArray: ContractsArrayDto ) {    
   try {

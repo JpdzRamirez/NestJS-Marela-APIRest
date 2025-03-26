@@ -9,6 +9,7 @@ import {
     Req,
     UseGuards,
     HttpException,
+    SetMetadata,
     HttpStatus,
     HttpCode,
     UsePipes,
@@ -29,8 +30,9 @@ constructor(
 ) {}
 
   /** ✅ Obtener todas las facturas (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
-  @HttpCode(201)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
+  @HttpCode(200)
   @UsePipes(new ValidationPipe({ whitelist: true })) 
   @Get('admin/get-all-invoices')
   async getAllInvoices(@Req() request: AuthRequest) {
@@ -51,7 +53,10 @@ constructor(
   }
   }
   /** ✅ Obtener todas las facturas dentro de un rango de fechas (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1]))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe({ whitelist: true })) 
   @Get('admin/get-date-range-invoices')
   async getDateRangeInvoices(@Req() request: AuthRequest,@Body() dateParameters: GetDateRangeInvoicesDto) {
 
@@ -74,9 +79,10 @@ constructor(
   }
 
     /** ✅ Subir todas las facturas no sincronizados desde el móbil (Solo admin) */
-  @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-  @UsePipes(new ValidationPipe({ whitelist: true }))
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [1,3]) 
   @HttpCode(201)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   @Post('admin/post-all-invoices')
   async submitAllInvoices(@Req() request: AuthRequest,@Body() invoicesArray: InvoiceArrayDto ) {            
     try {
@@ -97,9 +103,10 @@ constructor(
   }
 
     /** ✅ Facturas sincronizados en móbil (Solo admin) */
-    @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
-    @UsePipes(new ValidationPipe({ whitelist: true }))
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @SetMetadata('roles', [1,3]) 
     @HttpCode(200)
+    @UsePipes(new ValidationPipe({ whitelist: true }))
     @Patch('admin/patch-sync-invoices')
       async syncContracts(@Req() request: AuthRequest,@Body() invoicesArray: InvoiceArrayDto ) {    
     try {

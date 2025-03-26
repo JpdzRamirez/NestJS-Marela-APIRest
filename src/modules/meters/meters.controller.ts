@@ -9,6 +9,7 @@ import {
     Req,
     UseGuards,
     HttpException,
+    SetMetadata,
     HttpStatus,
     HttpCode,
     UsePipes,
@@ -30,7 +31,8 @@ export class WaterMeterController {
     ) {}
     
       /** ✅ Subir todos los tipos de medidores de agua no sincronizados desde el móbil (Solo admin) */
-      @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+      @UseGuards(JwtAuthGuard, RolesGuard)
+      @SetMetadata('roles', [1,3]) 
       @HttpCode(201)
       @UsePipes(new ValidationPipe({ whitelist: true })) 
       @Post('admin/post-all-waterMeters')
@@ -53,7 +55,8 @@ export class WaterMeterController {
       }
     
       /** ✅ Obtener todos los medidores de agua no sincronizados desde el la base de datos (Solo admin) */
-      @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+      @UseGuards(JwtAuthGuard, RolesGuard)
+      @SetMetadata('roles', [1,3]) 
       @HttpCode(200)
       @UsePipes(new ValidationPipe({ whitelist: true }))
       @Get('admin/get-all-waterMeters')
@@ -77,7 +80,8 @@ export class WaterMeterController {
       }
     
       /** ✅ Medidores de agua sincronizados en móbil (Solo admin) */
-      @UseGuards(JwtAuthGuard, new RolesGuard([1,3]))
+      @UseGuards(JwtAuthGuard, RolesGuard)
+      @SetMetadata('roles', [1,3])
       @HttpCode(201)
       @UsePipes(new ValidationPipe({ whitelist: true }))
       @Patch('admin/patch-sync-waterMeters')
