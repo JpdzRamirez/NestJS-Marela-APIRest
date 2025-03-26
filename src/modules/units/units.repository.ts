@@ -237,7 +237,7 @@ export class UnitsRepository {
             // 🔥 Actualizar `sync_with` correctamente
             await entityManager
               .createQueryBuilder()
-              .update(`${schema}.ciudades`)
+              .update(`${schema}.unidades`)
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("id_unidad = :id_unidad", { id_unidad: existingUnit.id_unidad })
               .execute();

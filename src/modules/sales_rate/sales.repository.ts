@@ -76,7 +76,7 @@ export class SalesRateRepository {
           await entityManager
           .createQueryBuilder()
           .insert()
-          .into(`${schema}.unidad_municipal`, [
+          .into(`${schema}.tarifas`, [
             'id_tarifa',
             'nombre',
             'tiposervicio_id', 

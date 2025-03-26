@@ -180,10 +180,10 @@ export class ProductsActivityRepository {
       // Obtener nombres que ya existen en la base de datos
       const notSyncCities = await entityManager
       .createQueryBuilder()
-      .select('ciudades.*') // Agregado `.*` para seleccionar todos los campos
-      .from(`${schema}.ciudades`, 'ciudades')
+      .select('productos_actividad.*') // Agregado `.*` para seleccionar todos los campos
+      .from(`${schema}.productos_actividad`, 'productos_actividad')
       .where(`NOT EXISTS (
-        SELECT 1 FROM jsonb_array_elements(ciudades.sync_with::jsonb) AS elem
+        SELECT 1 FROM jsonb_array_elements(productos_actividad.sync_with::jsonb) AS elem
         WHERE elem->>'uuid_authsupa' = :uuid_authsupa
       )`, { uuid_authsupa })
       .getRawMany();
@@ -265,7 +265,7 @@ export class ProductsActivityRepository {
             // 🔥 Actualizar `sync_with` correctamente
             await entityManager
               .createQueryBuilder()
-              .update(`${schema}.ciudades`)
+              .update(`${schema}.productos_actividad`)
               .set({ sync_with: () => `'${JSON.stringify(syncWithArray)}'::jsonb` }) // 🔥 Conversión segura a JSONB
               .where("id_productosactividad = :id_productosactividad", { id_productosactividad: existingProductActivity.id_productosactividad })
               .execute();

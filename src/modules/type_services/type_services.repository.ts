@@ -33,8 +33,6 @@ export class TypeServiceRepository {
       await queryRunner.connect();
       await queryRunner.startTransaction();
 
-      let messageResponse='';
-
       const insertedTypoServicio: { 
         id: number; 
         id_tiposervicio: string;
@@ -187,10 +185,10 @@ export class TypeServiceRepository {
       // Obtener nombres que ya existen en la base de datos
       const notSyncCities = await entityManager
       .createQueryBuilder()
-      .select('ciudades.*') // Agregado `.*` para seleccionar todos los campos
-      .from(`${schema}.ciudades`, 'ciudades')
+      .select('tipo_servicio.*') // Agregado `.*` para seleccionar todos los campos
+      .from(`${schema}.tipo_servicio`, 'tipo_servicio')
       .where(`NOT EXISTS (
-        SELECT 1 FROM jsonb_array_elements(ciudades.sync_with::jsonb) AS elem
+        SELECT 1 FROM jsonb_array_elements(tipo_servicio.sync_with::jsonb) AS elem
         WHERE elem->>'uuid_authsupa' = :uuid_authsupa
       )`, { uuid_authsupa })
       .getRawMany();

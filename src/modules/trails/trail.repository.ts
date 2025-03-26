@@ -270,7 +270,7 @@ export class TrailRepository {
       await queryRunner.rollbackTransaction();
       
       return {
-        message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
+        message: `¡La Sincronización ha terminado, retornando desde syncTrails !! -> ${error.message || 'Error desconocido'}`, 
         status: false,
         syncronized:syncronized,
         duplicated: trailsArrayFiltred.duplicateTrails,
