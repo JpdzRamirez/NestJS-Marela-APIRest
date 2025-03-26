@@ -30,7 +30,7 @@ export class ClientsDto {
 
   @IsOptional()
   @IsString({ message: 'El teléfono debe ser una cadena de texto' })
-  telefono?: string;
+  telefono!: string;
 
   @IsOptional()
   @IsString({ message: 'La dirección debe ser una cadena de texto' })
@@ -44,9 +44,9 @@ export class ClientsDto {
   @IsUUID()  
   tipoCliente!: string;
 
-  @IsNotEmpty({ message: 'El ID de tipo de documento es obligatorio.' })
+  @IsOptional()
   @IsUUID()  
-  unidadMunicipal!: string;
+  unidadMunicipal?: string;
 
   @IsString()
   @IsOptional() 

@@ -24,19 +24,8 @@ export class InvoiceServices {
       throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
     }
 
-    const result = await this.invoiceRepository.getAllInvoices(user.schemas.name, user.uuid_authsupa);
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          invoices: result.invoices
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result;
+    return await this.invoiceRepository.getAllInvoices(user.schemas.name, user.uuid_authsupa);
+
   }
   /** ✅ Obtener facturas dentro rangos de fecha */
   async getDateRangeInvoices(AuthRequest: AuthRequest,dateRange:GetDateRangeInvoicesDto): Promise<{ 
@@ -49,20 +38,8 @@ export class InvoiceServices {
       throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
     }
 
-    const result = await this.invoiceRepository.getDateRangeInvoices(user.schemas.name,dateRange,user.uuid_authsupa);
+    return await this.invoiceRepository.getDateRangeInvoices(user.schemas.name,dateRange,user.uuid_authsupa);
         
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          invoices: result.invoices
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result;
   }
 
     async submitAllInvoices(AuthRequest: AuthRequest, invoicesArray: InvoiceDto[]): Promise<{ 
@@ -85,22 +62,8 @@ export class InvoiceServices {
         const newInvoicesArray = this.utilityService.mapDtoInvoicesToEntityAndRemoveDuplicate(invoicesArray, uuidAuthsupa)
         
         // Enviar los facturas al repositorio para inserción en la BD
-        const result= await this.invoiceRepository.submitAllInvoices(user.schemas.name, newInvoicesArray);  
-  
-        if (!result.status) {
-          throw new HttpException(
-            {
-              message: result.message,
-              status: result.status,
-              inserted: result.inserted,
-              duplicated: result.duplicated,
-              existing: result.existing
-            },
-            HttpStatus.INTERNAL_SERVER_ERROR
-          );
-        }
-        
-        return result; 
+        return await this.invoiceRepository.submitAllInvoices(user.schemas.name, newInvoicesArray);  
+
     }
 
      /** ✅ Sincronizar las facturas*/
@@ -119,21 +82,7 @@ export class InvoiceServices {
           const invoicesArrayFiltred = this.utilityService.removeDuplicateInvoices(invoicesArray);
       
           // Enviar los clientes al repositorio para inserción en la BD
-          const result= await this.invoiceRepository.syncInvoices(user.schemas.name, uuidAuthsupa,invoicesArrayFiltred);
-    
-          if (!result.status) {
-            throw new HttpException(
-              {
-                message: result.message,
-                status: result.status,
-                syncronized: result.syncronized,
-                duplicated: result.duplicated
-              },
-              HttpStatus.INTERNAL_SERVER_ERROR
-            );
-          }
-          
-          return result; 
+          return await this.invoiceRepository.syncInvoices(user.schemas.name, uuidAuthsupa,invoicesArrayFiltred);                      
       
       }
 }

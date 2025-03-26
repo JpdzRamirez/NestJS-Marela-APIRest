@@ -34,19 +34,6 @@ export class UnitsService {
     const newCities = this.utilityService.mapDtoUnitsAndRemoveDuplicate(unitsArray, uuidAuthsupa)
     // Enviar las unidades al repositorio para inserción en la BD
     const result= await this.unitsRepository.submitAllUnits(user.schemas.name, newCities);
-
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
     
     return result; 
   
@@ -61,24 +48,12 @@ export class UnitsService {
       if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
-      // Enviar los ciudades al repositorio para inserción en la BD
-      const result= await this.unitsRepository.getAllUnits(user.schemas.name,user.uuid_authsupa);
-
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            units: result.units
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
+      // Enviar los unidades al repositorio para inserción en la BD
+      return await this.unitsRepository.getAllUnits(user.schemas.name,user.uuid_authsupa);
       
-      return result; 
     }
   
-    /** ✅ Sincronizar las ciudades*/
+    /** ✅ Sincronizar las unidades*/
     async syncUnits(AuthRequest: AuthRequest, unitsArray: UnitDto[]): Promise<{ 
       message: String,
       status: Boolean,
@@ -93,22 +68,8 @@ export class UnitsService {
   
       const unitsArrayFiltred = this.utilityService.removeDuplicateUnits(unitsArray);
   
-      // Enviar las ciudades al repositorio para inserción en la BD
-      const result= await this.unitsRepository.syncUnits(user.schemas.name, uuidAuthsupa,unitsArrayFiltred);
-
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            syncronized: result.syncronized,
-            duplicated: result.duplicated
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
+      // Enviar las unidades al repositorio para inserción en la BD
+      return await this.unitsRepository.syncUnits(user.schemas.name, uuidAuthsupa,unitsArrayFiltred);      
   
     }
 

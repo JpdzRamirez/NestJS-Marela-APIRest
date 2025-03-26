@@ -32,22 +32,8 @@ export class BrandsService {
     // Mapear todos los DTOs a entidades    
     const newMunicipalUnits = this.utilityService.mapDtoBrandAndRemoveDuplicateEntity(brandsArray, uuidAuthsupa)
     // Enviar los marcas al repositorio para inserción en la BD
-    const result= await this.brandRepository.submitAllBrands(user.schemas.name, newMunicipalUnits);
-    
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
+    return await this.brandRepository.submitAllBrands(user.schemas.name, newMunicipalUnits);
+      
   }
 
     async getAllBrands(AuthRequest: AuthRequest): Promise<{ 
@@ -60,20 +46,8 @@ export class BrandsService {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
       // Enviar los marcas al repositorio para inserción en la BD
-      const result= await this.brandRepository.getAllBrands(user.schemas.name,user.uuid_authsupa);
-
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            brands: result.brands
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
+      return await this.brandRepository.getAllBrands(user.schemas.name,user.uuid_authsupa);
+     
     }
   
     /** ✅ Sincronizar los marcas*/
@@ -92,22 +66,8 @@ export class BrandsService {
       const citiesArrayFiltred = this.utilityService.removeDuplicateBrands(brandsArray);
   
       // Enviar los marcas al repositorio para inserción en la BD
-      const result= await  this.brandRepository.syncBrands(user.schemas.name, uuidAuthsupa,citiesArrayFiltred);
+      return await  this.brandRepository.syncBrands(user.schemas.name, uuidAuthsupa,citiesArrayFiltred);
       
-            
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            syncronized: result.syncronized,
-            duplicated: result.duplicated
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
     }
 
 }

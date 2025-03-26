@@ -34,9 +34,12 @@ export class JwtAuthGuard implements CanActivate {
  
       const { data: authData, error: authError } = await this.supabaseService.getAdminClient().auth.getUser(token);
 
-      if (authError || !authData.user || !authData.user.email) {
-        throw new Error("Usuario no autenticado o token inválido");
-      }     
+      if (authError) {
+        throw new UnauthorizedException(`Error en la autenticación: ${authError.message}`);
+      }
+      if (!authData.user || !authData.user.email) {
+        throw new UnauthorizedException('Acceso denegado. Usuario no autenticado o token inválido.');
+      }  
 
       const complementaryDataUser = await this.userService.findByEmail(authData.user.email);
       
@@ -70,22 +73,23 @@ export class JwtAuthGuard implements CanActivate {
       request.user = user; // Guarda la información del usuario en la request
       return true;
     } catch (error) {
-        // 🔹 Obtener detalles del error
-        const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-        const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
-        const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
+      const status = error instanceof HttpException ? error.getStatus(): HttpStatus.UNAUTHORIZED; // 🔹 Si no es una excepción de Nest, asumimos 401
 
-        // 🔹 Capturar detalles de la petición
-        const url = request.url;
-        const method = request.method;
+      const response = error instanceof HttpException ? error.getResponse() : { message: 'Acceso denegado', status: false };
 
-        // 🔹 Registrar el error en el logger antes de lanzar la excepción
-        this.logger.error(
+      const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
+
+      // 🔹 Capturar detalles de la petición
+      const url = request.url;
+      const method = request.method;
+
+      // 🔹 Registrar el error en el logger antes de lanzar la excepción
+      this.logger.error(
           `Error en JwtAuthGuard - Status: ${status} - Método: ${method} - URL: ${url} - Mensaje: ${errorMessage}`,
           error.stack
-        );
+      );
 
-        // 🔹 Lanzar la excepción después de registrarla
+        // 🔹 Lanzar la excepción con el código HTTP correcto
         throw new HttpException(response, status);
     }
   }

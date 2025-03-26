@@ -35,52 +35,25 @@ export class ProductsActivityService {
       // Mapear todos los DTOs a entidades    
       const newProductsActivity = this.utilityService.mapDtoProductsActivityToEntityAndRemoveDuplicate(productsActivityArray, uuidAuthsupa)
       // Enviar las productos actividad al repositorio para inserción en la BD
-      const result= await this.productsActivityRepository.submitAllProductsActivity(user.schemas.name, newProductsActivity);
-  
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            inserted: result.inserted,
-            duplicated: result.duplicated,
-            existing: result.existing
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
+      return await this.productsActivityRepository.submitAllProductsActivity(user.schemas.name, newProductsActivity);
     
     }
 
     async getAllProductsActivity(AuthRequest: AuthRequest): Promise<{ 
           message: String,
           status:boolean,
-          cities:ProductsActivity[]
+          products_activity:ProductsActivity[]
     }> {
         const user = AuthRequest.user;
         if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
             throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
         }
-          // Enviar los ciudades al repositorio para inserción en la BD
-        const result= await this.productsActivityRepository.getAllProductsActivity(user.schemas.name,user.uuid_authsupa);
+          // Enviar los productos actividad al repositorio para inserción en la BD
+          return await this.productsActivityRepository.getAllProductsActivity(user.schemas.name,user.uuid_authsupa);
     
-        if (!result.status) {
-            throw new HttpException(
-              {
-                message: result.message,
-                status: result.status,
-                cities: result.cities
-              },
-              HttpStatus.INTERNAL_SERVER_ERROR
-            );
-          }
-          
-        return result; 
     }
 
-        /** ✅ Sincronizar las ciudades*/
+        /** ✅ Sincronizar las productos actividad*/
         async syncProductsActivity(AuthRequest: AuthRequest, productsActivityArray: ProductsActivityDto[]): Promise<{ 
           message: String,
           status: Boolean,
@@ -95,22 +68,8 @@ export class ProductsActivityService {
       
           const productsActivityArrayFiltred = this.utilityService.removeProductsActivity(productsActivityArray);
       
-          // Enviar las ciudades al repositorio para inserción en la BD
-          const result= await this.productsActivityRepository.syncProductsActivity(user.schemas.name, uuidAuthsupa,productsActivityArrayFiltred);
-    
-          if (!result.status) {
-            throw new HttpException(
-              {
-                message: result.message,
-                status: result.status,
-                syncronized: result.syncronized,
-                duplicated: result.duplicated
-              },
-              HttpStatus.INTERNAL_SERVER_ERROR
-            );
-          }
-          
-          return result; 
+          // Enviar las productos actividad al repositorio para inserción en la BD
+          return await this.productsActivityRepository.syncProductsActivity(user.schemas.name, uuidAuthsupa,productsActivityArrayFiltred);
       
         }
 }

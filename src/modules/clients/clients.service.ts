@@ -33,23 +33,7 @@ export class ClientServices {
     // Mapear todos los DTOs a entidades    
     const newClients = this.utilityService.mapDtoClientToEntityAndRemoveDuplicate(clientsArray, uuidAuthsupa)
     // Enviar los clientes al repositorio para inserción en la BD
-    const result= await this.clientRepository.submitAllClients(user.schemas.name, newClients);
-
-    
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
+    return await this.clientRepository.submitAllClients(user.schemas.name, newClients);
 
   }
 
@@ -63,20 +47,7 @@ export class ClientServices {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
       // Enviar los clientes al repositorio para inserción en la BD
-      const result= await this.clientRepository.getAllClients(user.schemas.name,user.uuid_authsupa);
-
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            clients: result.clients
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
+      return await this.clientRepository.getAllClients(user.schemas.name,user.uuid_authsupa);
     }
   
   
@@ -97,22 +68,8 @@ export class ClientServices {
       const clientArrayFiltred = this.utilityService.removeDuplicateClients(clientsArray);
   
       // Enviar los clientes al repositorio para inserción en la BD
-      const result= await this.clientRepository.syncClient(user.schemas.name, uuidAuthsupa,clientArrayFiltred);
+      return await this.clientRepository.syncClient(user.schemas.name, uuidAuthsupa,clientArrayFiltred);
       
-            
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            syncronized: result.syncronized,
-            duplicated: result.duplicated
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
     }
 
 }

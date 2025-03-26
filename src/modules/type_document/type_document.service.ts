@@ -31,23 +31,9 @@ export class TypeDocumentServices {
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades
     const newTypeDocument = this.utilityService.mapDtoToTypeDocumentAndRemoveDuplicateEntity(typeDocumentArray, uuidAuthsupa);
-    // Enviar los clientes al repositorio para inserción en la BD
-    const result= await this.clientRepository.submitAllTypeDocument(user.schemas.name, newTypeDocument);
+    // Enviar los documentos al repositorio para inserción en la BD
+    return await this.clientRepository.submitAllTypeDocument(user.schemas.name, newTypeDocument);
 
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
   }
 
 
@@ -61,26 +47,13 @@ export class TypeDocumentServices {
       throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
     }
 
-    // Enviar los tipos de clientes al repositorio para inserción en la BD
-    const result= await this.clientRepository.getAllTypeDocument(user.schemas.name,user.uuid_authsupa);
-
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          type_documents: result.type_documents
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
+    // Enviar los tipos de documentos al repositorio para inserción en la BD
+    return await this.clientRepository.getAllTypeDocument(user.schemas.name,user.uuid_authsupa);
   }
 
 
 
-  /** ✅ Sincronizar los tipos de clientes*/
+  /** ✅ Sincronizar los tipos de documentos*/
   async syncTypeDocument(AuthRequest: AuthRequest, typeDocumentArray: TypeDocumentDto[]): Promise<{ 
     message: String,
     status: Boolean,
@@ -96,21 +69,7 @@ export class TypeDocumentServices {
     const typeDocumentArrayFiltred = this.utilityService.removeDuplicateTypeDocument(typeDocumentArray);
 
     // Enviar los clientes al repositorio para inserción en la BD
-    const result= await  this.clientRepository.syncTypeDocument(user.schemas.name, uuidAuthsupa,typeDocumentArrayFiltred);
-
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          syncronized: result.syncronized,
-          duplicated: result.duplicated
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
+    return await  this.clientRepository.syncTypeDocument(user.schemas.name, uuidAuthsupa,typeDocumentArrayFiltred);
 
   }
 }

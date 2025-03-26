@@ -1,6 +1,6 @@
 import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
-import { Repository, DataSource, EntityManager, Between } from 'typeorm';
+import { Repository, DataSource, EntityManager, Between,QueryFailedError } from 'typeorm';
 import { ProductsActivity } from './products_activity.entity';
 
 import { ProductsActivityDto } from './dto/products_activity.dto';
@@ -127,11 +127,19 @@ export class ProductsActivityRepository {
           }))
         );       
         
-        }else{                      
-           throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
         }
 
         await queryRunner.commitTransaction();
+
+        if(uniqueFilteredProductsActivity.size === 0){                      
+          return {
+            message: "¡El cargue ha terminado! no hay datos pendientes por sincronizar",        
+            status: false,
+            inserted: [],
+            duplicated: duplicateProductsActivity,
+            existing:syncronizedProductsActivity
+          };
+        }
 
         return {
           message: "Cargue exitoso, se han obtenido los siguientes resultados:",
@@ -142,15 +150,37 @@ export class ProductsActivityRepository {
         };
       } catch (error) {
 
-        await queryRunner.rollbackTransaction();        
-        
-        return {
-          message: "¡El cargue ha terminado! -> "+ error.message,        
-          status: false,
-          inserted: [],
-          duplicated: duplicateProductsActivity,
-          existing:syncronizedProductsActivity
-        };
+        await queryRunner.rollbackTransaction();      
+
+        if (error instanceof HttpException) {
+          throw error;
+        } else if (error instanceof QueryFailedError) {
+          const message = error.message.toLowerCase();
+
+            if (message.includes('duplicate key value')) {
+              throw new HttpException('Registro duplicado', HttpStatus.CONFLICT); // 409
+            }
+            
+            if (message.includes('foreign key constraint')) {
+              throw new HttpException('Error de integridad referencial', HttpStatus.BAD_REQUEST); // 400
+            }
+
+            if (message.includes('not-null constraint')) {
+              throw new HttpException('Campo obligatorio no puede estar vacío', HttpStatus.BAD_REQUEST); // 400
+            }
+
+            if (message.includes('syntax error')) {
+              throw new HttpException('Error en la consulta SQL', HttpStatus.INTERNAL_SERVER_ERROR); // 500
+            }
+
+            if (message.includes('connection refused')) {
+              throw new HttpException('Error de conexión con la base de datos', HttpStatus.SERVICE_UNAVAILABLE); // 503
+            }
+
+            throw new HttpException(`Error en la base de datos: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR); // 500 por defecto
+        } else {
+          throw new HttpException(`Error inesperado: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
       } finally {
 
         await queryRunner.release();
@@ -168,7 +198,7 @@ export class ProductsActivityRepository {
   ): Promise<{
     message: string,
     status:boolean,
-    cities:ProductsActivity[]
+    products_activity:ProductsActivity[]
   }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -178,7 +208,7 @@ export class ProductsActivityRepository {
       const entityManager = queryRunner.manager;
 
       // Obtener nombres que ya existen en la base de datos
-      const notSyncCities = await entityManager
+      const notSyncProductsActivity = await entityManager
       .createQueryBuilder()
       .select('productos_actividad.*') // Agregado `.*` para seleccionar todos los campos
       .from(`${schema}.productos_actividad`, 'productos_actividad')
@@ -191,21 +221,55 @@ export class ProductsActivityRepository {
 
       await queryRunner.commitTransaction();
 
+      if(notSyncProductsActivity.length ===0){
+        return {
+          message: `¡Proceso finalizado, no existen registros pendientes por sincronizar!!`,
+          status:false,
+          products_activity: []
+        };
+      }
+
       return {
         message:
           'Conexión exitosa, se han obtenido las siguientes ciudades no sincronizados:',
           status:true,
-          cities: notSyncCities
+          products_activity: notSyncProductsActivity
       };
     } catch (error) {
 
       await queryRunner.rollbackTransaction();
 
-      return {
-        message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`,
-        status:true,
-        cities: []
-      };
+
+      if (error instanceof HttpException) {
+        throw error;
+      } else if (error instanceof QueryFailedError) {
+        const message = error.message.toLowerCase();
+
+          if (message.includes('duplicate key value')) {
+            throw new HttpException('Registro duplicado', HttpStatus.CONFLICT); // 409
+          }
+          
+          if (message.includes('foreign key constraint')) {
+            throw new HttpException('Error de integridad referencial', HttpStatus.BAD_REQUEST); // 400
+          }
+
+          if (message.includes('not-null constraint')) {
+            throw new HttpException('Campo obligatorio no puede estar vacío', HttpStatus.BAD_REQUEST); // 400
+          }
+
+          if (message.includes('syntax error')) {
+            throw new HttpException('Error en la consulta SQL', HttpStatus.INTERNAL_SERVER_ERROR); // 500
+          }
+
+          if (message.includes('connection refused')) {
+            throw new HttpException('Error de conexión con la base de datos', HttpStatus.SERVICE_UNAVAILABLE); // 503
+          }
+
+          throw new HttpException(`Error en la base de datos: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR); // 500 por defecto
+      } else {
+        throw new HttpException(`Error inesperado: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
     } finally {
       await queryRunner.release();
     }
@@ -276,7 +340,12 @@ export class ProductsActivityRepository {
       }      
       }
       if(syncronized.length ===0){
-        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
+        return {
+          message: `¡La Sincronización ha terminado, la base de datos ya se encuentra sincronizada!!`,
+          status: false,
+          syncronized:syncronized,
+          duplicated: productsActivityArrayFiltred.duplicateProductsActivity,
+        };
       }
         
       await queryRunner.commitTransaction();
@@ -291,12 +360,35 @@ export class ProductsActivityRepository {
       
       await queryRunner.rollbackTransaction();  
 
-      return {
-        message: `¡La Sincronización ha terminado, retornando desde syncCities !! -> ${error.message || 'Error desconocido'}`,
-        status: false,
-        syncronized:syncronized,
-        duplicated: productsActivityArrayFiltred.duplicateProductsActivity,
-      };
+      if (error instanceof HttpException) {
+        throw error;
+      } else if (error instanceof QueryFailedError) {
+        const message = error.message.toLowerCase();
+
+          if (message.includes('duplicate key value')) {
+            throw new HttpException('Registro duplicado', HttpStatus.CONFLICT); // 409
+          }
+          
+          if (message.includes('foreign key constraint')) {
+            throw new HttpException('Error de integridad referencial', HttpStatus.BAD_REQUEST); // 400
+          }
+
+          if (message.includes('not-null constraint')) {
+            throw new HttpException('Campo obligatorio no puede estar vacío', HttpStatus.BAD_REQUEST); // 400
+          }
+
+          if (message.includes('syntax error')) {
+            throw new HttpException('Error en la consulta SQL', HttpStatus.INTERNAL_SERVER_ERROR); // 500
+          }
+
+          if (message.includes('connection refused')) {
+            throw new HttpException('Error de conexión con la base de datos', HttpStatus.SERVICE_UNAVAILABLE); // 503
+          }
+
+          throw new HttpException(`Error en la base de datos: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR); // 500 por defecto
+      } else {
+        throw new HttpException(`Error inesperado: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     } finally {
 
       await queryRunner.release();

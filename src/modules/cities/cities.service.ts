@@ -33,22 +33,7 @@ export class CityServices {
     // Mapear todos los DTOs a entidades    
     const newCities = this.utilityService.mapDtoCityToEntityAndRemoveDuplicate(citiesArray, uuidAuthsupa)
     // Enviar las ciudades al repositorio para inserción en la BD
-    const result= await this.cityRepository.submitAllCities(user.schemas.name, newCities);
-
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
+    return await this.cityRepository.submitAllCities(user.schemas.name, newCities);
   
   }
 
@@ -62,20 +47,7 @@ export class CityServices {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
       // Enviar los ciudades al repositorio para inserción en la BD
-      const result= await this.cityRepository.getAllCities(user.schemas.name,user.uuid_authsupa);
-
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            cities: result.cities
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
+      return await this.cityRepository.getAllCities(user.schemas.name,user.uuid_authsupa);
     }
   
     /** ✅ Sincronizar las ciudades*/
@@ -94,21 +66,7 @@ export class CityServices {
       const citiesArrayFiltred = this.utilityService.removeDuplicateCities(statesArray);
   
       // Enviar las ciudades al repositorio para inserción en la BD
-      const result= await this.cityRepository.syncCities(user.schemas.name, uuidAuthsupa,citiesArrayFiltred);
-
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            syncronized: result.syncronized,
-            duplicated: result.duplicated
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
+      return await this.cityRepository.syncCities(user.schemas.name, uuidAuthsupa,citiesArrayFiltred);
   
     }
 

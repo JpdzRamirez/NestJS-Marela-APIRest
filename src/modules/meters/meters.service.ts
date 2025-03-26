@@ -35,23 +35,7 @@ export class WaterMeterService {
     const newWaterMetersArray = this.utilityService.mapDtoWaterMeterToEntityAndRemoveDuplicate(waterMetersArray, uuidAuthsupa)
     
     // Enviar los medidores de agua al repositorio para inserción en la BD
-    const result= await this.waterMeterRepository.submitAllWaterMeter(user.schemas.name, newWaterMetersArray);
-
-    
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
+    return await this.waterMeterRepository.submitAllWaterMeter(user.schemas.name, newWaterMetersArray);
 
   }
 
@@ -67,20 +51,8 @@ export class WaterMeterService {
     }
 
     // Enviar los medidores de agua al repositorio para inserción en la BD
-    const result= await this.waterMeterRepository.getAllWaterMeters(user.schemas.name,user.uuid_authsupa);
+    return await this.waterMeterRepository.getAllWaterMeters(user.schemas.name,user.uuid_authsupa);
 
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          water_meters: result.water_meters
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
   }
 
 
@@ -101,22 +73,7 @@ export class WaterMeterService {
     const waterMetersArrayFiltred = this.utilityService.removeDuplicateWaterMeter(waterMeterArray);
 
     // Enviar los medidores de aguea al repositorio para inserción en la BD
-    const result= await this.waterMeterRepository.syncWaterMeter(user.schemas.name, uuidAuthsupa,waterMetersArrayFiltred);
-
-          
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          syncronized: result.syncronized,
-          duplicated: result.duplicated
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
+    return await this.waterMeterRepository.syncWaterMeter(user.schemas.name, uuidAuthsupa,waterMetersArrayFiltred);
   }
 
 

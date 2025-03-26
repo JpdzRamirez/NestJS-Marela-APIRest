@@ -1,6 +1,6 @@
 import { Injectable,HttpException,HttpStatus } from '@nestjs/common';
 import { InjectRepository,InjectDataSource  } from '@nestjs/typeorm';
-import { Repository, DataSource, EntityManager } from 'typeorm';
+import { Repository, DataSource, EntityManager,QueryFailedError } from 'typeorm';
 import { Contract } from './contract.entity';
 import { Client } from '../clients/client.entity';
 import { WaterMeter } from '../meters/meters.entity';
@@ -116,11 +116,19 @@ export class ContractRepository {
                 fecha: ctr.fecha,
               }))
             );                
-            }else{                      
-              throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
             }
-          
+
           await queryRunner.commitTransaction();
+            
+          if(uniqueFilteredContracts.size === 0){                      
+            return {
+              message: "¡El cargue ha terminado! no hay datos pendientes por sincronizar",        
+              status: false,
+              inserted: [],
+              duplicated: duplicatedContracts,
+              existing:syncronizedContracts
+            };
+          }
           
           return {
             message: "Cargue exitoso, se han obtenido los siguientes resultados:",
@@ -132,14 +140,36 @@ export class ContractRepository {
         } catch (error) {
 
           await queryRunner.rollbackTransaction();          
+     
+        if (error instanceof HttpException) {
+          throw error;
+        } else if (error instanceof QueryFailedError) {
+          const message = error.message.toLowerCase();
 
-          return {
-            message: `¡El cargue ha terminado! -> ${error.message || 'Error desconocido'}`,      
-            status:false,
-            inserted: [],
-            duplicated: duplicatedContracts,
-            existing:syncronizedContracts
-          };
+            if (message.includes('duplicate key value')) {
+              throw new HttpException('Registro duplicado', HttpStatus.CONFLICT); // 409
+            }
+            
+            if (message.includes('foreign key constraint')) {
+              throw new HttpException('Error de integridad referencial', HttpStatus.BAD_REQUEST); // 400
+            }
+
+            if (message.includes('not-null constraint')) {
+              throw new HttpException('Campo obligatorio no puede estar vacío', HttpStatus.BAD_REQUEST); // 400
+            }
+
+            if (message.includes('syntax error')) {
+              throw new HttpException('Error en la consulta SQL', HttpStatus.INTERNAL_SERVER_ERROR); // 500
+            }
+
+            if (message.includes('connection refused')) {
+              throw new HttpException('Error de conexión con la base de datos', HttpStatus.SERVICE_UNAVAILABLE); // 503
+            }
+
+            throw new HttpException(`Error en la base de datos: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR); // 500 por defecto
+        } else {
+          throw new HttpException(`Error inesperado: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         } finally {
           await queryRunner.release();
         }
@@ -202,11 +232,36 @@ export class ContractRepository {
           };
         });          
       }catch (error) {
-        return {
-          message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
-          status:false,
-          contracts: []
-        };
+        
+        if (error instanceof HttpException) {
+          throw error;
+        } else if (error instanceof QueryFailedError) {
+          const message = error.message.toLowerCase();
+
+            if (message.includes('duplicate key value')) {
+              throw new HttpException('Registro duplicado', HttpStatus.CONFLICT); // 409
+            }
+            
+            if (message.includes('foreign key constraint')) {
+              throw new HttpException('Error de integridad referencial', HttpStatus.BAD_REQUEST); // 400
+            }
+
+            if (message.includes('not-null constraint')) {
+              throw new HttpException('Campo obligatorio no puede estar vacío', HttpStatus.BAD_REQUEST); // 400
+            }
+
+            if (message.includes('syntax error')) {
+              throw new HttpException('Error en la consulta SQL', HttpStatus.INTERNAL_SERVER_ERROR); // 500
+            }
+
+            if (message.includes('connection refused')) {
+              throw new HttpException('Error de conexión con la base de datos', HttpStatus.SERVICE_UNAVAILABLE); // 503
+            }
+
+            throw new HttpException(`Error en la base de datos: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR); // 500 por defecto
+        } else {
+          throw new HttpException(`Error inesperado: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
       }
   }
         /** ✅
@@ -275,11 +330,36 @@ export class ContractRepository {
         });     
 
       }catch (error) {
-        return {
-          message: `¡Error en la conexión, retornando desde la base de datos!! ->  ${error.message || 'Error desconocido'}`, 
-          status:false,
-          contracts: []
-        };
+        
+        if (error instanceof HttpException) {
+          throw error;
+        } else if (error instanceof QueryFailedError) {
+          const message = error.message.toLowerCase();
+
+            if (message.includes('duplicate key value')) {
+              throw new HttpException('Registro duplicado', HttpStatus.CONFLICT); // 409
+            }
+            
+            if (message.includes('foreign key constraint')) {
+              throw new HttpException('Error de integridad referencial', HttpStatus.BAD_REQUEST); // 400
+            }
+
+            if (message.includes('not-null constraint')) {
+              throw new HttpException('Campo obligatorio no puede estar vacío', HttpStatus.BAD_REQUEST); // 400
+            }
+
+            if (message.includes('syntax error')) {
+              throw new HttpException('Error en la consulta SQL', HttpStatus.INTERNAL_SERVER_ERROR); // 500
+            }
+
+            if (message.includes('connection refused')) {
+              throw new HttpException('Error de conexión con la base de datos', HttpStatus.SERVICE_UNAVAILABLE); // 503
+            }
+
+            throw new HttpException(`Error en la base de datos: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR); // 500 por defecto
+        } else {
+          throw new HttpException(`Error inesperado: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
   }
 
@@ -349,7 +429,12 @@ export class ContractRepository {
       }
 
       if(syncronized.length ===0){
-        throw new HttpException('La base de datos ya se encuentra sincronizada; Datos ya presentes en BD', HttpStatus.CONFLICT);
+        return {
+          message: `¡La Sincronización ha terminado, la base de datos ya se encuentra sincronizada!!`,
+          status: false,
+          syncronized:syncronized,
+          duplicated: contractsArrayFiltred.duplicateContracts,
+        };
       }
   
       await queryRunner.commitTransaction();
@@ -363,12 +448,36 @@ export class ContractRepository {
 
         await queryRunner.rollbackTransaction();        
 
-        return {
-          message: `¡La Sincronización ha terminado, retornando desde syncStates !! -> ${error.message || 'Error desconocido'}`, 
-          status: false,
-          syncronized:syncronized,
-          duplicated: contractsArrayFiltred.duplicateContracts,
-        };
+
+        if (error instanceof HttpException) {
+          throw error;
+        } else if (error instanceof QueryFailedError) {
+          const message = error.message.toLowerCase();
+  
+            if (message.includes('duplicate key value')) {
+              throw new HttpException('Registro duplicado', HttpStatus.CONFLICT); // 409
+            }
+            
+            if (message.includes('foreign key constraint')) {
+              throw new HttpException('Error de integridad referencial', HttpStatus.BAD_REQUEST); // 400
+            }
+  
+            if (message.includes('not-null constraint')) {
+              throw new HttpException('Campo obligatorio no puede estar vacío', HttpStatus.BAD_REQUEST); // 400
+            }
+  
+            if (message.includes('syntax error')) {
+              throw new HttpException('Error en la consulta SQL', HttpStatus.INTERNAL_SERVER_ERROR); // 500
+            }
+  
+            if (message.includes('connection refused')) {
+              throw new HttpException('Error de conexión con la base de datos', HttpStatus.SERVICE_UNAVAILABLE); // 503
+            }
+  
+            throw new HttpException(`Error en la base de datos: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR); // 500 por defecto
+        } else {
+          throw new HttpException(`Error inesperado: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
       } finally {
         await queryRunner.release();
       }

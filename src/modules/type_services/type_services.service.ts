@@ -32,23 +32,9 @@ export class TypeServicesService {
     const uuidAuthsupa: string = user.uuid_authsupa;
     // Mapear todos los DTOs a entidades    
     const newTypeServices = this.utilityService.mapDtoTypeServiceAndRemoveDuplicateEntity(typeServicesArray, uuidAuthsupa)
-    // Enviar los clientes al repositorio para inserción en la BD
-    const result= await this.typeServiceRepository.submitAllTypeServices(user.schemas.name, newTypeServices);
+    // Enviar los tipos de servicio al repositorio para inserción en la BD
+    return await this.typeServiceRepository.submitAllTypeServices(user.schemas.name, newTypeServices);
 
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
   }
 
     async getAllTypeServices(AuthRequest: AuthRequest): Promise<{ 
@@ -60,24 +46,11 @@ export class TypeServicesService {
       if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
-      // Enviar los clientes al repositorio para inserción en la BD
-      const result= await this.typeServiceRepository.getAllTypeServices(user.schemas.name,user.uuid_authsupa);
-
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            type_services: result.type_services
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
+      // Enviar los tipos de servicios al repositorio para inserción en la BD
+      return await this.typeServiceRepository.getAllTypeServices(user.schemas.name,user.uuid_authsupa);
     }
   
-    /** ✅ Sincronizar los tipos de clientes*/
+    /** ✅ Sincronizar los tipos de servicios*/
     async syncTypeServices(AuthRequest: AuthRequest, typeServicesArray: TypeServiceDto[]): Promise<{ 
       message: String,
       status: Boolean,
@@ -93,21 +66,8 @@ export class TypeServicesService {
       const typeServicesArrayFiltred = this.utilityService.removeDuplicateTypeServices(typeServicesArray);
   
       // Enviar los tipos de servicios al repositorio para inserción en la BD
-      const result= await this.typeServiceRepository.syncTypeServices(user.schemas.name, uuidAuthsupa,typeServicesArrayFiltred);
+      return await this.typeServiceRepository.syncTypeServices(user.schemas.name, uuidAuthsupa,typeServicesArrayFiltred);
       
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            syncronized: result.syncronized,
-            duplicated: result.duplicated
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
     }
 
 }

@@ -34,22 +34,7 @@ export class TypeClientServices {
     const newTypeClientArray = this.utilityService.mapDtoTypeClientToEntityAndRemoveDuplicate(typeClientsArray, uuidAuthsupa)
     
     // Enviar los tipos de clientes al repositorio para inserción en la BD
-    const result= await this.clientRepository.submitAllTypeClient(user.schemas.name, newTypeClientArray);
-
-  if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-  }
-    
-    return result; 
+    return await this.clientRepository.submitAllTypeClient(user.schemas.name, newTypeClientArray);
 
   }
 
@@ -63,7 +48,7 @@ export class TypeClientServices {
       throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
     }
 
-    // Enviar los clientes al repositorio para inserción en la BD
+    // Enviar los tipos de clientes al repositorio para inserción en la BD
     return await this.clientRepository.getAllTypeClient(user.schemas.name,user.uuid_authsupa);
 
   }
@@ -86,21 +71,8 @@ export class TypeClientServices {
     const typeClientArrayFiltred = this.utilityService.removeDuplicateTypeClients(typeClientsArray);
 
     // Enviar los tipos de clientes al repositorio para inserción en la BD
-    const result= await this.clientRepository.syncTypeClient(user.schemas.name, uuidAuthsupa,typeClientArrayFiltred);
+    return await this.clientRepository.syncTypeClient(user.schemas.name, uuidAuthsupa,typeClientArrayFiltred);
 
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          syncronized: result.syncronized,
-          duplicated: result.duplicated
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
   }
 }
 

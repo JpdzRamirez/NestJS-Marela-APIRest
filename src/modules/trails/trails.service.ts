@@ -32,49 +32,22 @@ export class TrailServices {
     // Mapear todos los DTOs a entidades    
     const newTrails = this.utilityService.mapDtoTrailsAndRemoveDuplicate(trailsArray, uuidAuthsupa)
     // Enviar las rutas al repositorio para inserción en la BD
-    const result= await this.trailRepository.submitAllTrails(user.schemas.name, newTrails);
+    return await this.trailRepository.submitAllTrails(user.schemas.name, newTrails);
 
-    
-    if (!result.status) {
-      throw new HttpException(
-        {
-          message: result.message,
-          status: result.status,
-          inserted: result.inserted,
-          duplicated: result.duplicated,
-          existing: result.existing
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-    
-    return result; 
   }
 
     async getAllTrails(AuthRequest: AuthRequest): Promise<{ 
       message: String,
       status:boolean,
-      cities:Trail[]
+      trails:Trail[]
       }> {
       const user = AuthRequest.user;
       if (!user || !user.schemas || !user.schemas.name || !user.uuid_authsupa  ) {
         throw new HttpException('Usuario sin acueducto', HttpStatus.NOT_FOUND);
       }
       // Enviar las rutas al repositorio para inserción en la BD
-      const result= await this.trailRepository.getAllTrails(user.schemas.name,user.uuid_authsupa);
+      return await this.trailRepository.getAllTrails(user.schemas.name,user.uuid_authsupa);
 
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            cities: result.cities
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result;
     }
   
     /** ✅ Sincronizar rutas*/
@@ -92,21 +65,8 @@ export class TrailServices {
       const trailsArrayFiltred = this.utilityService.removeDuplicateTrails(trailsArray);
   
       // Enviar las rutas al repositorio para inserción en la BD
-      const result= await  this.trailRepository.syncTrails(user.schemas.name, uuidAuthsupa,trailsArrayFiltred);
+      return await  this.trailRepository.syncTrails(user.schemas.name, uuidAuthsupa,trailsArrayFiltred);
       
-      if (!result.status) {
-        throw new HttpException(
-          {
-            message: result.message,
-            status: result.status,
-            syncronized: result.syncronized,
-            duplicated: result.duplicated
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR
-        );
-      }
-      
-      return result; 
     }
 
 }
