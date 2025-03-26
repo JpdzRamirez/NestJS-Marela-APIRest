@@ -12,7 +12,7 @@ export class CityServices {
     private readonly cityRepository: CityRepository,
     private readonly utilityService: UtilityService    
   ) {}
-/** ✅ Obtener todas las facturas*/
+/** ✅ Obtener todas las Ciudades*/
   async submitAllCities(AuthRequest: AuthRequest, citiesArray: CityDto[]): Promise<{ 
       message: string,
       status: boolean,

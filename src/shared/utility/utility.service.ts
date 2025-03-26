@@ -24,6 +24,10 @@ import { TypeService } from 'src/modules/type_services/type_service.entity';
 import { TypeServiceDto } from 'src/modules/type_services/dto/type_services.dto';
 import { SalesRate } from 'src/modules/sales_rate/sales_rate.entity';
 import { SalesDto } from 'src/modules/sales_rate/dto/sales.dto';
+import { ProductsActivityDto } from 'src/modules/products_activity/dto/products_activity.dto';
+import { ProductsActivity } from 'src/modules/products_activity/products_activity.entity';
+import { Activity } from 'src/modules/activities/activity.entity';
+import { Unit } from 'src/modules/units/units.entity';
 
 
 @Injectable()
@@ -272,6 +276,45 @@ export class UtilityService {
           duplicateMunicipalUnits,
         };
   }
+
+  mapDtoProductsActivityToEntityAndRemoveDuplicate(productsActivityArray: ProductsActivityDto[], uuid_authsupa: string): 
+  { uniqueProductsActivity: ProductsActivity[], 
+    duplicateProductsActivity: ProductsActivityDto[] 
+  }{
+      const uniqueProductsActivity = new Map<string, ProductsActivity>();
+      const duplicateProductsActivity: ProductsActivityDto[] = [];
+  
+      for (const productActivity of productsActivityArray) {
+          // Creamos el nombre clave para realizar la validacion si está repetido
+          const referenceKey = productActivity.id_productosactividad.toString().trim();
+
+          if (uniqueProductsActivity.has(referenceKey)) {
+            productActivity.source_failure='Request'
+            duplicateProductsActivity.push({ ...productActivity }); // Guardar duplicado
+          } else {
+            let newProductsActivity = new ProductsActivity();
+            newProductsActivity.id = productActivity.id;
+            newProductsActivity.id_productosactividad = productActivity.id_productosactividad;
+            newProductsActivity.nombre = productActivity.nombre;            
+            newProductsActivity.codigo = productActivity.codigo; 
+            newProductsActivity.stock = productActivity.stock;
+            newProductsActivity.precio_venta = productActivity.precio_venta;
+            newProductsActivity.descripcion = productActivity.descripcion;
+            newProductsActivity.manejo_stock = productActivity.manejo_stock;
+            newProductsActivity.producto_venta = productActivity.producto_venta;
+            newProductsActivity.unidad = { id_unidad: productActivity.unidad_id } as Partial<Unit> as Unit; 
+            newProductsActivity.actividad = { id_actividad: productActivity.actividad_id } as Partial<Activity> as Activity; 
+            newProductsActivity.uploaded_by_authsupa = uuid_authsupa;                   
+            newProductsActivity.sync_with = [{ id: productActivity.id, uuid_authsupa }];        
+            uniqueProductsActivity.set(referenceKey, { ...newProductsActivity });
+          }
+        }
+      
+        return {
+          uniqueProductsActivity: Array.from(uniqueProductsActivity.values()),
+          duplicateProductsActivity,
+        };
+}
   mapDtoSalesRateAndRemoveDuplicate(salesRateArray: SalesDto[], uuid_authsupa: string): 
   { uniqueSalesRate: SalesRate[], 
     duplicateSalesRate: SalesDto[] 
@@ -532,6 +575,26 @@ export class UtilityService {
         duplicateWaterMeters,
       };
     }
+
+    removeProductsActivity(productsActivityArray: ProductsActivityDto[]) {
+      const uniqueProductsActivity = new Map<string, ProductsActivityDto>();
+      const duplicateProductsActivity: ProductsActivityDto[] = [];    
+      for (const productActivity of productsActivityArray) {
+        // Normalizar el nombre para comparar sin errores
+        const referenceKey = productActivity.id_productosactividad.toString().trim();
+        if (uniqueProductsActivity.has(referenceKey)) {
+          productActivity.source_failure='Request'
+          duplicateProductsActivity.push({ ...productActivity });
+        } else {
+          uniqueProductsActivity.set(referenceKey, { ...productActivity });
+        }
+      }
+      return {
+        uniqueProductsActivity: Array.from(uniqueProductsActivity.values()),
+        duplicateProductsActivity,
+      };
+    }
+
     removeDuplicateTrails(trailsArray: TrailDto[]) {
       const uniqueTrails = new Map<string, TrailDto>();
       const duplicateTrails: TrailDto[] = [];    
