@@ -44,9 +44,12 @@ constructor(
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
+      // 🔹 Capturar detalles de la petición
+      const { url, method, ip } = request;
+
       this.logger.error(
-        `Error en SalesRateController.submitAllSalesRate - Status: ${status} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en SalesRateController.submitAllSalesRate - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
         request,
         status,
       );
@@ -68,9 +71,12 @@ constructor(
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
+      // 🔹 Capturar detalles de la petición
+      const { url, method, ip } = request;
+
       this.logger.error(
-        `Error en SalesRateController.getAllSalesRate - Status: ${status} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en SalesRateController.getAllSalesRate - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
         request,
         status,
       );
@@ -91,9 +97,12 @@ constructor(
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
+      // 🔹 Capturar detalles de la petición
+      const { url, method, ip } = request;
+
       this.logger.error(
-        `Error en SalesRateController.syncSalesRate - Status: ${status} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en SalesRateController.syncSalesRate - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
         request,
         status,
       );

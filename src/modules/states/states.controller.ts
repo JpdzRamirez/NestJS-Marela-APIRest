@@ -36,17 +36,18 @@ constructor(
   @HttpCode(201)
   @UsePipes(new ValidationPipe({ whitelist: true })) 
   @Post('admin/post-all-states')
-    async submitAllClients(@Req() request: AuthRequest,@Body() statesArray: StatesArrayDto) {  
+    async submitAllStates(@Req() request: AuthRequest,@Body() statesArray: StatesArrayDto) {  
     try {  
       return await this.stateServices.submitAllStates(request, statesArray.states);
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
-
+      // 🔹 Capturar detalles de la petición
+      const { url, method, ip } = request;
       this.logger.error(
-        `Error en StatesController.submitAllClients - Status: ${status} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en StatesController.submitAllStates - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
         request,
         status,
       );
@@ -60,17 +61,18 @@ constructor(
   @HttpCode(200)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @Get('admin/get-all-states')
-    async getAllTypeClient(@Req() request: AuthRequest ) { 
+    async getAllStates(@Req() request: AuthRequest ) { 
     try {    
       return await this.stateServices.getAllStates(request);
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
-
+      // 🔹 Capturar detalles de la petición
+      const { url, method, ip } = request;
       this.logger.error(
-        `Error en StatesController.getAllTypeClient - Status: ${status} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en StatesController.getAllStates - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
         request,
         status,
       );
@@ -80,22 +82,24 @@ constructor(
   }
   
     /** ✅ Departamentos sincronizados en móbil (fontanero y admin) */
-    @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', [1,3]) 
   @HttpCode(201)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @Patch('admin/patch-sync-states')
-    async syncClients(@Req() request: AuthRequest,@Body() citiesArray: StatesArrayDto ) { 
+    async syncStates(@Req() request: AuthRequest,@Body() citiesArray: StatesArrayDto ) { 
     try {   
       return await this.stateServices.syncStates(request,citiesArray.states);
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
+      // 🔹 Capturar detalles de la petición
+      const { url, method, ip } = request;
 
       this.logger.error(
-        `Error en StatesController.syncClients - Status: ${status} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en StatesController.syncStates - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
         request,
         status,
       );

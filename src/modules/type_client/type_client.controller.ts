@@ -44,9 +44,12 @@ constructor(
     const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
     const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
+    // 🔹 Capturar detalles de la petición
+    const { url, method, ip } = request;
+
     this.logger.error(
-      `Error en TypeClientController.submitAllTypeClient - Status: ${status} - Mensaje: ${errorMessage}`,
-      error.stack,
+      error,
+      `Error en TypeClientController.submitAllTypeClient - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
       request,
       status,
     );
@@ -69,8 +72,8 @@ constructor(
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
       this.logger.error(
-        `Error en StatesController.getAllTypeClient - Status: ${status} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en TypeClientController.getAllTypeClient - Status: ${status} - Mensaje: ${errorMessage}`,
         request,
         status,
       );
@@ -91,9 +94,12 @@ constructor(
     const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
     const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
+    // 🔹 Capturar detalles de la petición
+    const { url, method, ip } = request;
+
     this.logger.error(
-      `Error en StatesController.syncTypeClient - Status: ${status} - Mensaje: ${errorMessage}`,
-      error.stack,
+      error,
+      `Error en TypeClientController.syncTypeClient - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
       request,
       status,
     );

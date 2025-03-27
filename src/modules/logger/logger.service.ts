@@ -2,6 +2,7 @@ import { Injectable, LoggerService } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthRequest } from '../../types';
 import { LoggerRepository } from './logger.repository';
+import { UAParser } from 'ua-parser-js';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 
@@ -36,44 +37,75 @@ export class LoggerServices implements LoggerService {
     });
   }
 
-  async log(message: string, request?: AuthRequest) {
-    this.logger.info(message);
+  async log(log: any, request?: AuthRequest) {
+    this.logger.error(`${log.stack}`);
+    // 📌 Obtener el tipo de error dinámicamente
+  const errorType = log?.constructor?.name ?? 'UnknownError';
+
+  // 📌 Asegurar que el método HTTP se registre correctamente
+  const method = request?.method?.toUpperCase() ?? 'UNKNOWN';
     await this.loggerRepository.saveLog({
       status_code: '200',
-      error_type: 'INFO',
-      method: request?.method ? this.mapHttpMethod(request.method) : undefined,
+      error_type: errorType,
+      method: method,
       url: request?.url ?? undefined,
-      status_message: message,
+      status_message: log.stack,
       uploaded_by_authsupa: request?.user?.uuid_authsupa ? request?.user?.uuid_authsupa : undefined,
     });
   }
 
-  async error(message: string, trace?: string, request?: AuthRequest, statusCode?: number) {
-    this.logger.error(`${message} \nStack: ${trace}`);
+  async error(error: any, trace?: string, request?: AuthRequest, statusCode?: number) {
+    this.logger.error(`${error.stack} \nStack: ${trace}`);
+      // 📌 Obtener el tipo de error dinámicamente
+    const errorType = error?.constructor?.name ?? 'UnknownError';
+
+    const userAgent = request?.headers['user-agent'] ?? '';
+
+     // 📌 Extraer versión de la app y Flutter el User-Agent  
+    const userAgentParts = userAgent.match(/App\/([\d.]+)\+(\d+) \(Flutter ([\d.]+); (Android) ([\d.]+); (.+?); (.+?)\)/);
+    const appVersion = userAgentParts?.[1] || 'Unknown App Version';
+    const buildNumber = userAgentParts?.[2] || 'Unknown Build';
+    const flutterVersion = userAgentParts?.[3] || 'Unknown Flutter Version';
+    const operatingSystem = userAgentParts?.[4] || 'Unknown OS';
+    const androidVersion = userAgentParts?.[5] || 'Unknown Android Version';
+    const extractedDeviceModel = userAgentParts?.[6] || 'Unknown DeviceModel';
+    // 📌 Asegurar que el método HTTP se registre correctamente
+    const method = request?.method?.toUpperCase() ?? 'UNKNOWN';
+
     await this.loggerRepository.saveLog({
       status_code: statusCode?.toString() ?? '500',
-      error_type: 'ERROR',
-      method: request?.method ? this.mapHttpMethod(request.method) : undefined,
+      error_type: errorType,
+      method: method,
       url: request?.url ?? undefined,
-      status_message: message,
+      status_message: trace,
+      address_ipv4: request?.ip,
+      device_model:extractedDeviceModel,
+      operating_system:operatingSystem,
+      android_version: androidVersion,
+      app_version: appVersion, // 📌 Versión de la app extraída
+      build_number: buildNumber, // 📌 Número de compilación extraído
+      flutter_version: flutterVersion, 
       uploaded_by_authsupa: request?.user?.uuid_authsupa ? request?.user?.uuid_authsupa : undefined,
     });
   }
 
-  async warn(message: string, request?: AuthRequest) {
-    this.logger.warn(message);
+  async warn(warn: any, request?: AuthRequest) {
+
+    this.logger.error(`${warn.stack}`);
+      // 📌 Obtener el tipo de error dinámicamente
+    const errorType = warn?.constructor?.name ?? 'UnknownError';
+
+    // 📌 Asegurar que el método HTTP se registre correctamente
+    const method = request?.method?.toUpperCase() ?? 'UNKNOWN';
+
     await this.loggerRepository.saveLog({
       status_code: '300',
-      error_type: 'WARNING',
-      method: request?.method ? this.mapHttpMethod(request.method) : undefined,
+      error_type: errorType,
+      method: method,
       url: request?.url ?? undefined,
-      status_message: message,
+      status_message: warn.stack,
       uploaded_by_authsupa: request?.user?.uuid_authsupa ? request?.user?.uuid_authsupa : undefined,
     });
   }
 
-  private mapHttpMethod(method: string): number {
-    const methods = { GET: 1, POST: 2, PUT: 3, PATCH: 4, DELETE: 5 };
-    return methods[method] ?? 0;
-  }
 }

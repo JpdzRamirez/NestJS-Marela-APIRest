@@ -43,10 +43,11 @@ constructor(
     const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
     const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
     const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
-
+    // 🔹 Capturar detalles de la petición
+    const { url, method, ip } = request;
     this.logger.error(
-      `Error en TypeDocumentController.submitAllTypeDocument - Status: ${status} - Mensaje: ${errorMessage}`,
-      error.stack,
+      error,
+      `Error en TypeDocumentController.submitAllTypeDocument - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
       request,
       status,
     );
@@ -67,10 +68,11 @@ constructor(
     const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
     const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
     const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
-
+    // 🔹 Capturar detalles de la petición
+    const { url, method, ip } = request;
     this.logger.error(
-      `Error en TypeDocumentController.getAllTypeDocument - Status: ${status} - Mensaje: ${errorMessage}`,
-      error.stack,
+      error,
+      `Error en TypeDocumentController.getAllTypeDocument - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
       request,
       status,
     );
@@ -90,10 +92,11 @@ constructor(
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
-
+      // 🔹 Capturar detalles de la petición
+      const { url, method, ip } = request;
       this.logger.error(
-        `Error en StatesController.syncTypeDocument - Status: ${status} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en TypeDocumentController.syncTypeDocument - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
         request,
         status,
       );

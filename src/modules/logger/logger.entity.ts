@@ -12,11 +12,32 @@ export class Logger {
     @Column({ name: 'error_type',type: 'varchar', unique: true, nullable: false })
     error_type!: string;
 
-    @Column({ name: 'method',type: 'int', nullable: false })
-    method!: number;
+    @Column({ name: 'method',type: 'varchar', nullable: false })
+    method!: string;
 
     @Column({ name: 'url',type: 'varchar', length: 100, nullable: false })
     url!: string;
+
+    @Column({ name: 'address_ipv4',type: 'varchar', nullable: false })
+    address_ipv4!: string;
+
+    @Column({ name: 'device_model',type: 'varchar', nullable: false })
+    device_model!: string;
+
+    @Column({ name: 'operating_system',type: 'varchar', nullable: false })
+    operating_system!: string;
+
+    @Column({ name: 'android_version',type: 'varchar', nullable: false })
+    android_version!: string;
+
+    @Column({ name: 'app_version',type: 'varchar', nullable: false })
+    app_version!: string;
+
+    @Column({ name: 'build_number',type: 'varchar', nullable: false })
+    build_number!: string;
+
+    @Column({ name: 'flutter_version',type: 'varchar', nullable: false })
+    flutter_version!: string;
 
     @Column({ name: 'status_message',type: 'varchar', length: 100, nullable: false })
     status_message!: string;

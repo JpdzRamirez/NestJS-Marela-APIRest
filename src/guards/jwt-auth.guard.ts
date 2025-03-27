@@ -80,13 +80,14 @@ export class JwtAuthGuard implements CanActivate {
       const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
       // 🔹 Capturar detalles de la petición
-      const url = request.url;
-      const method = request.method;
+      const { url, method, ip } = request;
 
       // 🔹 Registrar el error en el logger antes de lanzar la excepción
-      this.logger.error(
-          `Error en JwtAuthGuard - Status: ${status} - Método: ${method} - URL: ${url} - Mensaje: ${errorMessage}`,
-          error.stack
+      this.logger.error(          
+          error,
+          `Error en JwtAuthGuard - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
+          request,
+          status
       );
 
         // 🔹 Lanzar la excepción con el código HTTP correcto

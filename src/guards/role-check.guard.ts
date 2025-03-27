@@ -55,14 +55,15 @@ export class RolesGuard implements CanActivate {
           ? response.message
           : 'Error desconocido';
 
-      // 🔹 Capturar detalles de la petición
-      const url = request.url;
-      const method = request.method;
+      // 🔹 Capturar detalles de la petición      
+      const { url, method, ip } = request;
 
       // 🔹 Registrar el error en el logger antes de lanzar la excepción
       this.logger.error(
-        `Error en RolesGuard - Status: ${status} - Método: ${method} - URL: ${url} - Mensaje: ${errorMessage}`,
-        error.stack,
+        error,
+        `Error en RolesGuard - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip} - Mensaje: ${errorMessage}`,        
+        request,
+        status,
       );
 
       // 🔹 Lanzar la excepción con el código HTTP correcto

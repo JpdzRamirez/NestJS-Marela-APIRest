@@ -36,7 +36,7 @@ export class WaterMeterController {
       @HttpCode(201)
       @UsePipes(new ValidationPipe({ whitelist: true })) 
       @Post('admin/post-all-waterMeters')
-      async submitAllTypeClient(@Req() request: AuthRequest,@Body() waterMetersArray: WaterMetersArrayDto ) {    
+      async submitAllWaterMeter(@Req() request: AuthRequest,@Body() waterMetersArray: WaterMetersArrayDto ) {    
       try {  
           return await this.waterMeterServices.submitAllWaterMeter(request, waterMetersArray.water_meters);
       } catch (error) {
@@ -44,9 +44,12 @@ export class WaterMeterController {
           const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
           const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
 
+          // 🔹 Capturar detalles de la petición
+          const { url, method, ip } = request;
+
           this.logger.error(
-            `Error en WaterMeterController.submitAllTypeClient - Status: ${status} - Mensaje: ${errorMessage}`,
-            error.stack,
+            error,
+            `Error en WaterMeterController.submitAllWaterMeter - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
             request,
             status,
           );
@@ -60,17 +63,20 @@ export class WaterMeterController {
       @HttpCode(200)
       @UsePipes(new ValidationPipe({ whitelist: true }))
       @Get('admin/get-all-waterMeters')
-      async getAllTypeClient(@Req() request: AuthRequest ) {    
+      async getAllWaterMeters(@Req() request: AuthRequest ) {    
         try {  
           return await this.waterMeterServices.getAllWaterMeters(request);
         } catch (error) {
           const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
           const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
           const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
-    
+
+          // 🔹 Capturar detalles de la petición
+          const { url, method, ip } = request;
+
           this.logger.error(
-            `Error en StatesController.getAllTypeClient - Status: ${status} - Mensaje: ${errorMessage}`,
-            error.stack,
+            error,
+            `Error en WaterMeterController.getAllWaterMeters - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
             request,
             status,
           );
@@ -85,17 +91,20 @@ export class WaterMeterController {
       @HttpCode(201)
       @UsePipes(new ValidationPipe({ whitelist: true }))
       @Patch('admin/patch-sync-waterMeters')
-        async syncTypeClient(@Req() request: AuthRequest,@Body() waterMetersArray: WaterMetersArrayDto ) {    
+        async syncWaterMeters(@Req() request: AuthRequest,@Body() waterMetersArray: WaterMetersArrayDto ) {    
       try {   
         return await this.waterMeterServices.syncWaterMeters(request,waterMetersArray.water_meters);
       } catch (error) {
         const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
         const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
         const errorMessage = typeof response === 'object' && 'message' in response ? response.message : 'Error desconocido';
-  
+
+        // 🔹 Capturar detalles de la petición
+        const { url, method, ip } = request;
+
         this.logger.error(
-          `Error en StatesController.syncClients - Status: ${status} - Mensaje: ${errorMessage}`,
-          error.stack,
+          error,
+          `Error en WaterMeterController.syncWaterMeters - Status: ${status} - Método: ${method} - URL: ${url} - IP: ${ip}- Mensaje: ${errorMessage}`,
           request,
           status,
         );
