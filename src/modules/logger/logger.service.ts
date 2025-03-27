@@ -59,15 +59,15 @@ export class LoggerServices implements LoggerService {
       // 📌 Obtener el tipo de error dinámicamente
     const errorType = error?.constructor?.name ?? 'UnknownError';
 
-    const userAgent = request?.headers['user-agent'] ?? '';
+    const rawUserAgent = request?.headers['user-agent'];
+    const userAgent = Array.isArray(rawUserAgent) ? rawUserAgent[0] : rawUserAgent ?? '';
+    const userAgentParts = userAgent.match(/App\/([\d.]+)\+(\d+) \(Flutter ([\d.]+); (Android|iOS) ([\d.]+); (.+?)\)/);
 
-     // 📌 Extraer versión de la app y Flutter el User-Agent  
-    const userAgentParts = userAgent.match(/App\/([\d.]+)\+(\d+) \(Flutter ([\d.]+); (Android) ([\d.]+); (.+?); (.+?)\)/);
     const appVersion = userAgentParts?.[1] || 'Unknown App Version';
     const buildNumber = userAgentParts?.[2] || 'Unknown Build';
     const flutterVersion = userAgentParts?.[3] || 'Unknown Flutter Version';
     const operatingSystem = userAgentParts?.[4] || 'Unknown OS';
-    const androidVersion = userAgentParts?.[5] || 'Unknown Android Version';
+    const osVersion = userAgentParts?.[5] || 'Unknown OS Version'; // Android o iOS version
     const extractedDeviceModel = userAgentParts?.[6] || 'Unknown DeviceModel';
     // 📌 Asegurar que el método HTTP se registre correctamente
     const method = request?.method?.toUpperCase() ?? 'UNKNOWN';
@@ -81,7 +81,7 @@ export class LoggerServices implements LoggerService {
       address_ipv4: request?.ip,
       device_model:extractedDeviceModel,
       operating_system:operatingSystem,
-      android_version: androidVersion,
+      android_version: osVersion,
       app_version: appVersion, // 📌 Versión de la app extraída
       build_number: buildNumber, // 📌 Número de compilación extraído
       flutter_version: flutterVersion, 
