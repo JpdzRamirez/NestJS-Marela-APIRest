@@ -40,7 +40,7 @@ export class AuthController {
   async register(@Body() createUserDto: CreateUserDto, @Req() request: Request) {
     try {
       const user = await this.authService.userBuilder(createUserDto);
-      return { message: 'Usuario registrado con éxito', user };
+      return { message: 'Usuario registrado con éxito',status:true, user };
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
@@ -65,7 +65,7 @@ export class AuthController {
   async login(@Body() loginDto: LoginUserDto, @Req() request: Request) {
     try {
       const result = await this.authService.login(loginDto);
-      return { message: 'Login exitoso', ...result };
+      return { message: 'Login exitoso',status:true, ...result };
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
       const response = error instanceof HttpException ? error.getResponse() : { message: 'Error interno', status: false };
