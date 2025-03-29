@@ -65,9 +65,13 @@ import { OverdueDebtModule } from './modules/overdue_debt/overdue_debt.module';
 import { UnitsModule } from './modules/units/units.module';
 import { LoggerModule } from './modules/logger/logger.module';
 import { LoggerServices } from './modules/logger/logger.service';
+import { TasksModule } from './tasks/tasks.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { DevicesModule } from './modules/devices/devices.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -98,7 +102,9 @@ import { LoggerServices } from './modules/logger/logger.service';
     InvoiceFooterModule,
     OverdueDebtModule,
     UnitsModule,
-    LoggerModule
+    LoggerModule,
+    TasksModule,
+    DevicesModule
   ],
   controllers: [AppController, TypeClientController, ClientController, TypeDocumentController, WaterMeterController, BrandsController, TypeServicesController, SalesRateController, MunicipalUnitController, CitiesController, StatesController, TrailController, ActivitiesController, ProductsActivityController, PaymentsActivityController, InvoiceHeaderController, InvoiceFooterController, OverdueDebtController],
   providers: [AppService, SchemasService, TypeClientServices, ClientServices, TypeDocumentServices, WaterMeterService, BrandsService, TypeServicesService, SalesRateService, MunicipalUnitService, CityServices, StatesService, TrailServices, ActivityServices, ProductsActivityService, PaymentsActivityService, InvoiceHeaderService, InvoiceFooterService, OverdueDebtService,LoggerServices],
